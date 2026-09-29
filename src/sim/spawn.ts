@@ -7,6 +7,7 @@ import {
   TRAIT,
 } from '@/sim/config'
 import type { GlorpType } from '@/sim/types'
+import { rollDirective } from '@/sim/genetics'
 import type { World } from '@/sim/world'
 
 /**
@@ -47,6 +48,7 @@ export const spawnGlorp = (
     TRAIT.reproCooldownMin,
     TRAIT.reproCooldownMax,
   )
+  world.directive[index] = rollDirective(world.random)
   world.id[index] = world.nextId
   world.nextId += 1
   world.count += 1

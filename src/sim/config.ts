@@ -43,6 +43,26 @@ export const TRAIT = {
   reproCooldownMax: 25,
 } as const
 
+/** Chance a pair-reproduced child inherits the more favorable parent's value. */
+export const INHERIT_BEST_CHANCE = 0.75
+
+/** Symmetric relative mutation spread (±) applied per trait to any offspring. */
+export const MUTATION_RATE = 0.08
+
+/** Extra relative drift per trait in the direction the glorp's directive prefers. */
+export const MUTATION_BIAS = 0.02
+
+/** Chance each directive bit flips when passed to an offspring. */
+export const DIRECTIVE_FLIP_CHANCE = 0.05
+
+/** Bit per trait inside a glorp's directive mask (1 = lineage prefers higher). */
+export const TRAIT_BIT = {
+  speed: 1,
+  staminaMax: 2,
+  metabolism: 4,
+  reproCooldown: 8,
+} as const
+
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
   walkFactor: 0.45,

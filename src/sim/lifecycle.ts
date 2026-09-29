@@ -10,7 +10,17 @@ import {
   OFFSPRING_FED,
   PREY_CONSUME_PER_SECOND,
   PREY_ENERGY_PER_SECOND,
+  TRAIT,
+  TRAIT_BIT,
 } from '@/sim/config'
+import {
+  FAVORS_HIGHER,
+  inheritTrait,
+  mixDirective,
+  mutateDirective,
+  mutateTrait,
+  prefersHigher,
+} from '@/sim/genetics'
 import { consumeGrass } from '@/sim/grass'
 import { nearestOfType } from '@/sim/query'
 import { GLORP_TYPE } from '@/sim/types'
@@ -34,6 +44,7 @@ const copyGlorp = (world: World, from: number, to: number): void => {
   world.staminaMax[to] = world.staminaMax[from]
   world.metabolism[to] = world.metabolism[from]
   world.reproCooldown[to] = world.reproCooldown[from]
+  world.directive[to] = world.directive[from]
 }
 
 /** Swap-remove one glorp, keeping every parallel array dense. */
@@ -97,6 +108,42 @@ export const applyReproduction = (world: World): void => {
 
     const child = world.count
     copyGlorp(world, index, child)
+
+    // A clone inherits the parent's directive (with occasional flips), then
+    // mutates each trait in the direction that directive prefers.
+    const directive = mutateDirective(world.random, world.directive[index])
+    const staminaMax = mutateTrait(
+      world.random,
+      world.staminaMax[index],
+      TRAIT.staminaMaxMin,
+      TRAIT.staminaMaxMax,
+      prefersHigher(directive, TRAIT_BIT.staminaMax),
+    )
+    world.directive[child] = directive
+    world.speed[child] = mutateTrait(
+      world.random,
+      world.speed[index],
+      TRAIT.speedMin,
+      TRAIT.speedMax,
+      prefersHigher(directive, TRAIT_BIT.speed),
+    )
+    world.staminaMax[child] = staminaMax
+    world.stamina[child] = staminaMax
+    world.metabolism[child] = mutateTrait(
+      world.random,
+      world.metabolism[index],
+      TRAIT.metabolismMin,
+      TRAIT.metabolismMax,
+      prefersHigher(directive, TRAIT_BIT.metabolism),
+    )
+    world.reproCooldown[child] = mutateTrait(
+      world.random,
+      world.reproCooldown[index],
+      TRAIT.reproCooldownMin,
+      TRAIT.reproCooldownMax,
+      prefersHigher(directive, TRAIT_BIT.reproCooldown),
+    )
+
     world.fed[child] = OFFSPRING_FED
     world.cooldown[child] = world.reproCooldown[child]
     world.sprinting[child] = 0
@@ -128,8 +175,9 @@ export const applyReproduction = (world: World): void => {
 }
 
 /**
- * Two nearby, well-fed, off-cooldown hunters produce one offspring whose
- * traits are the average of both parents. Both parents then go on cooldown.
+ * Two nearby, well-fed, off-cooldown hunters produce one offspring. For each
+ * trait the globally favorable parent's value is selected, then mutated in the
+ * direction the child's recombined directive prefers. Both parents go on cooldown.
  */
 export const applyPairReproduction = (world: World): void => {
   for (let index = 0; index < world.count; index += 1) {
@@ -149,10 +197,59 @@ export const applyPairReproduction = (world: World): void => {
     if (mate < 0) continue
 
     const child = world.count
-    const staminaMax =
-      (world.staminaMax[index] + world.staminaMax[mate]) / 2
-    const reproCooldown =
-      (world.reproCooldown[index] + world.reproCooldown[mate]) / 2
+    const directive = mixDirective(
+      world.random,
+      world.directive[index],
+      world.directive[mate],
+    )
+    const speed = mutateTrait(
+      world.random,
+      inheritTrait(
+        world.random,
+        world.speed[index],
+        world.speed[mate],
+        FAVORS_HIGHER.speed,
+      ),
+      TRAIT.speedMin,
+      TRAIT.speedMax,
+      prefersHigher(directive, TRAIT_BIT.speed),
+    )
+    const staminaMax = mutateTrait(
+      world.random,
+      inheritTrait(
+        world.random,
+        world.staminaMax[index],
+        world.staminaMax[mate],
+        FAVORS_HIGHER.staminaMax,
+      ),
+      TRAIT.staminaMaxMin,
+      TRAIT.staminaMaxMax,
+      prefersHigher(directive, TRAIT_BIT.staminaMax),
+    )
+    const metabolism = mutateTrait(
+      world.random,
+      inheritTrait(
+        world.random,
+        world.metabolism[index],
+        world.metabolism[mate],
+        FAVORS_HIGHER.metabolism,
+      ),
+      TRAIT.metabolismMin,
+      TRAIT.metabolismMax,
+      prefersHigher(directive, TRAIT_BIT.metabolism),
+    )
+    const reproCooldown = mutateTrait(
+      world.random,
+      inheritTrait(
+        world.random,
+        world.reproCooldown[index],
+        world.reproCooldown[mate],
+        FAVORS_HIGHER.reproCooldown,
+      ),
+      TRAIT.reproCooldownMin,
+      TRAIT.reproCooldownMax,
+      prefersHigher(directive, TRAIT_BIT.reproCooldown),
+    )
 
     world.x[child] = (world.x[index] + world.x[mate]) / 2
     world.y[child] = (world.y[index] + world.y[mate]) / 2
@@ -165,10 +262,10 @@ export const applyPairReproduction = (world: World): void => {
     world.sprinting[child] = 0
     world.cooldown[child] = reproCooldown
     world.wanderSeed[child] = hashUnit(child ^ 0x9e3779b9)
-    world.speed[child] = (world.speed[index] + world.speed[mate]) / 2
-    world.metabolism[child] =
-      (world.metabolism[index] + world.metabolism[mate]) / 2
+    world.speed[child] = speed
+    world.metabolism[child] = metabolism
     world.reproCooldown[child] = reproCooldown
+    world.directive[child] = directive
     world.id[child] = world.nextId
     world.nextId += 1
 

@@ -14,6 +14,7 @@ import {
   updateBehavior,
   updateStamina,
 } from '@/sim/behavior'
+import { rollDirective } from '@/sim/genetics'
 import { createGrass, regrowGrass } from '@/sim/grass'
 import {
   applyDeath,
@@ -38,6 +39,8 @@ export type World = RenderableWorld & {
   readonly staminaMax: Float32Array
   readonly metabolism: Float32Array
   readonly reproCooldown: Float32Array
+  /** Per-trait mutation bias: one bit per trait, 1 = lineage prefers higher. */
+  readonly directive: Uint8Array
   /** Stable per-glorp identity, unaffected by swap-removal compaction. */
   readonly id: Uint32Array
   /** Next id handed out to a newborn or spawned glorp. */
@@ -69,6 +72,7 @@ export const createWorld = (
   const staminaMax = new Float32Array(MAX_GLORPS)
   const metabolism = new Float32Array(MAX_GLORPS)
   const reproCooldown = new Float32Array(MAX_GLORPS)
+  const directive = new Uint8Array(MAX_GLORPS)
   const id = new Uint32Array(MAX_GLORPS)
 
   for (let index = 0; index < active; index += 1) {
@@ -92,6 +96,7 @@ export const createWorld = (
       TRAIT.reproCooldownMax,
     )
     wanderSeed[index] = random.unit()
+    directive[index] = rollDirective(random)
     id[index] = index
   }
 
@@ -111,6 +116,7 @@ export const createWorld = (
     staminaMax,
     metabolism,
     reproCooldown,
+    directive,
     id,
     nextId: active,
     random,

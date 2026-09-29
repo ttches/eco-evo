@@ -6,8 +6,11 @@ import {
   MATE_FED_MIN,
   MATE_RANGE,
   MAX_GLORPS,
+  MUTATION_BIAS,
+  MUTATION_RATE,
   OFFSPRING_FED,
   STAMINA,
+  TRAIT,
 } from '@/sim/config'
 import {
   applyDeath,
@@ -45,7 +48,7 @@ describe('applyDeath', () => {
 })
 
 describe('applyReproduction', () => {
-  it('spawns an offspring when fed and off cooldown', () => {
+  it('spawns a mutated offspring when fed and off cooldown', () => {
     const world = createWorld(2, 9)
     world.fed[0] = 100
     world.cooldown[0] = 0
@@ -65,10 +68,26 @@ describe('applyReproduction', () => {
     expect(world.cooldown[0]).toBeCloseTo(reproCooldown)
     expect(world.fed[2]).toBe(50)
     expect(world.type[2]).toBe(type)
-    expect(world.speed[2]).toBe(speed)
-    expect(world.staminaMax[2]).toBe(staminaMax)
-    expect(world.metabolism[2]).toBe(metabolism)
-    expect(world.cooldown[2]).toBeCloseTo(reproCooldown)
+    expect(world.stamina[2]).toBeCloseTo(world.staminaMax[2])
+    expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
+
+    // Traits mutate but stay inside the configured ranges and near the parent.
+    const envelope = MUTATION_RATE + MUTATION_BIAS + 1e-9
+    expect(Math.abs(world.speed[2] - speed) / speed).toBeLessThanOrEqual(
+      envelope,
+    )
+    expect(Math.abs(world.staminaMax[2] - staminaMax) / staminaMax).toBeLessThanOrEqual(
+      envelope,
+    )
+    expect(
+      Math.abs(world.metabolism[2] - metabolism) / metabolism,
+    ).toBeLessThanOrEqual(envelope)
+    expect(
+      Math.abs(world.reproCooldown[2] - reproCooldown) / reproCooldown,
+    ).toBeLessThanOrEqual(envelope)
+    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAIT.speedMin)
+    expect(world.speed[2]).toBeLessThanOrEqual(TRAIT.speedMax)
+
     expect(Math.hypot(world.x[2] - x, world.y[2] - y)).toBeCloseTo(GLORP_RADIUS)
     expect(world.wanderSeed[2]).not.toBe(parentSeed)
   })
@@ -122,20 +141,59 @@ describe('applyPairReproduction', () => {
     return world
   }
 
-  it('averages the traits of two nearby, well-fed hunters', () => {
+  it('inherits from two nearby, well-fed hunters', () => {
     const world = setupPair()
 
     applyPairReproduction(world)
 
     expect(world.count).toBe(3)
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
-    expect(world.speed[2]).toBeCloseTo(50)
-    expect(world.staminaMax[2]).toBeCloseTo(6)
-    expect(world.metabolism[2]).toBeCloseTo(3)
-    expect(world.reproCooldown[2]).toBeCloseTo(15)
     expect(world.fed[2]).toBe(OFFSPRING_FED)
+    expect(world.stamina[2]).toBeCloseTo(world.staminaMax[2])
+    expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
     expect(world.cooldown[0]).toBeCloseTo(10)
     expect(world.cooldown[1]).toBeCloseTo(20)
+    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAIT.speedMin)
+    expect(world.speed[2]).toBeLessThanOrEqual(TRAIT.speedMax)
+    expect(world.staminaMax[2]).toBeGreaterThanOrEqual(TRAIT.staminaMaxMin)
+    expect(world.staminaMax[2]).toBeLessThanOrEqual(TRAIT.staminaMaxMax)
+    expect(world.metabolism[2]).toBeGreaterThanOrEqual(TRAIT.metabolismMin)
+    expect(world.metabolism[2]).toBeLessThanOrEqual(TRAIT.metabolismMax)
+    expect(world.reproCooldown[2]).toBeGreaterThanOrEqual(
+      TRAIT.reproCooldownMin,
+    )
+    expect(world.reproCooldown[2]).toBeLessThanOrEqual(TRAIT.reproCooldownMax)
+  })
+
+  it('trends toward the globally favorable parent across many matings', () => {
+    const world = setupPair()
+    const samples = 600
+    let speed = 0
+    let metabolism = 0
+    let reproCooldown = 0
+    for (let i = 0; i < samples; i += 1) {
+      world.count = 2
+      world.fed[0] = 100
+      world.fed[1] = 100
+      world.cooldown[0] = 0
+      world.cooldown[1] = 0
+      world.speed[0] = 40
+      world.speed[1] = 60
+      world.metabolism[0] = 2
+      world.metabolism[1] = 4
+      world.reproCooldown[0] = 10
+      world.reproCooldown[1] = 20
+
+      applyPairReproduction(world)
+
+      speed += world.speed[2]
+      metabolism += world.metabolism[2]
+      reproCooldown += world.reproCooldown[2]
+    }
+
+    expect(speed / samples).toBeGreaterThan(50)
+    expect(metabolism / samples).toBeLessThan(3)
+    expect(reproCooldown / samples).toBeLessThan(15)
   })
 
   it('does not mate out of range, on cooldown, or while hungry', () => {
