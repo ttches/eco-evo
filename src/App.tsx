@@ -8,7 +8,7 @@ import {
 } from '@/engine/camera'
 import { CAMERA, FIXED_STEP, VIEWPORT } from '@/engine/config'
 import { createLoop } from '@/engine/loop'
-import { Renderer } from '@/engine/renderer'
+import { Renderer } from '@/render/renderer'
 import { createWorld, step } from '@/sim/world'
 import ControlDock from '@/ui/ControlDock'
 import SettingsPanel from '@/ui/SettingsPanel'

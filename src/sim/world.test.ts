@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_GLORPS, WORLD } from '@/engine/config'
+import { WORLD } from '@/engine/config'
+import { MAX_GLORPS } from '@/sim/config'
 import { createWorld, step } from '@/sim/world'
 
 describe('createWorld', () => {
@@ -9,7 +10,7 @@ describe('createWorld', () => {
     expect(world.radius).toBeGreaterThan(0)
   })
 
-  it('clamps the population to the engine capacity', () => {
+  it('clamps the population to the simulation capacity', () => {
     const world = createWorld(MAX_GLORPS + 100)
     expect(world.count).toBe(MAX_GLORPS)
   })
@@ -28,24 +29,22 @@ describe('createWorld', () => {
     const first = createWorld(8, 42)
     const second = createWorld(8, 42)
     expect(Array.from(first.x)).toEqual(Array.from(second.x))
-    expect(Array.from(first.colors)).toEqual(Array.from(second.colors))
+    expect(Array.from(first.y)).toEqual(Array.from(second.y))
+    expect(Array.from(first.type)).toEqual(Array.from(second.type))
+    expect(Array.from(first.speed)).toEqual(Array.from(second.speed))
+    expect(Array.from(first.staminaMax)).toEqual(Array.from(second.staminaMax))
+    expect(Array.from(first.metabolism)).toEqual(Array.from(second.metabolism))
+    expect(Array.from(first.reproCooldown)).toEqual(
+      Array.from(second.reproCooldown),
+    )
+    expect(Array.from(first.wanderSeed)).toEqual(Array.from(second.wanderSeed))
+    expect(Array.from(first.grass.values)).toEqual(
+      Array.from(second.grass.values),
+    )
   })
 })
 
 describe('step', () => {
-  it('advances positions by velocity times delta', () => {
-    const world = createWorld(4)
-    world.x[0] = 500
-    world.y[0] = 500
-    world.vx[0] = 10
-    world.vy[0] = -4
-
-    step(world, 0.5)
-
-    expect(world.x[0]).toBeCloseTo(505)
-    expect(world.y[0]).toBeCloseTo(498)
-  })
-
   it('keeps glorps inside the bounded world over time', () => {
     const world = createWorld(64)
 
@@ -59,14 +58,20 @@ describe('step', () => {
     }
   })
 
-  it('reflects velocity when hitting a wall', () => {
-    const world = createWorld(1)
-    world.x[0] = world.radius + 1
-    world.vx[0] = -50
+  it('compacts the parallel arrays when glorps die', () => {
+    const world = createWorld(6, 21)
+    world.fed[1] = -1
+    world.fed[3] = -1
 
-    step(world, 1)
+    step(world, 1 / 60)
 
-    expect(world.x[0]).toBe(world.radius)
-    expect(world.vx[0]).toBeGreaterThan(0)
+    expect(world.count).toBe(4)
+    for (let index = 0; index < world.count; index += 1) {
+      expect(world.fed[index]).toBeGreaterThan(0)
+      expect(Number.isFinite(world.x[index])).toBe(true)
+      expect(Number.isFinite(world.y[index])).toBe(true)
+      expect(world.type[index]).toBeGreaterThanOrEqual(0)
+      expect(world.type[index]).toBeLessThanOrEqual(1)
+    }
   })
 })

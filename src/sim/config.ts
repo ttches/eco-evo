@@ -1,0 +1,90 @@
+/** Maximum number of glorps the simulation can hold at once. */
+export const MAX_GLORPS = 512
+
+/** Collision / draw radius of a single glorp, in world units. */
+export const GLORP_RADIUS = 12
+
+export const DEFAULT_SEED = 0x00c0ffee
+
+/** Population the world starts with. */
+export const START_PREY = 30
+
+export const START_HUNTERS = 6
+
+/** Initial energy every glorp spawns with, as a percentage of satiation. */
+export const FED_START = 50
+
+/** Energy an offspring starts life with. */
+export const OFFSPRING_FED = 50
+
+export const FED_MAX = 100
+
+/** Below this fed value a glorp becomes hungry and starts seeking food. */
+export const HUNGER = 70
+
+/** Spawned trait ranges, sampled once per glorp at creation. */
+export const TRAIT = {
+  speedMin: 30,
+  speedMax: 70,
+  staminaMaxMin: 2,
+  staminaMaxMax: 8,
+  metabolismMin: 1.5,
+  metabolismMax: 4.0,
+  reproCooldownMin: 8,
+  reproCooldownMax: 25,
+} as const
+
+export const MOVEMENT = {
+  /** Fraction of a glorp's top speed used when moving without sprinting. */
+  walkFactor: 0.45,
+} as const
+
+/** How quickly velocity is steered toward its target, in 1/s. */
+export const STEER_RATE = 8
+
+/** How quickly wander headings drift, in radians/s. */
+export const WANDER_TURN_RATE = 2
+
+export const STAMINA = {
+  drainPerSecond: 1.0,
+  recoverPerSecond: 0.6,
+} as const
+
+/** Hunter perception range. */
+export const HUNTER_SIGHT = 220
+
+/** Prey flight range. */
+export const PREY_FLEE = 120
+
+/**
+ * Hunters sprint this much faster than their `speed` trait, so they can close
+ * on fleeing prey. Without an edge predators never catch anything and starve.
+ */
+export const HUNTER_SPRINT_MULTIPLIER = 1.4
+
+/** Grass is laid out on a grid of this many world units per tile. */
+export const GRASS_TILE = 32
+
+/**
+ * Grass regrows at this fraction per second, capped at 1. Total regrowth is
+ * `tiles * GRASS_REGROW` (~8 grass/s across the 60x34 grid), which sets the
+ * carrying capacity: prey need ~`metabolism / GRASS_ENERGY` grass per second,
+ * so this sustains roughly 100 prey before food becomes limiting.
+ */
+export const GRASS_REGROW = 0.004
+
+export const GRASS_INITIAL_MIN = 0.15
+
+export const GRASS_INITIAL_MAX = 0.6
+
+/** Tiles at or below this value are treated as bare ground. */
+export const GRASS_MIN_VALUE = 0.01
+
+/** Grass a grazing prey consumes per second. */
+export const PREY_CONSUME_PER_SECOND = 0.5
+
+/** Energy a grazing prey gains per second. */
+export const PREY_ENERGY_PER_SECOND = 18
+
+/** Energy gained from a successful hunt. */
+export const HUNTER_KILL_FED = 30

@@ -1,23 +1,44 @@
-import { GLORP_RADIUS, MAX_GLORPS, WORLD } from '@/engine/config'
-import type { RenderableWorld } from '@/engine/contracts'
+import { WORLD } from '@/engine/config'
 import { XorShift32 } from '@/engine/math'
+import {
+  DEFAULT_SEED,
+  FED_START,
+  GLORP_RADIUS,
+  MAX_GLORPS,
+  START_HUNTERS,
+  START_PREY,
+  TRAIT,
+} from '@/sim/config'
+import {
+  integrateMotion,
+  updateBehavior,
+  updateStamina,
+} from '@/sim/behavior'
+import { createGrass, regrowGrass } from '@/sim/grass'
+import {
+  applyDeath,
+  applyEating,
+  applyMetabolism,
+  applyReproduction,
+} from '@/sim/lifecycle'
+import { GLORP_TYPE } from '@/sim/types'
+import type { RenderableWorld } from '@/sim/view'
 
 export type World = RenderableWorld & {
+  count: number
   readonly vx: Float32Array
   readonly vy: Float32Array
+  readonly stamina: Float32Array
+  readonly sprinting: Uint8Array
+  readonly cooldown: Float32Array
+  readonly wanderSeed: Float32Array
+  readonly speed: Float32Array
+  readonly staminaMax: Float32Array
+  readonly metabolism: Float32Array
+  readonly reproCooldown: Float32Array
 }
 
-const DEFAULT_COUNT = 150
-const DEFAULT_SEED = 0x00c0ffee
-
-const PALETTE: ReadonlyArray<readonly [number, number, number]> = [
-  [0.3, 0.72, 0.62],
-  [0.9, 0.65, 0.3],
-  [0.85, 0.4, 0.52],
-  [0.58, 0.48, 0.85],
-  [0.6, 0.8, 0.35],
-  [0.4, 0.68, 0.88],
-]
+const DEFAULT_COUNT = START_PREY + START_HUNTERS
 
 export const createWorld = (
   count = DEFAULT_COUNT,
@@ -25,58 +46,76 @@ export const createWorld = (
 ): World => {
   const random = new XorShift32(seed)
   const active = Math.max(0, Math.min(count, MAX_GLORPS))
-  const radius = GLORP_RADIUS
 
   const x = new Float32Array(MAX_GLORPS)
   const y = new Float32Array(MAX_GLORPS)
   const vx = new Float32Array(MAX_GLORPS)
   const vy = new Float32Array(MAX_GLORPS)
-  const colors = new Float32Array(MAX_GLORPS * 3)
+  const type = new Uint8Array(MAX_GLORPS)
+  const fed = new Float32Array(MAX_GLORPS)
+  const stamina = new Float32Array(MAX_GLORPS)
+  const sprinting = new Uint8Array(MAX_GLORPS)
+  const cooldown = new Float32Array(MAX_GLORPS)
+  const wanderSeed = new Float32Array(MAX_GLORPS)
+  const speed = new Float32Array(MAX_GLORPS)
+  const staminaMax = new Float32Array(MAX_GLORPS)
+  const metabolism = new Float32Array(MAX_GLORPS)
+  const reproCooldown = new Float32Array(MAX_GLORPS)
 
   for (let index = 0; index < active; index += 1) {
-    x[index] = random.range(radius, WORLD.width - radius)
-    y[index] = random.range(radius, WORLD.height - radius)
-    vx[index] = random.range(-30, 30)
-    vy[index] = random.range(-30, 30)
-
-    const color = PALETTE[index % PALETTE.length]
-    const offset = index * 3
-    colors[offset] = color[0]
-    colors[offset + 1] = color[1]
-    colors[offset + 2] = color[2]
+    x[index] = random.range(GLORP_RADIUS, WORLD.width - GLORP_RADIUS)
+    y[index] = random.range(GLORP_RADIUS, WORLD.height - GLORP_RADIUS)
+    type[index] =
+      index < START_PREY ? GLORP_TYPE.prey : GLORP_TYPE.hunter
+    fed[index] = FED_START
+    speed[index] = random.range(TRAIT.speedMin, TRAIT.speedMax)
+    staminaMax[index] = random.range(
+      TRAIT.staminaMaxMin,
+      TRAIT.staminaMaxMax,
+    )
+    stamina[index] = staminaMax[index]
+    metabolism[index] = random.range(
+      TRAIT.metabolismMin,
+      TRAIT.metabolismMax,
+    )
+    reproCooldown[index] = random.range(
+      TRAIT.reproCooldownMin,
+      TRAIT.reproCooldownMax,
+    )
+    wanderSeed[index] = random.unit()
   }
 
-  return { count: active, x, y, vx, vy, colors, radius }
+  return {
+    count: active,
+    x,
+    y,
+    vx,
+    vy,
+    type,
+    fed,
+    stamina,
+    sprinting,
+    cooldown,
+    wanderSeed,
+    speed,
+    staminaMax,
+    metabolism,
+    reproCooldown,
+    grass: createGrass(seed),
+    radius: GLORP_RADIUS,
+  }
 }
 
+/** Advance the whole simulation one fixed step. */
 export const step = (world: World, deltaSeconds: number): void => {
-  const { count, x, y, vx, vy, radius } = world
-  const minimumX = radius
-  const maximumX = WORLD.width - radius
-  const minimumY = radius
-  const maximumY = WORLD.height - radius
-
-  for (let index = 0; index < count; index += 1) {
-    let nextX = x[index] + vx[index] * deltaSeconds
-    let nextY = y[index] + vy[index] * deltaSeconds
-
-    if (nextX < minimumX) {
-      nextX = minimumX
-      vx[index] = Math.abs(vx[index])
-    } else if (nextX > maximumX) {
-      nextX = maximumX
-      vx[index] = -Math.abs(vx[index])
-    }
-
-    if (nextY < minimumY) {
-      nextY = minimumY
-      vy[index] = Math.abs(vy[index])
-    } else if (nextY > maximumY) {
-      nextY = maximumY
-      vy[index] = -Math.abs(vy[index])
-    }
-
-    x[index] = nextX
-    y[index] = nextY
-  }
+  updateBehavior(world, deltaSeconds)
+  integrateMotion(world, deltaSeconds)
+  applyEating(world, deltaSeconds)
+  // Reproduction must run before metabolism: eating tops `fed` up to exactly
+  // FED_MAX, and metabolism would immediately drain it below the threshold.
+  applyReproduction(world, deltaSeconds)
+  applyMetabolism(world, deltaSeconds)
+  updateStamina(world, deltaSeconds)
+  applyDeath(world)
+  regrowGrass(world.grass, deltaSeconds)
 }

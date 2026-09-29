@@ -16,10 +16,6 @@ export const SIMULATION = {
 
 export const FIXED_STEP = 1 / SIMULATION.updatesPerSecond
 
-export const MAX_GLORPS = 512
-
-export const GLORP_RADIUS = 12
-
 export const CAMERA = {
   /** Fits the whole world exactly (480/1920 = 270/1080 = 0.25). */
   minZoom: 0.25,

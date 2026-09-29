@@ -1,15 +1,12 @@
 import * as THREE from 'three'
 import type { Camera } from '@/engine/camera'
 import { viewBounds } from '@/engine/camera'
-import {
-  CAMERA,
-  GLORP_RADIUS,
-  MAX_GLORPS,
-  VIEWPORT,
-  WORLD_BACKGROUND,
-} from '@/engine/config'
-import type { RenderableWorld } from '@/engine/contracts'
-import { GroundPass } from '@/engine/ground'
+import { CAMERA, VIEWPORT, WORLD_BACKGROUND } from '@/engine/config'
+import { writeGlorpColor } from '@/render/appearance'
+import { GrassLayer } from '@/render/grass-layer'
+import { GroundPass } from '@/render/ground'
+import { GLORP_RADIUS, MAX_GLORPS } from '@/sim/config'
+import type { RenderableWorld } from '@/sim/view'
 
 const BLOB_SEGMENTS = 16
 
@@ -21,6 +18,7 @@ export class Renderer {
   private readonly material: THREE.MeshBasicMaterial
   private readonly mesh: THREE.InstancedMesh
   private readonly ground = new GroundPass()
+  private readonly grass = new GrassLayer()
   private readonly colorValues = new Float32Array(MAX_GLORPS * 3)
   private readonly matrix = new THREE.Matrix4()
 
@@ -64,9 +62,9 @@ export class Renderer {
     )
     this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage)
     this.mesh.frustumCulled = false
-    this.mesh.renderOrder = 1
+    this.mesh.renderOrder = 2
 
-    this.scene.add(this.ground.mesh, this.mesh)
+    this.scene.add(this.ground.mesh, this.grass.mesh, this.mesh)
   }
 
   public draw(world: RenderableWorld, camera: Camera): void {
@@ -76,6 +74,8 @@ export class Renderer {
     this.camera.top = bounds.top
     this.camera.bottom = bounds.bottom
     this.camera.updateProjectionMatrix()
+
+    this.grass.update(world)
 
     const count = Math.min(world.count, MAX_GLORPS)
     const radius = world.radius > 0 ? world.radius : GLORP_RADIUS
@@ -92,12 +92,7 @@ export class Renderer {
       this.matrix.makeScale(radius, radius, 1)
       this.matrix.setPosition(x, y, 0)
       this.mesh.setMatrixAt(visible, this.matrix)
-
-      const source = index * 3
-      const target = visible * 3
-      colors[target] = world.colors[source]
-      colors[target + 1] = world.colors[source + 1]
-      colors[target + 2] = world.colors[source + 2]
+      writeGlorpColor(world, index, colors, visible)
       visible += 1
     }
 
@@ -113,6 +108,7 @@ export class Renderer {
     this.material.dispose()
     this.mesh.dispose()
     this.ground.dispose()
+    this.grass.dispose()
     this.renderer.dispose()
   }
 }
