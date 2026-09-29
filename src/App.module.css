@@ -1,7 +1,7 @@
 .brand {
   position: absolute;
-  top: clamp(0.6rem, 1.8vw, 1.1rem);
-  left: clamp(0.6rem, 1.8vw, 1.1rem);
+  top: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-top));
+  left: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-left));
   padding: 0.46rem 0.72rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 0.7rem;
@@ -21,8 +21,8 @@
 
 .topActions {
   position: absolute;
-  top: clamp(0.6rem, 1.8vw, 1.1rem);
-  right: clamp(0.6rem, 1.8vw, 1.1rem);
+  top: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-top));
+  right: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-right));
   display: flex;
   align-items: center;
   gap: 0.16rem;
@@ -57,4 +57,22 @@
 .settingsTrigger svg {
   width: 0.95rem;
   height: 0.95rem;
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  .settingsTrigger {
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+  }
+
+  .settingsTrigger span {
+    display: none;
+  }
+
+  .settingsTrigger svg {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
 }

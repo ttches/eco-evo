@@ -1,26 +1,17 @@
 .stage {
-  display: grid;
   width: 100vw;
   height: 100dvh;
-  place-items: center;
   overflow: hidden;
   background: var(--background);
 }
 
-.shell {
-  position: relative;
-  width: min(100vw, calc(100dvh * 16 / 9));
-}
-
+/* The view fills the screen; the camera, not the layout, adapts to its shape. */
 .display {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   overflow: hidden;
   background: var(--world);
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 8%),
-    0 30px 90px rgb(0 0 0 / 52%);
 }
 
 .canvas {
@@ -46,4 +37,5 @@
 
 .overlay > * {
   pointer-events: auto;
+  touch-action: manipulation;
 }

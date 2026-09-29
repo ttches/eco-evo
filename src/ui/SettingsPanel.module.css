@@ -59,3 +59,22 @@
   font-size: 0.78rem;
   line-height: 1.5;
 }
+
+@media (pointer: coarse) {
+  .close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+/* Narrow screens: a sheet rising from the bottom edge. */
+@media (max-width: 700px) {
+  .panel {
+    top: auto;
+    right: max(0.5rem, env(safe-area-inset-right));
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    left: max(0.5rem, env(safe-area-inset-left));
+    width: auto;
+    height: min(56dvh, 34rem);
+  }
+}

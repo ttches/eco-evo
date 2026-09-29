@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Settings2 } from 'lucide-react'
-import { createCamera, zoomAt, type Camera } from '@/engine/camera'
-import { CAMERA, FIXED_STEP, VIEWPORT } from '@/engine/config'
+import {
+  createCamera,
+  fitCamera,
+  resizeCamera,
+  viewportFor,
+  zoomAt,
+  type Camera,
+} from '@/engine/camera'
+import { FIXED_STEP } from '@/engine/config'
 import { createLoop } from '@/engine/loop'
 import { Renderer } from '@/render/renderer'
 import { findGlorpById, readGlorp, type GlorpSnapshot } from '@/sim/inspect'
@@ -33,7 +40,7 @@ const App = () => {
   const cameraRef = useRef<Camera>(createCamera())
   const selectedIdRef = useRef<number | null>(null)
   const [world] = useState<World>(() => createWorld())
-  const [zoom, setZoom] = useState<number>(CAMERA.defaultZoom)
+  const [zoom, setZoom] = useState<number>(() => createCamera().zoom)
   const [showInterface, setShowInterface] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [selected, setSelected] = useState<GlorpSnapshot | null>(null)
@@ -45,13 +52,21 @@ const App = () => {
 
   const syncZoom = useCallback(() => setZoom(cameraRef.current.zoom), [])
 
-  const selectAt = useCallback(
+  /** Index of the glorp under a world point, with a little touch slack. */
+  const pickAt = useCallback(
     (point: { x: number; y: number }) => {
       const pickRadius = Math.max(
         world.radius,
         PICK_TOLERANCE_PX / cameraRef.current.zoom,
       )
-      const index = glorpAt(world, point.x, point.y, pickRadius)
+      return glorpAt(world, point.x, point.y, pickRadius)
+    },
+    [world],
+  )
+
+  const selectAt = useCallback(
+    (point: { x: number; y: number }) => {
+      const index = pickAt(point)
       if (index < 0) {
         clearSelection()
         return
@@ -59,12 +74,23 @@ const App = () => {
       selectedIdRef.current = world.id[index]
       setSelected(readGlorp(world, index))
     },
-    [world, clearSelection],
+    [world, pickAt, clearSelection],
+  )
+
+  // Double tap on open ground toggles the interface; on a glorp it only
+  // selects, which the first tap already did.
+  const handleDoubleTap = useCallback(
+    (point: { x: number; y: number }) => {
+      if (pickAt(point) >= 0) return
+      setShowInterface((current) => !current)
+    },
+    [pickAt],
   )
 
   const cursorRef = useCanvasControls(canvasRef, cameraRef, {
     onCameraChange: syncZoom,
     onClick: selectAt,
+    onDoubleTap: handleDoubleTap,
   })
 
   const spawn = useCallback(
@@ -86,8 +112,31 @@ const App = () => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const renderer = new Renderer(canvas)
+    const measure = () => {
+      const rect = canvas.getBoundingClientRect()
+      return viewportFor(rect.width, rect.height)
+    }
+    const initial = measure()
+    cameraRef.current = createCamera(initial)
+    syncZoom()
+    const renderer = new Renderer(canvas, initial)
     let lastInspectorUpdate = 0
+
+    // Rotations and window resizes reshape the view, never the world.
+    const resizeObserver = new ResizeObserver(() => {
+      const viewport = measure()
+      const current = cameraRef.current.viewport
+      if (
+        viewport.width === current.width &&
+        viewport.height === current.height
+      ) {
+        return
+      }
+      renderer.resize(viewport)
+      cameraRef.current = resizeCamera(cameraRef.current, viewport)
+      syncZoom()
+    })
+    resizeObserver.observe(canvas)
 
     const loop = createLoop(FIXED_STEP, {
       step: (deltaSeconds) => step(world, deltaSeconds),
@@ -111,9 +160,10 @@ const App = () => {
 
     return () => {
       loop.stop()
+      resizeObserver.disconnect()
       renderer.dispose()
     }
-  }, [world, clearSelection])
+  }, [world, clearSelection, syncZoom])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -130,17 +180,18 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [spawnPrey, spawnPredator])
 
-  const resetView = (): void => {
-    cameraRef.current = createCamera()
+  const fitView = (): void => {
+    cameraRef.current = fitCamera(cameraRef.current.viewport)
     syncZoom()
   }
 
   const zoomBy = (factor: number): void => {
+    const { viewport } = cameraRef.current
     cameraRef.current = zoomAt(
       cameraRef.current,
       factor,
-      VIEWPORT.width / 2,
-      VIEWPORT.height / 2,
+      viewport.width / 2,
+      viewport.height / 2,
     )
     syncZoom()
   }
@@ -166,7 +217,7 @@ const App = () => {
         zoom={zoom}
         onZoomIn={() => zoomBy(1.25)}
         onZoomOut={() => zoomBy(0.8)}
-        onResetView={resetView}
+        onFitView={fitView}
         onHideInterface={() => setShowInterface(false)}
         onSpawnPrey={spawnPrey}
         onSpawnPredator={spawnPredator}

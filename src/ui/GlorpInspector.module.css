@@ -176,3 +176,22 @@
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
+
+@media (pointer: coarse) {
+  .close {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+/* Narrow screens: a sheet along the bottom, just above the control dock. */
+@media (max-width: 700px) {
+  .panel {
+    top: auto;
+    right: max(0.5rem, env(safe-area-inset-right));
+    bottom: calc(max(0.85rem, env(safe-area-inset-bottom)) + 3.9rem);
+    left: max(0.5rem, env(safe-area-inset-left));
+    width: auto;
+    max-height: 45dvh;
+  }
+}

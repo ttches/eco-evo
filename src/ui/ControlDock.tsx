@@ -12,7 +12,7 @@ type ControlDockProps = {
   zoom: number
   onZoomIn: () => void
   onZoomOut: () => void
-  onResetView: () => void
+  onFitView: () => void
   onHideInterface: () => void
   onSpawnPrey: () => void
   onSpawnPredator: () => void
@@ -22,7 +22,7 @@ const ControlDock = ({
   zoom,
   onZoomIn,
   onZoomOut,
-  onResetView,
+  onFitView,
   onHideInterface,
   onSpawnPrey,
   onSpawnPredator,
@@ -55,7 +55,8 @@ const ControlDock = ({
 
     <span className={styles.divider} aria-hidden="true" />
 
-    <div className={styles.group}>
+    {/* Hidden on touch screens, where pinch zoom replaces it. */}
+    <div className={`${styles.group} ${styles.zoomControls}`}>
       <button
         type="button"
         className={styles.iconButton}
@@ -77,12 +78,15 @@ const ControlDock = ({
       </button>
     </div>
 
-    <span className={styles.divider} aria-hidden="true" />
+    <span
+      className={`${styles.divider} ${styles.zoomControls}`}
+      aria-hidden="true"
+    />
 
     <button
       type="button"
       className={styles.button}
-      onClick={onResetView}
+      onClick={onFitView}
       aria-label="Fit world"
     >
       <Maximize2 aria-hidden="true" />

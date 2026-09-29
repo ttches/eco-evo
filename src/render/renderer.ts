@@ -1,7 +1,5 @@
 import * as THREE from 'three'
-import type { Camera } from '@/engine/camera'
-import { viewBounds } from '@/engine/camera'
-import { VIEWPORT } from '@/engine/config'
+import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
 import { GlorpLayer } from '@/render/glorp-layer'
 import { GrassLayer } from '@/render/grass-layer'
 import { GroundPass } from '@/render/ground'
@@ -18,7 +16,7 @@ export class Renderer {
   private readonly glorps = new GlorpLayer()
   private readonly selection = new SelectionRing()
 
-  public constructor(canvas: HTMLCanvasElement) {
+  public constructor(canvas: HTMLCanvasElement, viewport: Viewport) {
     THREE.ColorManagement.enabled = false
 
     this.renderer = new THREE.WebGLRenderer({
@@ -28,18 +26,11 @@ export class Renderer {
       powerPreference: 'high-performance',
     })
     this.renderer.setPixelRatio(1)
-    this.renderer.setSize(VIEWPORT.width, VIEWPORT.height, false)
+    this.resize(viewport)
     this.renderer.setClearColor(WORLD_BACKGROUND, 1)
 
-    // Y-down orthographic camera so world coordinates match screen coordinates.
-    this.camera = new THREE.OrthographicCamera(
-      0,
-      VIEWPORT.width,
-      0,
-      VIEWPORT.height,
-      -10,
-      10,
-    )
+    // Y-down orthographic camera; its bounds are set from the view every draw.
+    this.camera = new THREE.OrthographicCamera(0, 1, 0, 1, -10, 10)
 
     this.scene.add(
       this.ground.mesh,
@@ -47,6 +38,11 @@ export class Renderer {
       this.glorps.mesh,
       this.selection.mesh,
     )
+  }
+
+  /** Match the backing store to a new viewport; CSS keeps the display size. */
+  public resize(viewport: Viewport): void {
+    this.renderer.setSize(viewport.width, viewport.height, false)
   }
 
   public draw(
