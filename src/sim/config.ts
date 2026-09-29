@@ -22,6 +22,15 @@ export const FED_MAX = 100
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
 export const HUNGER = 70
 
+/**
+ * Two hunters within this distance (world units) can pair-reproduce. Four body
+ * radii keeps mates visually "touching" without requiring pixel-perfect contact.
+ */
+export const MATE_RANGE = 48
+
+/** Minimum fed each parent needs to pair-reproduce. */
+export const MATE_FED_MIN = HUNGER
+
 /** Spawned trait ranges, sampled once per glorp at creation. */
 export const TRAIT = {
   speedMin: 30,

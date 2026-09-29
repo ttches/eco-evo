@@ -10,6 +10,9 @@ import type { RenderableWorld } from '@/sim/view'
 
 const BLOB_SEGMENTS = 16
 
+/** Soft mint highlight drawn around the currently inspected glorp. */
+const SELECTION_COLOR = 0x9df5c9
+
 export class Renderer {
   private readonly renderer: THREE.WebGLRenderer
   private readonly scene = new THREE.Scene()
@@ -17,6 +20,9 @@ export class Renderer {
   private readonly geometry: THREE.CircleGeometry
   private readonly material: THREE.MeshBasicMaterial
   private readonly mesh: THREE.InstancedMesh
+  private readonly ring: THREE.Mesh
+  private readonly ringGeometry: THREE.RingGeometry
+  private readonly ringMaterial: THREE.MeshBasicMaterial
   private readonly ground = new GroundPass()
   private readonly grass = new GrassLayer()
   private readonly colorValues = new Float32Array(MAX_GLORPS * 3)
@@ -64,10 +70,29 @@ export class Renderer {
     this.mesh.frustumCulled = false
     this.mesh.renderOrder = 2
 
-    this.scene.add(this.ground.mesh, this.grass.mesh, this.mesh)
+    this.ringGeometry = new THREE.RingGeometry(0.82, 1, 24)
+    this.ringMaterial = new THREE.MeshBasicMaterial({
+      color: SELECTION_COLOR,
+      transparent: true,
+      opacity: 0.9,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false,
+    })
+    this.ring = new THREE.Mesh(this.ringGeometry, this.ringMaterial)
+    this.ring.visible = false
+    this.ring.frustumCulled = false
+    this.ring.renderOrder = 3
+
+    this.scene.add(this.ground.mesh, this.grass.mesh, this.mesh, this.ring)
   }
 
-  public draw(world: RenderableWorld, camera: Camera): void {
+  public draw(
+    world: RenderableWorld,
+    camera: Camera,
+    selectedIndex = -1,
+  ): void {
     const bounds = viewBounds(camera)
     this.camera.left = bounds.left
     this.camera.right = bounds.right
@@ -100,6 +125,19 @@ export class Renderer {
     this.mesh.instanceMatrix.needsUpdate = true
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true
 
+    if (selectedIndex >= 0 && selectedIndex < count) {
+      this.ring.position.set(
+        world.x[selectedIndex],
+        world.y[selectedIndex],
+        0.5,
+      )
+      const scale = radius * 1.5
+      this.ring.scale.set(scale, scale, 1)
+      this.ring.visible = true
+    } else {
+      this.ring.visible = false
+    }
+
     this.renderer.render(this.scene, this.camera)
   }
 
@@ -107,6 +145,9 @@ export class Renderer {
     this.geometry.dispose()
     this.material.dispose()
     this.mesh.dispose()
+    this.ringGeometry.dispose()
+    this.ringMaterial.dispose()
+    this.ring.dispose()
     this.ground.dispose()
     this.grass.dispose()
     this.renderer.dispose()

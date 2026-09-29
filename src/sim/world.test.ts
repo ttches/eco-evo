@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { WORLD } from '@/engine/config'
 import { MAX_GLORPS } from '@/sim/config'
+import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 
 describe('createWorld', () => {
@@ -73,5 +74,24 @@ describe('step', () => {
       expect(world.type[index]).toBeGreaterThanOrEqual(0)
       expect(world.type[index]).toBeLessThanOrEqual(1)
     }
+  })
+
+  it('pair-reproduces nearby well-fed hunters', () => {
+    const world = createWorld(2, 31)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.hunter
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 120
+    world.y[1] = 100
+    world.fed[0] = 90
+    world.fed[1] = 90
+    world.cooldown[0] = 0
+    world.cooldown[1] = 0
+
+    step(world, 1 / 60)
+
+    expect(world.count).toBe(3)
+    expect(world.type[2]).toBe(GLORP_TYPE.hunter)
   })
 })

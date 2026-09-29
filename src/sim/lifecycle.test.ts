@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { computeSteering, updateBehavior, updateStamina } from '@/sim/behavior'
-import { GLORP_RADIUS, HUNTER_KILL_FED, MAX_GLORPS, STAMINA } from '@/sim/config'
+import {
+  GLORP_RADIUS,
+  HUNTER_KILL_FED,
+  MATE_FED_MIN,
+  MATE_RANGE,
+  MAX_GLORPS,
+  OFFSPRING_FED,
+  STAMINA,
+} from '@/sim/config'
 import {
   applyDeath,
   applyEating,
   applyMetabolism,
+  applyPairReproduction,
   applyReproduction,
+  tickCooldowns,
 } from '@/sim/lifecycle'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
@@ -48,7 +58,7 @@ describe('applyReproduction', () => {
     const y = world.y[0]
     const parentSeed = world.wanderSeed[0]
 
-    applyReproduction(world, 0.1)
+    applyReproduction(world)
 
     expect(world.count).toBe(3)
     expect(world.fed[0]).toBe(100)
@@ -70,7 +80,8 @@ describe('applyReproduction', () => {
     world.fed[1] = 50
     world.cooldown[1] = 0
 
-    applyReproduction(world, 0.1)
+    tickCooldowns(world, 0.1)
+    applyReproduction(world)
 
     expect(world.count).toBe(2)
     expect(world.cooldown[0]).toBeCloseTo(9.9)
@@ -81,7 +92,83 @@ describe('applyReproduction', () => {
     world.fed[0] = 100
     world.cooldown[0] = 0
 
-    applyReproduction(world, 0.1)
+    applyReproduction(world)
+
+    expect(world.count).toBe(MAX_GLORPS)
+  })
+})
+
+describe('applyPairReproduction', () => {
+  const setupPair = (): ReturnType<typeof createWorld> => {
+    const world = createWorld(2, 17)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.hunter
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 100 + MATE_RANGE / 2
+    world.y[1] = 100
+    world.fed[0] = 100
+    world.fed[1] = 100
+    world.cooldown[0] = 0
+    world.cooldown[1] = 0
+    world.speed[0] = 40
+    world.speed[1] = 60
+    world.staminaMax[0] = 4
+    world.staminaMax[1] = 8
+    world.metabolism[0] = 2
+    world.metabolism[1] = 4
+    world.reproCooldown[0] = 10
+    world.reproCooldown[1] = 20
+    return world
+  }
+
+  it('averages the traits of two nearby, well-fed hunters', () => {
+    const world = setupPair()
+
+    applyPairReproduction(world)
+
+    expect(world.count).toBe(3)
+    expect(world.type[2]).toBe(GLORP_TYPE.hunter)
+    expect(world.speed[2]).toBeCloseTo(50)
+    expect(world.staminaMax[2]).toBeCloseTo(6)
+    expect(world.metabolism[2]).toBeCloseTo(3)
+    expect(world.reproCooldown[2]).toBeCloseTo(15)
+    expect(world.fed[2]).toBe(OFFSPRING_FED)
+    expect(world.cooldown[0]).toBeCloseTo(10)
+    expect(world.cooldown[1]).toBeCloseTo(20)
+  })
+
+  it('does not mate out of range, on cooldown, or while hungry', () => {
+    const far = setupPair()
+    far.x[1] = 100 + MATE_RANGE * 2
+    applyPairReproduction(far)
+    expect(far.count).toBe(2)
+
+    const cooling = setupPair()
+    cooling.cooldown[1] = 5
+    applyPairReproduction(cooling)
+    expect(cooling.count).toBe(2)
+
+    const hungry = setupPair()
+    hungry.fed[1] = MATE_FED_MIN
+    applyPairReproduction(hungry)
+    expect(hungry.count).toBe(2)
+  })
+
+  it('respects the population cap', () => {
+    const world = createWorld(MAX_GLORPS, 9)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.hunter
+    world.fed[0] = 100
+    world.fed[1] = 100
+    world.cooldown[0] = 0
+    world.cooldown[1] = 0
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 110
+    world.y[1] = 100
+
+    applyPairReproduction(world)
 
     expect(world.count).toBe(MAX_GLORPS)
   })

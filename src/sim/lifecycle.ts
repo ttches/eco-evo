@@ -3,6 +3,8 @@ import { TAU, clamp, hashUnit } from '@/engine/math'
 import {
   FED_MAX,
   HUNTER_KILL_FED,
+  MATE_FED_MIN,
+  MATE_RANGE,
   MAX_GLORPS,
   MOVEMENT,
   OFFSPRING_FED,
@@ -76,15 +78,20 @@ export const applyEating = (world: World, dt: number): void => {
   }
 }
 
+/** Count down every glorp's reproduction cooldown. */
+export const tickCooldowns = (world: World, dt: number): void => {
+  for (let index = 0; index < world.count; index += 1) {
+    if (world.cooldown[index] <= 0) continue
+    const next = world.cooldown[index] - dt
+    world.cooldown[index] = next > 0 ? next : 0
+  }
+}
+
 /** Well-fed, off-cooldown glorps spawn an offspring at their position. */
-export const applyReproduction = (world: World, dt: number): void => {
+export const applyReproduction = (world: World): void => {
   const population = world.count
   for (let index = 0; index < population; index += 1) {
-    if (world.cooldown[index] > 0) {
-      const next = world.cooldown[index] - dt
-      world.cooldown[index] = next > 0 ? next : 0
-      continue
-    }
+    if (world.cooldown[index] > 0) continue
     if (world.fed[index] < FED_MAX) continue
     if (world.count >= MAX_GLORPS) continue
 
@@ -93,6 +100,8 @@ export const applyReproduction = (world: World, dt: number): void => {
     world.fed[child] = OFFSPRING_FED
     world.cooldown[child] = world.reproCooldown[child]
     world.sprinting[child] = 0
+    world.id[child] = world.nextId
+    world.nextId += 1
 
     // Scatter the offspring deterministically so it never stacks on the parent,
     // and give it its own wander seed so parent and child don't move in lockstep.
@@ -114,6 +123,57 @@ export const applyReproduction = (world: World, dt: number): void => {
 
     world.fed[index] = FED_MAX
     world.cooldown[index] = world.reproCooldown[index]
+    world.count += 1
+  }
+}
+
+/**
+ * Two nearby, well-fed, off-cooldown hunters produce one offspring whose
+ * traits are the average of both parents. Both parents then go on cooldown.
+ */
+export const applyPairReproduction = (world: World): void => {
+  for (let index = 0; index < world.count; index += 1) {
+    if (world.type[index] !== GLORP_TYPE.hunter) continue
+    if (world.cooldown[index] > 0) continue
+    if (world.fed[index] <= MATE_FED_MIN) continue
+    if (world.count >= MAX_GLORPS) continue
+
+    const mate = nearestOfType(
+      world,
+      index,
+      GLORP_TYPE.hunter,
+      MATE_RANGE,
+      (candidate) =>
+        world.cooldown[candidate] <= 0 && world.fed[candidate] > MATE_FED_MIN,
+    )
+    if (mate < 0) continue
+
+    const child = world.count
+    const staminaMax =
+      (world.staminaMax[index] + world.staminaMax[mate]) / 2
+    const reproCooldown =
+      (world.reproCooldown[index] + world.reproCooldown[mate]) / 2
+
+    world.x[child] = (world.x[index] + world.x[mate]) / 2
+    world.y[child] = (world.y[index] + world.y[mate]) / 2
+    world.vx[child] = 0
+    world.vy[child] = 0
+    world.type[child] = GLORP_TYPE.hunter
+    world.fed[child] = OFFSPRING_FED
+    world.stamina[child] = staminaMax
+    world.staminaMax[child] = staminaMax
+    world.sprinting[child] = 0
+    world.cooldown[child] = reproCooldown
+    world.wanderSeed[child] = hashUnit(child ^ 0x9e3779b9)
+    world.speed[child] = (world.speed[index] + world.speed[mate]) / 2
+    world.metabolism[child] =
+      (world.metabolism[index] + world.metabolism[mate]) / 2
+    world.reproCooldown[child] = reproCooldown
+    world.id[child] = world.nextId
+    world.nextId += 1
+
+    world.cooldown[index] = world.reproCooldown[index]
+    world.cooldown[mate] = world.reproCooldown[mate]
     world.count += 1
   }
 }

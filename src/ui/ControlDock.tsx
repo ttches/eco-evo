@@ -1,4 +1,11 @@
-import { EyeOff, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  Cat,
+  EyeOff,
+  Maximize2,
+  Rabbit,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import styles from './ControlDock.module.css'
 
 type ControlDockProps = {
@@ -7,6 +14,8 @@ type ControlDockProps = {
   onZoomOut: () => void
   onResetView: () => void
   onHideInterface: () => void
+  onSpawnPrey: () => void
+  onSpawnPredator: () => void
 }
 
 const ControlDock = ({
@@ -15,8 +24,37 @@ const ControlDock = ({
   onZoomOut,
   onResetView,
   onHideInterface,
+  onSpawnPrey,
+  onSpawnPredator,
 }: ControlDockProps) => (
   <nav className={styles.dock} aria-label="Simulation controls">
+    <div className={styles.group}>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={onSpawnPrey}
+        aria-label="Spawn prey"
+        aria-keyshortcuts="1"
+      >
+        <Rabbit aria-hidden="true" />
+        <span className={styles.label}>Prey</span>
+        <kbd className={styles.kbd}>1</kbd>
+      </button>
+      <button
+        type="button"
+        className={styles.button}
+        onClick={onSpawnPredator}
+        aria-label="Spawn predator"
+        aria-keyshortcuts="2"
+      >
+        <Cat aria-hidden="true" />
+        <span className={styles.label}>Predator</span>
+        <kbd className={styles.kbd}>2</kbd>
+      </button>
+    </div>
+
+    <span className={styles.divider} aria-hidden="true" />
+
     <div className={styles.group}>
       <button
         type="button"
