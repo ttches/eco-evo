@@ -1,0 +1,43 @@
+.stage {
+  display: grid;
+  width: 100vw;
+  height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.shell {
+  position: relative;
+  width: min(100vw, calc(100dvh * 16 / 9));
+}
+
+.display {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--world);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 8%),
+    0 30px 90px rgb(0 0 0 / 52%);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.overlay > * {
+  pointer-events: auto;
+}

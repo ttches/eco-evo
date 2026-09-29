@@ -6,9 +6,19 @@ A simulation game that users mostly **watch** without interacting with directly.
 
 ## Tech & Art Direction
 
-- **Engine setup, tech, and art direction:** based on the sibling project **nagomi**.
-- **Coding style:** closer to **whendow.ui** — const functions, types, and common patterns.
-- **Styling:** CSS Modules preferred, unless not recommended.
+- **Engine setup, tech, and rendering:** based on the sibling project **nagomi** — its
+  fixed-timestep loop, simulation/render separation, WebGL renderer, and **pixel-art look**
+  (fixed low logical resolution upscaled with nearest-neighbor, flat procedural shapes).
+- **Not taken from nagomi:** anything water/fish/pond-specific — water surface, reflections,
+  refraction, ripples, weather, koi, and aquatic props. eco-evo is not fish- or water-based.
+- **Coding style:** closer to **whendow.ui** — const arrow functions, `type` aliases, and
+  common patterns.
+- **Styling:** CSS Modules (not styled-components).
+- **Deployment:** static SPA hosted on **GitHub Pages or self-hosted** — no Next.js, no
+  server runtime. (nagomi is a plain Vite SPA, not Next.js.)
+- **Glorp art:** glorps can be **very undetailed — simple ~24px blobs** (flat, unlit,
+  pixel-art). No complex procedural bodies needed.
+- Reference docs live in `docs/`.
 
 ## Gameplay
 

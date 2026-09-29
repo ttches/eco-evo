@@ -1,0 +1,60 @@
+.brand {
+  position: absolute;
+  top: clamp(0.6rem, 1.8vw, 1.1rem);
+  left: clamp(0.6rem, 1.8vw, 1.1rem);
+  padding: 0.46rem 0.72rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  box-shadow:
+    0 10px 34px rgb(0 0 0 / 24%),
+    inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 660;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+
+.topActions {
+  position: absolute;
+  top: clamp(0.6rem, 1.8vw, 1.1rem);
+  right: clamp(0.6rem, 1.8vw, 1.1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.16rem;
+  padding: 0.22rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+  box-shadow:
+    0 10px 34px rgb(0 0 0 / 24%),
+    inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+.settingsTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 1.8rem;
+  padding: 0 0.55rem;
+  border: none;
+  border-radius: 0.62rem;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 560;
+  transition: background 140ms ease;
+}
+
+.settingsTrigger:hover {
+  background: var(--accent);
+}
+
+.settingsTrigger svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
