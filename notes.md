@@ -49,3 +49,34 @@ A simulation game that users mostly **watch** without interacting with directly.
   (e.g. much faster but much less stamina).
 - These can be passed around via **Mendelian genetics** with dominant and
   recessive alleles.
+
+## Roadmap / Upcoming
+
+See `docs/` for the reference material these build on:
+`nagomi-technical-reference.md`, `whendow-ui-coding-style.md`,
+`performance-assessment.md`, `prior-art-research.md`.
+
+### Milestone 3 — Simulation core
+
+- **Energy budget:** metabolism drains energy, food restores it, zero = death.
+- **Resource grid:** a coarse, regrowing field of plant food (also the
+  carrying-capacity knob).
+- **Attributes/stats:** speed, stamina, strength, metabolism (start as plain
+  stats; genes come later).
+- **Reproduction:** asexual duplication by energy, with mutation.
+- **Population dynamics:** births, deaths, carrying capacity.
+
+### Later
+
+- **Mendelian genetics:** diploid alleles, dominant/recessive.
+- **"Similar-enough" partner reproduction** → speciation.
+- **Spatial grid:** neighbor queries for separation, predation, and
+  mate-finding (O(n²) → O(n·k)). Sim-side, added when behavior needs it.
+- **Camera:** auto-follow, minimap, zoom presets.
+- **Settings engine:** schema-driven store/editor (per nagomi).
+- **Deployment:** GitHub Pages or self-hosted static.
+
+### Performance / scale
+
+- Spatial grid, struct-of-arrays (done), GPU instancing (done), LOD by zoom,
+  chunked simulation, Web Worker simulation.

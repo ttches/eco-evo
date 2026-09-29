@@ -27,8 +27,14 @@
   display: block;
   width: 100%;
   height: 100%;
+  cursor: grab;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  touch-action: none;
+}
+
+.canvas:active {
+  cursor: grabbing;
 }
 
 .overlay {

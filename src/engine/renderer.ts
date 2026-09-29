@@ -1,11 +1,15 @@
 import * as THREE from 'three'
+import type { Camera } from '@/engine/camera'
+import { viewBounds } from '@/engine/camera'
 import {
-  CANVAS,
+  CAMERA,
   GLORP_RADIUS,
   MAX_GLORPS,
+  VIEWPORT,
   WORLD_BACKGROUND,
 } from '@/engine/config'
 import type { RenderableWorld } from '@/engine/contracts'
+import { GroundPass } from '@/engine/ground'
 
 const BLOB_SEGMENTS = 16
 
@@ -16,10 +20,13 @@ export class Renderer {
   private readonly geometry: THREE.CircleGeometry
   private readonly material: THREE.MeshBasicMaterial
   private readonly mesh: THREE.InstancedMesh
+  private readonly ground = new GroundPass()
   private readonly colorValues = new Float32Array(MAX_GLORPS * 3)
   private readonly matrix = new THREE.Matrix4()
 
   public constructor(canvas: HTMLCanvasElement) {
+    THREE.ColorManagement.enabled = false
+
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: false,
@@ -27,22 +34,24 @@ export class Renderer {
       powerPreference: 'high-performance',
     })
     this.renderer.setPixelRatio(1)
-    this.renderer.setSize(CANVAS.width, CANVAS.height, false)
+    this.renderer.setSize(VIEWPORT.width, VIEWPORT.height, false)
     this.renderer.setClearColor(WORLD_BACKGROUND, 1)
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace
 
     // Y-down orthographic camera so world coordinates match screen coordinates.
     this.camera = new THREE.OrthographicCamera(
       0,
-      CANVAS.width,
+      VIEWPORT.width,
       0,
-      CANVAS.height,
+      VIEWPORT.height,
       -10,
       10,
     )
 
     this.geometry = new THREE.CircleGeometry(1, BLOB_SEGMENTS)
-    this.material = new THREE.MeshBasicMaterial({ toneMapped: false })
+    this.material = new THREE.MeshBasicMaterial({
+      toneMapped: false,
+      side: THREE.DoubleSide,
+    })
     this.mesh = new THREE.InstancedMesh(
       this.geometry,
       this.material,
@@ -55,26 +64,44 @@ export class Renderer {
     )
     this.mesh.instanceColor.setUsage(THREE.DynamicDrawUsage)
     this.mesh.frustumCulled = false
-    this.scene.add(this.mesh)
+    this.mesh.renderOrder = 1
+
+    this.scene.add(this.ground.mesh, this.mesh)
   }
 
-  public draw(world: RenderableWorld): void {
+  public draw(world: RenderableWorld, camera: Camera): void {
+    const bounds = viewBounds(camera)
+    this.camera.left = bounds.left
+    this.camera.right = bounds.right
+    this.camera.top = bounds.top
+    this.camera.bottom = bounds.bottom
+    this.camera.updateProjectionMatrix()
+
     const count = Math.min(world.count, MAX_GLORPS)
     const radius = world.radius > 0 ? world.radius : GLORP_RADIUS
+    const margin = radius + CAMERA.cullMargin
     const colors = this.colorValues
+    let visible = 0
 
     for (let index = 0; index < count; index += 1) {
-      this.matrix.makeScale(radius, radius, 1)
-      this.matrix.setPosition(world.x[index], world.y[index], 0)
-      this.mesh.setMatrixAt(index, this.matrix)
+      const x = world.x[index]
+      const y = world.y[index]
+      if (x < bounds.left - margin || x > bounds.right + margin) continue
+      if (y < bounds.top - margin || y > bounds.bottom + margin) continue
 
-      const offset = index * 3
-      colors[offset] = world.colors[offset]
-      colors[offset + 1] = world.colors[offset + 1]
-      colors[offset + 2] = world.colors[offset + 2]
+      this.matrix.makeScale(radius, radius, 1)
+      this.matrix.setPosition(x, y, 0)
+      this.mesh.setMatrixAt(visible, this.matrix)
+
+      const source = index * 3
+      const target = visible * 3
+      colors[target] = world.colors[source]
+      colors[target + 1] = world.colors[source + 1]
+      colors[target + 2] = world.colors[source + 2]
+      visible += 1
     }
 
-    this.mesh.count = count
+    this.mesh.count = visible
     this.mesh.instanceMatrix.needsUpdate = true
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true
 
@@ -85,6 +112,7 @@ export class Renderer {
     this.geometry.dispose()
     this.material.dispose()
     this.mesh.dispose()
+    this.ground.dispose()
     this.renderer.dispose()
   }
 }

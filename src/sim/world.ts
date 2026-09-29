@@ -1,4 +1,4 @@
-import { CANVAS, GLORP_RADIUS, MAX_GLORPS } from '@/engine/config'
+import { GLORP_RADIUS, MAX_GLORPS, WORLD } from '@/engine/config'
 import type { RenderableWorld } from '@/engine/contracts'
 import { XorShift32 } from '@/engine/math'
 
@@ -7,7 +7,7 @@ export type World = RenderableWorld & {
   readonly vy: Float32Array
 }
 
-const DEFAULT_COUNT = 24
+const DEFAULT_COUNT = 150
 const DEFAULT_SEED = 0x00c0ffee
 
 const PALETTE: ReadonlyArray<readonly [number, number, number]> = [
@@ -25,6 +25,7 @@ export const createWorld = (
 ): World => {
   const random = new XorShift32(seed)
   const active = Math.max(0, Math.min(count, MAX_GLORPS))
+  const radius = GLORP_RADIUS
 
   const x = new Float32Array(MAX_GLORPS)
   const y = new Float32Array(MAX_GLORPS)
@@ -33,10 +34,10 @@ export const createWorld = (
   const colors = new Float32Array(MAX_GLORPS * 3)
 
   for (let index = 0; index < active; index += 1) {
-    x[index] = random.range(0, CANVAS.width)
-    y[index] = random.range(0, CANVAS.height)
-    vx[index] = random.range(-20, 20)
-    vy[index] = random.range(-20, 20)
+    x[index] = random.range(radius, WORLD.width - radius)
+    y[index] = random.range(radius, WORLD.height - radius)
+    vx[index] = random.range(-30, 30)
+    vy[index] = random.range(-30, 30)
 
     const color = PALETTE[index % PALETTE.length]
     const offset = index * 3
@@ -45,24 +46,35 @@ export const createWorld = (
     colors[offset + 2] = color[2]
   }
 
-  return { count: active, x, y, vx, vy, colors, radius: GLORP_RADIUS }
+  return { count: active, x, y, vx, vy, colors, radius }
 }
 
 export const step = (world: World, deltaSeconds: number): void => {
   const { count, x, y, vx, vy, radius } = world
-  const left = -radius
-  const right = CANVAS.width + radius
-  const top = -radius
-  const bottom = CANVAS.height + radius
+  const minimumX = radius
+  const maximumX = WORLD.width - radius
+  const minimumY = radius
+  const maximumY = WORLD.height - radius
 
   for (let index = 0; index < count; index += 1) {
     let nextX = x[index] + vx[index] * deltaSeconds
     let nextY = y[index] + vy[index] * deltaSeconds
 
-    if (nextX < left) nextX = right
-    else if (nextX > right) nextX = left
-    if (nextY < top) nextY = bottom
-    else if (nextY > bottom) nextY = top
+    if (nextX < minimumX) {
+      nextX = minimumX
+      vx[index] = Math.abs(vx[index])
+    } else if (nextX > maximumX) {
+      nextX = maximumX
+      vx[index] = -Math.abs(vx[index])
+    }
+
+    if (nextY < minimumY) {
+      nextY = minimumY
+      vy[index] = Math.abs(vy[index])
+    } else if (nextY > maximumY) {
+      nextY = maximumY
+      vy[index] = -Math.abs(vy[index])
+    }
 
     x[index] = nextX
     y[index] = nextY

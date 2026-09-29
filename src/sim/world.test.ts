@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CANVAS, MAX_GLORPS } from '@/engine/config'
+import { MAX_GLORPS, WORLD } from '@/engine/config'
 import { createWorld, step } from '@/sim/world'
 
 describe('createWorld', () => {
@@ -14,6 +14,16 @@ describe('createWorld', () => {
     expect(world.count).toBe(MAX_GLORPS)
   })
 
+  it('spawns glorps inside the world', () => {
+    const world = createWorld(64)
+    for (let index = 0; index < world.count; index += 1) {
+      expect(world.x[index]).toBeGreaterThanOrEqual(world.radius)
+      expect(world.x[index]).toBeLessThanOrEqual(WORLD.width - world.radius)
+      expect(world.y[index]).toBeGreaterThanOrEqual(world.radius)
+      expect(world.y[index]).toBeLessThanOrEqual(WORLD.height - world.radius)
+    }
+  })
+
   it('is deterministic for a given seed', () => {
     const first = createWorld(8, 42)
     const second = createWorld(8, 42)
@@ -25,28 +35,38 @@ describe('createWorld', () => {
 describe('step', () => {
   it('advances positions by velocity times delta', () => {
     const world = createWorld(4)
-    world.x[0] = 100
-    world.y[0] = 100
+    world.x[0] = 500
+    world.y[0] = 500
     world.vx[0] = 10
     world.vy[0] = -4
 
     step(world, 0.5)
 
-    expect(world.x[0]).toBeCloseTo(105)
-    expect(world.y[0]).toBeCloseTo(98)
+    expect(world.x[0]).toBeCloseTo(505)
+    expect(world.y[0]).toBeCloseTo(498)
   })
 
-  it('keeps glorps within the wrapped bounds over time', () => {
-    const world = createWorld(32)
-    const { radius } = world
+  it('keeps glorps inside the bounded world over time', () => {
+    const world = createWorld(64)
 
-    for (let tick = 0; tick < 600; tick += 1) step(world, 1 / 60)
+    for (let tick = 0; tick < 1200; tick += 1) step(world, 1 / 60)
 
     for (let index = 0; index < world.count; index += 1) {
-      expect(world.x[index]).toBeGreaterThanOrEqual(-radius)
-      expect(world.x[index]).toBeLessThanOrEqual(CANVAS.width + radius)
-      expect(world.y[index]).toBeGreaterThanOrEqual(-radius)
-      expect(world.y[index]).toBeLessThanOrEqual(CANVAS.height + radius)
+      expect(world.x[index]).toBeGreaterThanOrEqual(world.radius)
+      expect(world.x[index]).toBeLessThanOrEqual(WORLD.width - world.radius)
+      expect(world.y[index]).toBeGreaterThanOrEqual(world.radius)
+      expect(world.y[index]).toBeLessThanOrEqual(WORLD.height - world.radius)
     }
+  })
+
+  it('reflects velocity when hitting a wall', () => {
+    const world = createWorld(1)
+    world.x[0] = world.radius + 1
+    world.vx[0] = -50
+
+    step(world, 1)
+
+    expect(world.x[0]).toBe(world.radius)
+    expect(world.vx[0]).toBeGreaterThan(0)
   })
 })

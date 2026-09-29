@@ -15,27 +15,65 @@
   transform: translateX(-50%);
 }
 
-.button {
+.group {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.button,
+.iconButton {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.32rem 0.55rem;
   border: none;
   border-radius: 0.7rem;
   background: transparent;
   color: var(--foreground);
-  font-size: 0.72rem;
-  font-weight: 560;
   transition: background 140ms ease;
 }
 
-.button:hover {
+.button {
+  padding: 0.32rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 560;
+}
+
+.iconButton {
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.button:hover,
+.iconButton:hover {
   background: var(--accent);
 }
 
 .button svg {
   width: 0.95rem;
   height: 0.95rem;
+}
+
+.iconButton svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.zoom {
+  min-width: 2.4rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.divider {
+  width: 1px;
+  height: 1.1rem;
+  margin: 0 0.16rem;
+  background: var(--border);
 }
 
 .kbd {
