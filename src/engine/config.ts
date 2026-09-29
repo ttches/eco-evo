@@ -10,8 +10,8 @@ export const VIEWPORT = {
 
 /** Simulation domain, larger than the viewport. */
 export const WORLD = {
-  width: 1920,
-  height: 1080,
+  width: 3840,
+  height: 2160,
 } as const
 
 export const SIMULATION = {
@@ -20,8 +20,13 @@ export const SIMULATION = {
 
 export const FIXED_STEP = 1 / SIMULATION.updatesPerSecond
 
-/** Minimum and starting zoom depend on the screen; see `fitZoom` / `coverZoom`. */
+/** Minimum and starting zoom depend on the screen; see `fitZoom` / `startZoom`. */
 export const CAMERA = {
+  /**
+   * World area the starting view covers, cropped to fill the screen. Smaller
+   * than the world so there is room to zoom out.
+   */
+  startView: { width: WORLD.width / 2, height: WORLD.height / 2 },
   maxZoom: 4,
   wheelSensitivity: 0.0015,
   /** Extra world units rendered beyond the view edge, to avoid pop-in. */

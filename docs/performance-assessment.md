@@ -14,6 +14,7 @@ steps, first run (not JIT-warmed):
 |---|---:|---:|
 | ~150 glorps (120 prey / 30 hunters) | 0.075 | ~0.5% |
 | ~500 glorps, all hungry (400 / 100) | 0.145 | ~0.9% |
+| 3840×2160 world, default start, 10 sim-minutes (peaks ~830 glorps) | 0.13–0.22 | ~1% |
 
 Warmed-up runs are ~40% faster again. Before the spatial grid the same
 scenarios cost 0.61 and 1.30 ms. Phone CPUs are roughly 4–5× slower, which still
@@ -32,8 +33,12 @@ in a loop, and compare the final population to confirm identical behavior.
   exactly, ties included.
 - **Grass ring search** (`sim/grass.ts`): hungry prey search outward from their
   tile and stop once no farther ring can be closer, instead of scanning all
-  ~2,000 tiles.
-- **Instanced rendering**: one draw call each for grass tiles and glorps.
+  ~8,000 tiles.
+- **Grass as a data texture** (`render/grass-layer.ts`): one world-sized quad
+  samples the simulation's density array directly as a nearest-filtered float
+  texture. Each frame uploads one float per tile (~32 KB for the 120×68 grid)
+  instead of a matrix and color per tile.
+- **Instanced rendering**: one draw call for all glorps.
 - **View culling**: glorps outside the view (plus a margin) are not uploaded.
 - **Screen-independent render cost**: the canvas renders at a fixed 270 px on
   its short side (480×270 on 16:9, 270×584 on a portrait phone) and is
@@ -44,20 +49,25 @@ in a loop, and compare the final population to confirm identical behavior.
 
 ## Next limits, in likely order
 
-1. **Population cap.** `MAX_GLORPS = 512` sizes every column and the instanced
+1. **Population cap.** `MAX_GLORPS = 2048` sizes every column and the instanced
    mesh. Raising it is a constant change; the grid keeps queries cheap.
-2. **Grass layer uploads.** `GrassLayer.update` rewrites every visible tile's
-   matrix and color each frame. Tiles never move, so positions could be built
-   once and only colors refreshed (or grass moved to a single data texture).
-3. **Steering allocations.** Each glorp's drive returns a small `{ x, y, sprint }`
+2. **Grass upload rate.** The density texture is re-uploaded every rendered
+   frame even though grass changes slowly. Uploading only on frames after a
+   simulation step (or every few steps) would cut it further; at 32 KB it is
+   not worth the extra state yet.
+3. **Grass search when food is scarce.** `nearestGrassTile` stops at the first
+   ring that can't beat its best hit, but with almost no grass left each hungry
+   prey scans up to all ~8,000 tiles per step. A coarse "any grass in this
+   8×8 block" summary grid would let it skip empty regions.
+4. **Steering allocations.** Each glorp's drive returns a small `{ x, y, sprint }`
    object every step, which is garbage-collector churn at a few thousand
    glorps. Writing into a reusable scratch object would remove it.
-4. **Selection lookup.** `findGlorpById` scans the population each frame while
+5. **Selection lookup.** `findGlorpById` scans the population each frame while
    something is selected. An id-to-index map maintained on alloc/remove would
    make it O(1) if populations get large.
-5. **Battery on mobile.** The loop renders every display frame. A frame-rate
+6. **Battery on mobile.** The loop renders every display frame. A frame-rate
    cap (nagomi has one, `frame-limiter.ts`) would save power on phones; the
    fixed-step simulation already tolerates it.
-6. **Very large populations (5k+).** Move the simulation into a Web Worker,
+7. **Very large populations (5k+).** Move the simulation into a Web Worker,
    sharing the typed-array columns with the renderer via `SharedArrayBuffer`.
    The sim already has no DOM or renderer dependencies.

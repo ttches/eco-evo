@@ -43,16 +43,19 @@ export const viewportFor = (cssWidth: number, cssHeight: number): Viewport => {
 export const fitZoom = (viewport: Viewport): number =>
   Math.min(viewport.width / WORLD.width, viewport.height / WORLD.height)
 
-/** Zoom at which the world fills the whole viewport, cropping the rest. */
-export const coverZoom = (viewport: Viewport): number =>
-  Math.max(viewport.width / WORLD.width, viewport.height / WORLD.height)
+/** Zoom at which the starting view area fills the whole viewport, cropping the rest. */
+export const startZoom = (viewport: Viewport): number =>
+  Math.max(
+    viewport.width / CAMERA.startView.width,
+    viewport.height / CAMERA.startView.height,
+  )
 
-/** Centered on the world, filling the viewport. */
+/** Centered on the world, filling the viewport with the starting view area. */
 export const createCamera = (viewport: Viewport = VIEWPORT.fallback): Camera =>
   clampCamera({
     x: WORLD.width / 2,
     y: WORLD.height / 2,
-    zoom: coverZoom(viewport),
+    zoom: startZoom(viewport),
     viewport,
   })
 

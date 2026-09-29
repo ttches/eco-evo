@@ -4,6 +4,9 @@ import { GRID_COLOR, GROUND_COLOR } from '@/render/palette'
 
 const GRID_SPACING = 64
 
+/** Grid lines fade out as their on-screen spacing shrinks between these, in render px. */
+const GRID_FADE = { visible: 16, hidden: 8 } as const
+
 const vertexShader = /* glsl */ `
   varying vec2 vWorld;
   uniform vec2 uWorldSize;
@@ -22,11 +25,15 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uGrid;
   uniform vec2 uWorldSize;
   uniform float uSpacing;
+  uniform vec2 uFade;
 
   void main() {
     vec2 coord = vWorld / uSpacing;
-    vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
-    float line = 1.0 - min(min(grid.x, grid.y), 1.0);
+    vec2 cellsPerPixel = fwidth(coord);
+    vec2 grid = abs(fract(coord - 0.5) - 0.5) / cellsPerPixel;
+    float spacingPx = 1.0 / max(cellsPerPixel.x, 0.0001);
+    float fade = smoothstep(uFade.y, uFade.x, spacingPx);
+    float line = (1.0 - min(min(grid.x, grid.y), 1.0)) * fade;
 
     vec2 halfSize = uWorldSize * 0.5;
     vec2 edge = abs(abs(vWorld) - halfSize);
@@ -54,6 +61,7 @@ export class GroundPass {
         uGround: { value: new THREE.Color(GROUND_COLOR) },
         uGrid: { value: new THREE.Color(GRID_COLOR) },
         uSpacing: { value: GRID_SPACING },
+        uFade: { value: new THREE.Vector2(GRID_FADE.visible, GRID_FADE.hidden) },
       },
       depthTest: false,
       depthWrite: false,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   clampCamera,
-  coverZoom,
   createCamera,
   fitCamera,
   fitZoom,
   panBy,
   resizeCamera,
   screenToWorld,
+  startZoom,
   viewBounds,
   viewportFor,
   worldToScreen,
@@ -40,20 +40,28 @@ describe('viewportFor', () => {
 })
 
 describe('createCamera', () => {
-  it('starts centered, filling a 16:9 viewport with the whole world', () => {
+  it('starts centered, filling a 16:9 viewport with the starting view area', () => {
     const camera = createCamera(LANDSCAPE)
+    const bounds = viewBounds(camera)
     expect(camera.x).toBe(WORLD.width / 2)
     expect(camera.y).toBe(WORLD.height / 2)
     expect(camera.zoom).toBeCloseTo(0.25)
+    expect(bounds.right - bounds.left).toBeCloseTo(CAMERA.startView.width)
+    expect(bounds.bottom - bounds.top).toBeCloseTo(CAMERA.startView.height)
   })
 
-  it('fills a portrait viewport, cropping the sides of the world', () => {
+  it('fills a portrait viewport, cropping the sides of the starting view', () => {
     const camera = createCamera(PORTRAIT)
     const bounds = viewBounds(camera)
-    expect(camera.zoom).toBeCloseTo(coverZoom(PORTRAIT))
-    expect(bounds.top).toBeCloseTo(0)
-    expect(bounds.bottom).toBeCloseTo(WORLD.height)
-    expect(bounds.right - bounds.left).toBeLessThan(WORLD.width)
+    expect(camera.zoom).toBeCloseTo(startZoom(PORTRAIT))
+    expect(bounds.bottom - bounds.top).toBeCloseTo(CAMERA.startView.height)
+    expect(bounds.right - bounds.left).toBeLessThan(CAMERA.startView.width)
+  })
+
+  it('leaves room to zoom out on any viewport shape', () => {
+    for (const viewport of [LANDSCAPE, PORTRAIT]) {
+      expect(createCamera(viewport).zoom).toBeGreaterThan(fitZoom(viewport))
+    }
   })
 })
 
