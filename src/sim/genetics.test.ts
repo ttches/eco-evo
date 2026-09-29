@@ -5,8 +5,6 @@ import {
   INHERIT_BEST_CHANCE,
   MUTATION_BIAS,
   MUTATION_RATE,
-  TRAIT,
-  TRAIT_BIT,
 } from '@/sim/config'
 import {
   inheritTrait,
@@ -16,6 +14,7 @@ import {
   prefersHigher,
   rollDirective,
 } from '@/sim/genetics'
+import { TRAIT_BIT, TRAITS } from '@/sim/traits'
 
 const popcount = (value: number): number => {
   let count = 0
@@ -68,22 +67,22 @@ describe('mutateTrait', () => {
     for (let i = 0; i < 500; i += 1) {
       const up = mutateTrait(
         random,
-        TRAIT.speedMax,
-        TRAIT.speedMin,
-        TRAIT.speedMax,
+        TRAITS.speed.max,
+        TRAITS.speed.min,
+        TRAITS.speed.max,
         true,
       )
       const down = mutateTrait(
         random,
-        TRAIT.speedMin,
-        TRAIT.speedMin,
-        TRAIT.speedMax,
+        TRAITS.speed.min,
+        TRAITS.speed.min,
+        TRAITS.speed.max,
         false,
       )
-      expect(up).toBeLessThanOrEqual(TRAIT.speedMax)
-      expect(up).toBeGreaterThanOrEqual(TRAIT.speedMin)
-      expect(down).toBeGreaterThanOrEqual(TRAIT.speedMin)
-      expect(down).toBeLessThanOrEqual(TRAIT.speedMax)
+      expect(up).toBeLessThanOrEqual(TRAITS.speed.max)
+      expect(up).toBeGreaterThanOrEqual(TRAITS.speed.min)
+      expect(down).toBeGreaterThanOrEqual(TRAITS.speed.min)
+      expect(down).toBeLessThanOrEqual(TRAITS.speed.max)
     }
   })
 

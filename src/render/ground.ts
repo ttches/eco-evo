@@ -1,10 +1,8 @@
 import * as THREE from 'three'
-import {
-  GRID_COLOR,
-  GRID_SPACING,
-  GROUND_COLOR,
-  WORLD,
-} from '@/engine/config'
+import { WORLD } from '@/engine/config'
+import { GRID_COLOR, GROUND_COLOR } from '@/render/palette'
+
+const GRID_SPACING = 64
 
 const vertexShader = /* glsl */ `
   varying vec2 vWorld;

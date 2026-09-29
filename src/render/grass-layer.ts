@@ -1,9 +1,7 @@
 import * as THREE from 'three'
-import { GROUND_COLOR } from '@/engine/config'
+import { GRASS_GREEN, GROUND_COLOR } from '@/render/palette'
 import { grassCols, grassRows } from '@/sim/grass'
 import type { RenderableWorld } from '@/sim/view'
-
-const GRASS_GREEN = 0x2f8f43
 
 /** Tiles at or below this density are left as bare ground. */
 const MIN_VISIBLE = 0.02

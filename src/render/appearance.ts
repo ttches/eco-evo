@@ -27,13 +27,3 @@ export const writeGlorpColor = (
   target[offset + 1] = lerp(dim[1], bright[1], amount)
   target[offset + 2] = lerp(dim[2], bright[2], amount)
 }
-
-/** Fill an interleaved rgb buffer for every glorp in the world. */
-export const fillInstanceColors = (
-  world: RenderableWorld,
-  target: Float32Array,
-): void => {
-  for (let index = 0; index < world.count; index += 1) {
-    writeGlorpColor(world, index, target, index)
-  }
-}

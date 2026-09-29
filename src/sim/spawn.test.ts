@@ -4,9 +4,9 @@ import {
   FED_START,
   GLORP_RADIUS,
   MAX_GLORPS,
-  TRAIT,
 } from '@/sim/config'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
+import { TRAITS } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -21,12 +21,12 @@ describe('spawnGlorp', () => {
     expect(world.count).toBe(before + 1)
     expect(world.type[index]).toBe(GLORP_TYPE.hunter)
     expect(world.fed[index]).toBe(FED_START)
-    expect(world.speed[index]).toBeGreaterThanOrEqual(TRAIT.speedMin)
-    expect(world.speed[index]).toBeLessThanOrEqual(TRAIT.speedMax)
+    expect(world.speed[index]).toBeGreaterThanOrEqual(TRAITS.speed.min)
+    expect(world.speed[index]).toBeLessThanOrEqual(TRAITS.speed.max)
     expect(world.metabolism[index]).toBeGreaterThanOrEqual(
-      TRAIT.metabolismMin,
+      TRAITS.metabolism.min,
     )
-    expect(world.metabolism[index]).toBeLessThanOrEqual(TRAIT.metabolismMax)
+    expect(world.metabolism[index]).toBeLessThanOrEqual(TRAITS.metabolism.max)
     expect(world.stamina[index]).toBe(world.staminaMax[index])
   })
 

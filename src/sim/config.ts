@@ -31,18 +31,6 @@ export const MATE_RANGE = 48
 /** Minimum fed each parent needs to pair-reproduce. */
 export const MATE_FED_MIN = HUNGER
 
-/** Spawned trait ranges, sampled once per glorp at creation. */
-export const TRAIT = {
-  speedMin: 30,
-  speedMax: 70,
-  staminaMaxMin: 2,
-  staminaMaxMax: 8,
-  metabolismMin: 1.5,
-  metabolismMax: 4.0,
-  reproCooldownMin: 8,
-  reproCooldownMax: 25,
-} as const
-
 /** Chance a pair-reproduced child inherits the more favorable parent's value. */
 export const INHERIT_BEST_CHANCE = 0.75
 
@@ -54,14 +42,6 @@ export const MUTATION_BIAS = 0.02
 
 /** Chance each directive bit flips when passed to an offspring. */
 export const DIRECTIVE_FLIP_CHANCE = 0.05
-
-/** Bit per trait inside a glorp's directive mask (1 = lineage prefers higher). */
-export const TRAIT_BIT = {
-  speed: 1,
-  staminaMax: 2,
-  metabolism: 4,
-  reproCooldown: 8,
-} as const
 
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
@@ -78,6 +58,12 @@ export const STAMINA = {
   drainPerSecond: 1.0,
   recoverPerSecond: 0.6,
 } as const
+
+/**
+ * Side of a spatial-grid cell, in world units. Near the common query ranges
+ * (prey flee, mating) so most lookups only touch a few cells.
+ */
+export const SPATIAL_CELL = 64
 
 /** Hunter perception range. */
 export const HUNTER_SIGHT = 220

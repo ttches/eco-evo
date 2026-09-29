@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeSteering } from '@/sim/behavior'
+import { rebuildSpatialGrid } from '@/sim/spatial'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -17,6 +18,7 @@ describe('prey steering', () => {
     world.fed[0] = 50
     world.stamina[0] = 5
 
+    rebuildSpatialGrid(world)
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.x).toBeLessThan(0)
@@ -37,6 +39,7 @@ describe('hunter steering', () => {
     world.fed[0] = 50
     world.stamina[0] = 5
 
+    rebuildSpatialGrid(world)
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.x).toBeGreaterThan(0)
@@ -55,6 +58,7 @@ describe('hunter steering', () => {
     world.fed[0] = 100
     world.stamina[0] = 5
 
+    rebuildSpatialGrid(world)
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.sprint).toBe(false)

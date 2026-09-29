@@ -1,5 +1,5 @@
 import { WORLD } from '@/engine/config'
-import { XorShift32 } from '@/engine/math'
+import { XorShift32, clamp } from '@/engine/math'
 import {
   DEFAULT_SEED,
   GRASS_INITIAL_MAX,
@@ -71,34 +71,65 @@ export const consumeGrass = (
   return consumed
 }
 
-/** Center of the closest tile holding meaningful grass, or null if none. */
+/**
+ * Center of the closest tile holding meaningful grass, or null if none.
+ * Searches outward in square rings of tiles around the point and stops once
+ * no farther ring could hold anything closer. Equal distances resolve to the
+ * lower tile index, matching a row-major scan.
+ */
 export const nearestGrassTile = (
   grass: GrassField,
   x: number,
   y: number,
 ): { x: number; y: number } | null => {
-  const half = grass.tileSize / 2
+  const { cols, rows, tileSize, values } = grass
+  const half = tileSize / 2
+  const originCol = clamp(Math.floor(x / tileSize), 0, cols - 1)
+  const originRow = clamp(Math.floor(y / tileSize), 0, rows - 1)
+  // How far the point sits from its origin tile's center, per axis at most.
+  const offset = Math.max(
+    Math.abs(x - (originCol * tileSize + half)),
+    Math.abs(y - (originRow * tileSize + half)),
+  )
+  const lastRing = Math.max(
+    originCol,
+    cols - 1 - originCol,
+    originRow,
+    rows - 1 - originRow,
+  )
   let bestDistance = Infinity
-  let bestX = 0
-  let bestY = 0
+  let best = -1
 
-  for (let row = 0; row < grass.rows; row += 1) {
-    const centerY = row * grass.tileSize + half
-    for (let col = 0; col < grass.cols; col += 1) {
-      const index = row * grass.cols + col
-      if (grass.values[index] <= GRASS_MIN_VALUE) continue
+  for (let ring = 0; ring <= lastRing; ring += 1) {
+    // Every tile center in this ring is at least this far from the point.
+    const reach = Math.max(0, ring * tileSize - offset)
+    if (reach * reach > bestDistance) break
 
-      const centerX = col * grass.tileSize + half
-      const deltaX = centerX - x
-      const deltaY = centerY - y
-      const distance = deltaX * deltaX + deltaY * deltaY
-      if (distance < bestDistance) {
-        bestDistance = distance
-        bestX = centerX
-        bestY = centerY
+    for (let row = originRow - ring; row <= originRow + ring; row += 1) {
+      if (row < 0 || row >= rows) continue
+      const edgeRow = row === originRow - ring || row === originRow + ring
+      // Edge rows are walked fully; middle rows only touch the ring's two sides.
+      const stride = edgeRow || ring === 0 ? 1 : 2 * ring
+      const centerY = row * tileSize + half
+      for (let col = originCol - ring; col <= originCol + ring; col += stride) {
+        if (col < 0 || col >= cols) continue
+        const index = row * cols + col
+        if (values[index] <= GRASS_MIN_VALUE) continue
+
+        const deltaX = col * tileSize + half - x
+        const deltaY = centerY - y
+        const distance = deltaX * deltaX + deltaY * deltaY
+        if (distance < bestDistance || (distance === bestDistance && index < best)) {
+          bestDistance = distance
+          best = index
+        }
       }
     }
   }
 
-  return bestDistance === Infinity ? null : { x: bestX, y: bestY }
+  if (best < 0) return null
+  return {
+    x: (best % cols) * tileSize + half,
+    y: Math.floor(best / cols) * tileSize + half,
+  }
 }

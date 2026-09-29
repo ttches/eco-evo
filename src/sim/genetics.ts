@@ -5,24 +5,12 @@ import {
   INHERIT_BEST_CHANCE,
   MUTATION_BIAS,
   MUTATION_RATE,
-  TRAIT_BIT,
 } from '@/sim/config'
-
-/** Global favorable direction per trait, used to pick the better parent. */
-export const FAVORS_HIGHER = {
-  speed: true,
-  staminaMax: true,
-  metabolism: false,
-  reproCooldown: false,
-} as const
+import { TRAIT_BIT, TRAIT_KEYS, TRAITS, type TraitKey } from '@/sim/traits'
+import type { World } from '@/sim/world'
 
 /** Every trait bit, in a fixed order so directive rolls stay deterministic. */
-export const TRAIT_BITS = [
-  TRAIT_BIT.speed,
-  TRAIT_BIT.staminaMax,
-  TRAIT_BIT.metabolism,
-  TRAIT_BIT.reproCooldown,
-] as const
+const TRAIT_BITS = TRAIT_KEYS.map((key) => TRAIT_BIT[key])
 
 /** Whether a glorp's directive prefers a higher value for a trait bit. */
 export const prefersHigher = (directive: number, bit: number): boolean =>
@@ -92,4 +80,57 @@ export const rollDirective = (random: XorShift32): number => {
     if (random.unit() < 0.5) directive |= bit
   }
   return directive
+}
+
+/** Roll every trait uniformly inside its spawn range. */
+export const rollTraits = (world: World, index: number): void => {
+  for (const key of TRAIT_KEYS) {
+    world[key][index] = world.random.range(TRAITS[key].min, TRAITS[key].max)
+  }
+}
+
+const mutateInto = (
+  world: World,
+  child: number,
+  key: TraitKey,
+  value: number,
+): void => {
+  const { min, max } = TRAITS[key]
+  const higher = prefersHigher(world.directive[child], TRAIT_BIT[key])
+  world[key][child] = mutateTrait(world.random, value, min, max, higher)
+}
+
+/**
+ * Asexual inheritance: each trait is copied from the parent, then mutated in
+ * the direction the child's directive prefers. Set the child's directive first.
+ */
+export const cloneTraits = (
+  world: World,
+  parent: number,
+  child: number,
+): void => {
+  for (const key of TRAIT_KEYS) {
+    mutateInto(world, child, key, world[key][parent])
+  }
+}
+
+/**
+ * Paired inheritance: each trait is taken from the globally favorable parent
+ * (usually), then mutated toward the child's directive. Set the directive first.
+ */
+export const crossTraits = (
+  world: World,
+  a: number,
+  b: number,
+  child: number,
+): void => {
+  for (const key of TRAIT_KEYS) {
+    const value = inheritTrait(
+      world.random,
+      world[key][a],
+      world[key][b],
+      TRAITS[key].favorsHigher,
+    )
+    mutateInto(world, child, key, value)
+  }
 }

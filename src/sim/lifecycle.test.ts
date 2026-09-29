@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeSteering, updateBehavior, updateStamina } from '@/sim/behavior'
+import { computeSteering, updateBehavior } from '@/sim/behavior'
 import {
   GLORP_RADIUS,
   HUNTER_KILL_FED,
@@ -10,16 +10,16 @@ import {
   MUTATION_RATE,
   OFFSPRING_FED,
   STAMINA,
-  TRAIT,
 } from '@/sim/config'
+import { applyDeath, applyEating, applyMetabolism } from '@/sim/lifecycle'
+import { updateStamina } from '@/sim/motion'
+import { rebuildSpatialGrid } from '@/sim/spatial'
 import {
-  applyDeath,
-  applyEating,
-  applyMetabolism,
   applyPairReproduction,
   applyReproduction,
   tickCooldowns,
-} from '@/sim/lifecycle'
+} from '@/sim/reproduction'
+import { TRAITS } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -85,8 +85,8 @@ describe('applyReproduction', () => {
     expect(
       Math.abs(world.reproCooldown[2] - reproCooldown) / reproCooldown,
     ).toBeLessThanOrEqual(envelope)
-    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAIT.speedMin)
-    expect(world.speed[2]).toBeLessThanOrEqual(TRAIT.speedMax)
+    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAITS.speed.min)
+    expect(world.speed[2]).toBeLessThanOrEqual(TRAITS.speed.max)
 
     expect(Math.hypot(world.x[2] - x, world.y[2] - y)).toBeCloseTo(GLORP_RADIUS)
     expect(world.wanderSeed[2]).not.toBe(parentSeed)
@@ -153,16 +153,16 @@ describe('applyPairReproduction', () => {
     expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
     expect(world.cooldown[0]).toBeCloseTo(10)
     expect(world.cooldown[1]).toBeCloseTo(20)
-    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAIT.speedMin)
-    expect(world.speed[2]).toBeLessThanOrEqual(TRAIT.speedMax)
-    expect(world.staminaMax[2]).toBeGreaterThanOrEqual(TRAIT.staminaMaxMin)
-    expect(world.staminaMax[2]).toBeLessThanOrEqual(TRAIT.staminaMaxMax)
-    expect(world.metabolism[2]).toBeGreaterThanOrEqual(TRAIT.metabolismMin)
-    expect(world.metabolism[2]).toBeLessThanOrEqual(TRAIT.metabolismMax)
+    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAITS.speed.min)
+    expect(world.speed[2]).toBeLessThanOrEqual(TRAITS.speed.max)
+    expect(world.staminaMax[2]).toBeGreaterThanOrEqual(TRAITS.staminaMax.min)
+    expect(world.staminaMax[2]).toBeLessThanOrEqual(TRAITS.staminaMax.max)
+    expect(world.metabolism[2]).toBeGreaterThanOrEqual(TRAITS.metabolism.min)
+    expect(world.metabolism[2]).toBeLessThanOrEqual(TRAITS.metabolism.max)
     expect(world.reproCooldown[2]).toBeGreaterThanOrEqual(
-      TRAIT.reproCooldownMin,
+      TRAITS.reproCooldown.min,
     )
-    expect(world.reproCooldown[2]).toBeLessThanOrEqual(TRAIT.reproCooldownMax)
+    expect(world.reproCooldown[2]).toBeLessThanOrEqual(TRAITS.reproCooldown.max)
   })
 
   it('trends toward the globally favorable parent across many matings', () => {
@@ -300,6 +300,7 @@ describe('stamina', () => {
   it('cannot sprint at zero stamina', () => {
     const world = setupChase()
     world.stamina[0] = 0
+    rebuildSpatialGrid(world)
 
     const steering = computeSteering(world, 0, 1 / 60)
 

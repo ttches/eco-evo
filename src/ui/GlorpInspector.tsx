@@ -11,6 +11,7 @@ import {
 import { clamp } from '@/engine/math'
 import { FED_MAX } from '@/sim/config'
 import type { GlorpSnapshot } from '@/sim/inspect'
+import type { TraitKey } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import styles from './GlorpInspector.module.css'
 
@@ -60,6 +61,34 @@ const Meter = ({ label, value, max, tone }: MeterProps) => {
   )
 }
 
+type TraitDisplay = {
+  icon: ReactNode
+  label: string
+  format: (value: number) => string
+}
+
+/** How each trait is shown, in display order. Every trait must have an entry. */
+const TRAIT_DISPLAY = {
+  speed: { icon: <Zap />, label: 'Speed', format: (v) => v.toFixed(1) },
+  metabolism: {
+    icon: <Gauge />,
+    label: 'Metabolism',
+    format: (v) => v.toFixed(2),
+  },
+  staminaMax: {
+    icon: <Activity />,
+    label: 'Stamina max',
+    format: (v) => v.toFixed(1),
+  },
+  reproCooldown: {
+    icon: <HeartPulse />,
+    label: 'Repro cooldown',
+    format: (v) => `${v.toFixed(1)}s`,
+  },
+} satisfies Record<TraitKey, TraitDisplay>
+
+const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][]
+
 const GlorpInspector = ({ glorp, onClose }: GlorpInspectorProps) => {
   if (!glorp) return null
 
@@ -74,7 +103,7 @@ const GlorpInspector = ({ glorp, onClose }: GlorpInspectorProps) => {
           >
             {isHunter ? 'Predator' : 'Prey'}
           </span>
-          <h2 className={styles.title}>Glorp #{glorp.id}</h2>
+          <h2 className={styles.title}>{glorp.name}</h2>
         </div>
         <button
           type="button"
@@ -91,32 +120,20 @@ const GlorpInspector = ({ glorp, onClose }: GlorpInspectorProps) => {
         <Meter
           label="Stamina"
           value={glorp.stamina}
-          max={glorp.staminaMax}
+          max={glorp.traits.staminaMax}
           tone="stamina"
         />
       </div>
 
       <div className={styles.stats}>
-        <Stat
-          icon={<Zap />}
-          label="Speed"
-          value={glorp.speed.toFixed(1)}
-        />
-        <Stat
-          icon={<Gauge />}
-          label="Metabolism"
-          value={glorp.metabolism.toFixed(2)}
-        />
-        <Stat
-          icon={<Activity />}
-          label="Stamina max"
-          value={glorp.staminaMax.toFixed(1)}
-        />
-        <Stat
-          icon={<HeartPulse />}
-          label="Repro cooldown"
-          value={`${glorp.reproCooldown.toFixed(1)}s`}
-        />
+        {TRAIT_ROWS.map(([key, display]) => (
+          <Stat
+            key={key}
+            icon={display.icon}
+            label={display.label}
+            value={display.format(glorp.traits[key])}
+          />
+        ))}
         <Stat
           icon={<Utensils />}
           label="Repro status"

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { findGlorpById, readGlorp } from '@/sim/inspect'
 import { glorpAt, nearestOfType } from '@/sim/query'
+import { rebuildSpatialGrid } from '@/sim/spatial'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -29,6 +30,7 @@ describe('nearestOfType', () => {
     world.y[1] = 100
     world.x[2] = 140
     world.y[2] = 100
+    rebuildSpatialGrid(world)
 
     const nearest = nearestOfType(world, 0, GLORP_TYPE.hunter, 100)
     expect(nearest).toBe(1)
@@ -56,7 +58,7 @@ describe('findGlorpById / readGlorp', () => {
     expect(snapshot.id).toBe(targetId)
     expect(snapshot.type).toBe(world.type[index])
     expect(snapshot.fed).toBe(world.fed[index])
-    expect(snapshot.staminaMax).toBe(world.staminaMax[index])
+    expect(snapshot.traits.staminaMax).toBe(world.staminaMax[index])
   })
 
   it('returns -1 for a missing id', () => {
