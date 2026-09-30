@@ -119,6 +119,17 @@
   background: rgb(255 255 255 / 6%);
 }
 
+.extremeActive,
+.extremeActive:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.extremeActive .extremeLabel,
+.extremeActive .extremeValue {
+  color: var(--foreground);
+}
+
 .extremeLabel {
   color: var(--muted-foreground);
   font-size: 0.58rem;
@@ -148,6 +159,14 @@
   gap: 0.25rem;
   padding-bottom: 0.15rem;
   border-bottom: 1px solid var(--border);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.5rem;
 }
 
 .filter {

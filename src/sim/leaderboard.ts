@@ -13,6 +13,9 @@ const STAT_KEYS = [
 
 export type StatKey = (typeof STAT_KEYS)[number]
 
+/** Anything the ranked list can be sorted by: a tally or a heritable trait. */
+export type SortKey = StatKey | TraitKey
+
 /** One glorp's all-time stats, alive or dead, ready for React. */
 export type GlorpStat = {
   readonly id: number
@@ -27,7 +30,26 @@ export type GlorpStat = {
   readonly offspring: number
   /** Every descendant in the family tree, direct or not. */
   readonly descendants: number
+  /** Heritable trait values, as rolled or inherited at birth. */
+  readonly traits: Readonly<Record<TraitKey, number>>
 }
+
+/** Diet restriction for the leaderboard, or `all`. */
+export type DietFilter = 'all' | GlorpType
+
+/** Life-status restriction for the leaderboard. */
+export type StatusFilter = 'both' | 'alive' | 'dead'
+
+const TRAIT_KEY_SET: ReadonlySet<string> = new Set(TRAIT_KEYS)
+
+const isTraitKey = (key: SortKey): key is TraitKey => TRAIT_KEY_SET.has(key)
+
+/** Narrow a sort key to one of the tallies (i.e. not a trait). */
+export const isStatKey = (key: SortKey): key is StatKey => !isTraitKey(key)
+
+/** The value a sort key reads off a stat, whether a tally or a trait. */
+export const sortValue = (stat: GlorpStat, key: SortKey): number =>
+  isTraitKey(key) ? stat.traits[key] : stat[key]
 
 /** Population totals for the stats header. */
 export type PopulationSummary = {
@@ -100,6 +122,8 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
   for (let id = 0; id < size; id += 1) {
     const alive = isAlive(log, id)
     const endedAt = alive ? world.time : log.diedAt[id]
+    const traits = {} as Record<TraitKey, number>
+    for (const key of TRAIT_KEYS) traits[key] = log.traits[key][id]
     stats[id] = {
       id,
       name: displayName(log, id),
@@ -109,37 +133,56 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
       kills: kills[id],
       offspring: offspring[id],
       descendants: descendants[id],
+      traits,
     }
   }
   return stats
 }
 
-/** Copy sorted by `key` descending, ties broken by ascending id. */
+/** Keep only the glorps matching a diet and life status. */
+export const filterStats = (
+  stats: readonly GlorpStat[],
+  diet: DietFilter,
+  status: StatusFilter,
+): GlorpStat[] =>
+  stats.filter((stat) => {
+    if (diet !== 'all' && stat.type !== diet) return false
+    if (status === 'alive') return stat.alive
+    if (status === 'dead') return !stat.alive
+    return true
+  })
+
+/** Copy sorted by `key`, best first, ties broken by ascending id. */
 export const sortStats = (
   stats: readonly GlorpStat[],
-  key: StatKey,
+  key: SortKey,
 ): GlorpStat[] =>
   [...stats].sort((a, b) => {
-    const delta = b[key] - a[key]
+    // Tallies are always "higher is better"; traits have a favored direction.
+    const higher = isTraitKey(key) ? TRAITS[key].favorsHigher : true
+    const delta = higher
+      ? sortValue(b, key) - sortValue(a, key)
+      : sortValue(a, key) - sortValue(b, key)
     return delta !== 0 ? delta : a.id - b.id
   })
 
-/** Live/dead and diet counts across the whole history. */
-export const summarizePopulation = (world: World): PopulationSummary => {
-  const log = world.lineage
+/** Live/dead and diet counts across a set of stats. */
+export const summarizeStats = (
+  stats: readonly GlorpStat[],
+): PopulationSummary => {
   let alive = 0
   let prey = 0
   let hunters = 0
-  for (let id = 0; id < log.size; id += 1) {
-    if (!isAlive(log, id)) continue
+  for (const stat of stats) {
+    if (!stat.alive) continue
     alive += 1
-    if (log.type[id] === GLORP_TYPE.prey) prey += 1
+    if (stat.type === GLORP_TYPE.prey) prey += 1
     else hunters += 1
   }
   return {
     alive,
-    totalBorn: log.size,
-    deaths: log.size - alive,
+    totalBorn: stats.length,
+    deaths: stats.length - alive,
     prey,
     hunters,
   }
@@ -147,24 +190,22 @@ export const summarizePopulation = (world: World): PopulationSummary => {
 
 /**
  * The best glorp for each trait, in the direction the lineage favors: highest
- * speed and stamina, lowest metabolism and reproduction cooldown.
+ * speed and stamina, lowest metabolism and reproduction cooldown. Ties keep the
+ * earlier stat, so the lower id wins.
  */
-export const traitExtremes = (world: World): TraitExtreme[] => {
-  const log = world.lineage
-  if (log.size === 0) return []
+export const traitExtremesFromStats = (
+  stats: readonly GlorpStat[],
+): TraitExtreme[] => {
+  if (stats.length === 0) return []
 
   return TRAIT_KEYS.map((key) => {
-    const column = log.traits[key]
     const favorsHigher = TRAITS[key].favorsHigher
-    let bestId = 0
-    let bestValue = column[0]
-    for (let id = 1; id < log.size; id += 1) {
-      const value = column[id]
-      if (favorsHigher ? value > bestValue : value < bestValue) {
-        bestValue = value
-        bestId = id
-      }
+    let best = stats[0]
+    for (const stat of stats) {
+      const value = stat.traits[key]
+      const bestValue = best.traits[key]
+      if (favorsHigher ? value > bestValue : value < bestValue) best = stat
     }
-    return { key, id: bestId, name: displayName(log, bestId), value: bestValue }
+    return { key, id: best.id, name: best.name, value: best.traits[key] }
   })
 }

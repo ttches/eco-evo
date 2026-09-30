@@ -19,11 +19,7 @@ import {
 import { setName } from '@/sim/lineage'
 import {
   buildLeaderboard,
-  summarizePopulation,
-  traitExtremes,
   type GlorpStat,
-  type PopulationSummary,
-  type TraitExtreme,
 } from '@/sim/leaderboard'
 import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
@@ -69,12 +65,6 @@ const App = () => {
   const [canGoBack, setCanGoBack] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
   const [stats, setStats] = useState<readonly GlorpStat[]>([])
-  const [summary, setSummary] = useState<PopulationSummary>(() =>
-    summarizePopulation(world),
-  )
-  const [extremes, setExtremes] = useState<readonly TraitExtreme[]>(() =>
-    traitExtremes(world),
-  )
   const statsOpenRef = useRef(false)
 
   const handleCameraChange = useCallback(() => {
@@ -209,8 +199,6 @@ const App = () => {
 
   const refreshStats = useCallback(() => {
     setStats(buildLeaderboard(world))
-    setSummary(summarizePopulation(world))
-    setExtremes(traitExtremes(world))
   }, [world])
 
   const toggleStats = useCallback(() => {
@@ -367,8 +355,6 @@ const App = () => {
             open={statsOpen}
             onClose={closeStats}
             stats={stats}
-            summary={summary}
-            extremes={extremes}
             onNavigate={navigateTo}
           />
         </>

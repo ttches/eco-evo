@@ -14,6 +14,7 @@ import { FED_MAX } from '@/sim/config'
 import type { GlorpView } from '@/sim/inspect'
 import { DEATH_CAUSE, type DeathCause } from '@/sim/lineage'
 import type { TraitKey } from '@/sim/traits'
+import { formatTraitValue } from '@/ui/traitFormat'
 import styles from './GlorpStats.module.css'
 
 type GlorpStatsProps = {
@@ -64,27 +65,14 @@ const Meter = ({ label, value, max, tone }: MeterProps) => {
 type TraitDisplay = {
   icon: ReactNode
   label: string
-  format: (value: number) => string
 }
 
 /** How each trait is shown, in display order. Every trait must have an entry. */
 const TRAIT_DISPLAY = {
-  speed: { icon: <Zap />, label: 'Speed', format: (v) => v.toFixed(1) },
-  metabolism: {
-    icon: <Gauge />,
-    label: 'Metabolism',
-    format: (v) => v.toFixed(2),
-  },
-  staminaMax: {
-    icon: <Activity />,
-    label: 'Stamina max',
-    format: (v) => v.toFixed(1),
-  },
-  reproCooldown: {
-    icon: <HeartPulse />,
-    label: 'Repro cooldown',
-    format: (v) => `${v.toFixed(1)}s`,
-  },
+  speed: { icon: <Zap />, label: 'Speed' },
+  metabolism: { icon: <Gauge />, label: 'Metabolism' },
+  staminaMax: { icon: <Activity />, label: 'Stamina max' },
+  reproCooldown: { icon: <HeartPulse />, label: 'Repro cooldown' },
 } satisfies Record<TraitKey, TraitDisplay>
 
 const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][]
@@ -124,7 +112,7 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => (
           key={key}
           icon={display.icon}
           label={display.label}
-          value={display.format(glorp.traits[key])}
+          value={formatTraitValue(key, glorp.traits[key])}
         />
       ))}
       {glorp.live ? (

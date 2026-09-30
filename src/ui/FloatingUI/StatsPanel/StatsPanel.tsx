@@ -1,15 +1,22 @@
 import { memo, useMemo, useState } from 'react'
 import { BarChart3, X } from 'lucide-react'
 import {
+  filterStats,
+  isStatKey,
   sortStats,
+  sortValue,
+  summarizeStats,
+  traitExtremesFromStats,
+  type DietFilter,
   type GlorpStat,
-  type PopulationSummary,
+  type SortKey,
   type StatKey,
-  type TraitExtreme,
+  type StatusFilter,
 } from '@/sim/leaderboard'
 import type { TraitKey } from '@/sim/traits'
-import { GLORP_TYPE, type GlorpType } from '@/sim/types'
+import { GLORP_TYPE } from '@/sim/types'
 import GlorpTypeBadge from '@/ui/GlorpInspector/GlorpTypeBadge/GlorpTypeBadge'
+import { formatTraitValue } from '@/ui/traitFormat'
 import { useEscapeKey } from '@/ui/useEscapeKey'
 import styles from './StatsPanel.module.css'
 
@@ -17,8 +24,6 @@ type StatsPanelProps = {
   open: boolean
   onClose: () => void
   stats: readonly GlorpStat[]
-  summary: PopulationSummary
-  extremes: readonly TraitExtreme[]
   onNavigate: (id: number) => void
 }
 
@@ -40,13 +45,16 @@ const TABS = {
 
 const TAB_KEYS = Object.keys(TABS) as StatKey[]
 
-/** Diet filter for the ranked list; the summary and leaders stay global. */
-type DietFilter = 'all' | GlorpType
-
 const DIETS: readonly { value: DietFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: GLORP_TYPE.prey, label: 'Prey' },
   { value: GLORP_TYPE.hunter, label: 'Predator' },
+]
+
+const STATUSES: readonly { value: StatusFilter; label: string }[] = [
+  { value: 'dead', label: 'Dead' },
+  { value: 'both', label: 'Both' },
+  { value: 'alive', label: 'Alive' },
 ]
 
 const TRAIT_LABEL: Record<TraitKey, string> = {
@@ -54,12 +62,6 @@ const TRAIT_LABEL: Record<TraitKey, string> = {
   staminaMax: 'Most stamina',
   metabolism: 'Lowest metabolism',
   reproCooldown: 'Fastest breeder',
-}
-
-const formatTrait = (key: TraitKey, value: number): string => {
-  if (key === 'metabolism') return value.toFixed(2)
-  if (key === 'reproCooldown') return `${value.toFixed(1)}s`
-  return value.toFixed(1)
 }
 
 const SummaryItem = ({ label, value }: { label: string; value: number }) => (
@@ -97,27 +99,35 @@ const StatRow = memo(
 
 /**
  * All-time leaderboard over the lineage log: population totals, the best glorp
- * per trait, and ranked lists you can sort and filter by diet. Every row links
- * to the inspector, so dead record-holders stay clickable.
+ * per trait, and ranked lists. The diet and life-status toggles filter every
+ * section at once, and any ranked column or trait card can sort the list. Rows
+ * link to the inspector, so dead record-holders stay clickable.
  */
 const StatsPanel = ({
   open,
   onClose,
   stats,
-  summary,
-  extremes,
   onNavigate,
 }: StatsPanelProps) => {
-  const [active, setActive] = useState<StatKey>('offspring')
+  const [active, setActive] = useState<SortKey>('offspring')
   const [diet, setDiet] = useState<DietFilter>('all')
+  const [status, setStatus] = useState<StatusFilter>('both')
   useEscapeKey(open, onClose)
 
   const pool = useMemo(
-    () => (diet === 'all' ? stats : stats.filter((stat) => stat.type === diet)),
-    [stats, diet],
+    () => filterStats(stats, diet, status),
+    [stats, diet, status],
   )
+  const summary = useMemo(() => summarizeStats(pool), [pool])
+  const extremes = useMemo(() => traitExtremesFromStats(pool), [pool])
   const sorted = useMemo(() => sortStats(pool, active), [pool, active])
-  const activeTab = TABS[active]
+  const formatActive = useMemo(
+    () =>
+      isStatKey(active)
+        ? TABS[active].format
+        : (value: number) => formatTraitValue(active, value),
+    [active],
+  )
   const rows = sorted.slice(0, MAX_ROWS)
 
   if (!open) return null
@@ -139,20 +149,41 @@ const StatsPanel = ({
         </button>
       </header>
 
-      <div className={styles.filter} role="group" aria-label="Filter by diet">
-        {DIETS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={diet === option.value}
-            className={`${styles.tab} ${
-              diet === option.value ? styles.tabActive : ''
-            }`}
-            onClick={() => setDiet(option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className={styles.filterRow}>
+        <div className={styles.filter} role="group" aria-label="Filter by diet">
+          {DIETS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={diet === option.value}
+              className={`${styles.tab} ${
+                diet === option.value ? styles.tabActive : ''
+              }`}
+              onClick={() => setDiet(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <div
+          className={styles.filter}
+          role="group"
+          aria-label="Filter by life status"
+        >
+          {STATUSES.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={status === option.value}
+              className={`${styles.tab} ${
+                status === option.value ? styles.tabActive : ''
+              }`}
+              onClick={() => setStatus(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <section className={styles.summary} aria-label="Population">
@@ -168,15 +199,18 @@ const StatsPanel = ({
           <button
             key={extreme.key}
             type="button"
-            className={styles.extreme}
-            onClick={() => onNavigate(extreme.id)}
+            aria-pressed={active === extreme.key}
+            className={`${styles.extreme} ${
+              active === extreme.key ? styles.extremeActive : ''
+            }`}
+            onClick={() => setActive(extreme.key)}
           >
             <span className={styles.extremeLabel}>
               {TRAIT_LABEL[extreme.key]}
             </span>
             <span className={styles.extremeName}>{extreme.name}</span>
             <span className={styles.extremeValue}>
-              {formatTrait(extreme.key, extreme.value)}
+              {formatTraitValue(extreme.key, extreme.value)}
             </span>
           </button>
         ))}
@@ -202,8 +236,8 @@ const StatsPanel = ({
             key={entry.id}
             entry={entry}
             index={index}
-            value={entry[active]}
-            format={activeTab.format}
+            value={sortValue(entry, active)}
+            format={formatActive}
             onNavigate={onNavigate}
           />
         ))}
