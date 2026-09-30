@@ -44,6 +44,11 @@ in a loop, and compare the final population to confirm identical behavior.
   its short side (480×270 on 16:9, 270×584 on a portrait phone) and is
   upscaled with nearest-neighbor, so GPU fill cost stays tiny on high-DPI
   phones.
+- **Draw only when something changed** (`App.tsx` frame callback): a display
+  frame with no simulation step and no camera or selection change is skipped.
+  The simulation steps at 60 Hz, so 120/144/240 Hz screens no longer redraw
+  duplicate frames, while panning and zooming still draw at the full refresh
+  rate.
 - **Lineage log** (`sim/lineage.ts`): ~50 bytes per glorp ever born in growable
   typed arrays; the default sim grows it by roughly 350 KB per hour.
 
@@ -65,9 +70,11 @@ in a loop, and compare the final population to confirm identical behavior.
 5. **Selection lookup.** `findGlorpById` scans the population each frame while
    something is selected. An id-to-index map maintained on alloc/remove would
    make it O(1) if populations get large.
-6. **Battery on mobile.** The loop renders every display frame. A frame-rate
-   cap (nagomi has one, `frame-limiter.ts`) would save power on phones; the
-   fixed-step simulation already tolerates it.
+6. **Smooth motion on high-refresh screens.** Positions only change on the
+   60 Hz step, so a 120 Hz display still shows 60 distinct frames. Drawing
+   glorps interpolated between the last two steps would use the extra frames,
+   at the cost of keeping previous positions and reintroducing a draw per
+   display frame.
 7. **Very large populations (5k+).** Move the simulation into a Web Worker,
    sharing the typed-array columns with the renderer via `SharedArrayBuffer`.
    The sim already has no DOM or renderer dependencies.

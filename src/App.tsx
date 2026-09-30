@@ -39,6 +39,8 @@ const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cameraRef = useRef<Camera>(createCamera())
   const selectedIdRef = useRef<number | null>(null)
+  /** Set when the view or selection changed; steps redraw on their own. */
+  const needsDrawRef = useRef(true)
   const [world] = useState<World>(() => createWorld())
   const [zoom, setZoom] = useState<number>(() => createCamera().zoom)
   const [showInterface, setShowInterface] = useState(true)
@@ -47,10 +49,14 @@ const App = () => {
 
   const clearSelection = useCallback(() => {
     selectedIdRef.current = null
+    needsDrawRef.current = true
     setSelected(null)
   }, [])
 
-  const syncZoom = useCallback(() => setZoom(cameraRef.current.zoom), [])
+  const handleCameraChange = useCallback(() => {
+    needsDrawRef.current = true
+    setZoom(cameraRef.current.zoom)
+  }, [])
 
   /** Index of the glorp under a world point, with a little touch slack. */
   const pickAt = useCallback(
@@ -72,6 +78,7 @@ const App = () => {
         return
       }
       selectedIdRef.current = world.id[index]
+      needsDrawRef.current = true
       setSelected(readGlorp(world, index))
     },
     [world, pickAt, clearSelection],
@@ -88,7 +95,7 @@ const App = () => {
   )
 
   const cursorRef = useCanvasControls(canvasRef, cameraRef, {
-    onCameraChange: syncZoom,
+    onCameraChange: handleCameraChange,
     onClick: selectAt,
     onDoubleTap: handleDoubleTap,
   })
@@ -118,7 +125,7 @@ const App = () => {
     }
     const initial = measure()
     cameraRef.current = createCamera(initial)
-    syncZoom()
+    handleCameraChange()
     const renderer = new Renderer(canvas, initial)
     let lastInspectorUpdate = 0
 
@@ -134,13 +141,17 @@ const App = () => {
       }
       renderer.resize(viewport)
       cameraRef.current = resizeCamera(cameraRef.current, viewport)
-      syncZoom()
+      handleCameraChange()
     })
     resizeObserver.observe(canvas)
 
     const loop = createLoop(FIXED_STEP, {
       step: (deltaSeconds) => step(world, deltaSeconds),
-      frame: () => {
+      frame: (steps) => {
+        // Frames with no step and no view change would draw the same image.
+        if (steps === 0 && !needsDrawRef.current) return
+        needsDrawRef.current = false
+
         const id = selectedIdRef.current
         const selectedIndex = id === null ? -1 : findGlorpById(world, id)
         renderer.draw(world, cameraRef.current, selectedIndex)
@@ -163,7 +174,7 @@ const App = () => {
       resizeObserver.disconnect()
       renderer.dispose()
     }
-  }, [world, clearSelection, syncZoom])
+  }, [world, clearSelection, handleCameraChange])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -182,7 +193,7 @@ const App = () => {
 
   const fitView = (): void => {
     cameraRef.current = fitCamera(cameraRef.current.viewport)
-    syncZoom()
+    handleCameraChange()
   }
 
   const zoomBy = (factor: number): void => {
@@ -193,7 +204,7 @@ const App = () => {
       viewport.width / 2,
       viewport.height / 2,
     )
-    syncZoom()
+    handleCameraChange()
   }
 
   const overlay = showInterface ? (
