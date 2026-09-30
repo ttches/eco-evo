@@ -1,6 +1,5 @@
-click ui pannel allow us to rename glorps and click into parent.
-
-make click ui look less like ai and match sprite theme
+click ui pannel allow us to rename glorps and click into parent. The button should be small to edit the name, maybe an icon next to their name.
+click UI shows parent 1 / 2, click opens the parent's information wick a back icon. There should already be a lineage feature we can use for this
 
 prey should not get stuck in corners when being chased
 
@@ -18,3 +17,5 @@ biomes break the game up naturally instead of one full square. swamps / sand / m
 opposing attributes - can't have more than 150% total attribute points for some categories. speed / stamina. if speed is 100%, stamina can't go beyond 50%.
 
 have "clouds" you don't see the cloud but you see shadow similarly to how nagomi does, and you see rain maybe, and it makes all plant tiles grow
+
+make click ui look less like ai and match sprite theme

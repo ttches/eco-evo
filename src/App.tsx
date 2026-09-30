@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Settings2 } from 'lucide-react'
 import {
+  centerCamera,
   createCamera,
   fitCamera,
   resizeCamera,
@@ -11,14 +12,19 @@ import {
 import { FIXED_STEP } from '@/engine/config'
 import { createLoop } from '@/engine/loop'
 import { Renderer } from '@/render/renderer'
-import { findGlorpById, readGlorp, type GlorpSnapshot } from '@/sim/inspect'
+import {
+  findGlorpById,
+  readGlorpView,
+  type GlorpView,
+} from '@/sim/inspect'
+import { setName } from '@/sim/lineage'
 import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import { createWorld, step, type World } from '@/sim/world'
-import ControlDock from '@/ui/ControlDock'
-import GlorpInspector from '@/ui/GlorpInspector'
-import SettingsPanel from '@/ui/SettingsPanel'
+import ControlDock from '@/ui/FloatingUI/ControlDock'
+import SettingsPanel from '@/ui/FloatingUI/SettingsPanel'
+import GlorpInspector from '@/ui/GlorpInspector/GlorpInspector'
 import Stage from '@/ui/Stage'
 import { useCanvasControls } from '@/ui/useCanvasControls'
 import styles from './App.module.css'
@@ -39,24 +45,88 @@ const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cameraRef = useRef<Camera>(createCamera())
   const selectedIdRef = useRef<number | null>(null)
+  /** Ids visited before the current one, so the inspector can go back. */
+  const historyRef = useRef<number[]>([])
   /** Set when the view or selection changed; steps redraw on their own. */
   const needsDrawRef = useRef(true)
   const [world] = useState<World>(() => createWorld())
   const [zoom, setZoom] = useState<number>(() => createCamera().zoom)
   const [showInterface, setShowInterface] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [selected, setSelected] = useState<GlorpSnapshot | null>(null)
-
-  const clearSelection = useCallback(() => {
-    selectedIdRef.current = null
-    needsDrawRef.current = true
-    setSelected(null)
-  }, [])
+  const [selected, setSelected] = useState<GlorpView | null>(null)
+  const [canGoBack, setCanGoBack] = useState(false)
 
   const handleCameraChange = useCallback(() => {
     needsDrawRef.current = true
     setZoom(cameraRef.current.zoom)
   }, [])
+
+  const clearSelection = useCallback(() => {
+    selectedIdRef.current = null
+    historyRef.current = []
+    needsDrawRef.current = true
+    setCanGoBack(false)
+    setSelected(null)
+  }, [])
+
+  /**
+   * Show a glorp. `center` is set only when following a lineage link, so a
+   * direct click on the world never yanks the camera.
+   */
+  const showGlorp = useCallback(
+    (id: number, center: boolean) => {
+      selectedIdRef.current = id
+      needsDrawRef.current = true
+      setSelected(readGlorpView(world, id))
+
+      if (!center) return
+      const index = findGlorpById(world, id)
+      if (index < 0) return
+      cameraRef.current = centerCamera(
+        cameraRef.current,
+        world.x[index],
+        world.y[index],
+      )
+      handleCameraChange()
+    },
+    [world, handleCameraChange],
+  )
+
+  /** A fresh world click resets the history and leaves the camera alone. */
+  const selectGlorp = useCallback(
+    (id: number) => {
+      historyRef.current = []
+      setCanGoBack(false)
+      showGlorp(id, false)
+    },
+    [showGlorp],
+  )
+
+  const navigateTo = useCallback(
+    (id: number) => {
+      const current = selectedIdRef.current
+      if (current === id) return
+      if (current !== null) historyRef.current.push(current)
+      setCanGoBack(historyRef.current.length > 0)
+      showGlorp(id, true)
+    },
+    [showGlorp],
+  )
+
+  const goBack = useCallback(() => {
+    const previous = historyRef.current.pop()
+    if (previous === undefined) return
+    setCanGoBack(historyRef.current.length > 0)
+    showGlorp(previous, true)
+  }, [showGlorp])
+
+  const renameGlorp = useCallback(
+    (id: number, name: string) => {
+      setName(world.lineage, id, name)
+      if (selectedIdRef.current === id) setSelected(readGlorpView(world, id))
+    },
+    [world],
+  )
 
   /** Index of the glorp under a world point, with a little touch slack. */
   const pickAt = useCallback(
@@ -77,11 +147,9 @@ const App = () => {
         clearSelection()
         return
       }
-      selectedIdRef.current = world.id[index]
-      needsDrawRef.current = true
-      setSelected(readGlorp(world, index))
+      selectGlorp(world.id[index])
     },
-    [world, pickAt, clearSelection],
+    [world, pickAt, clearSelection, selectGlorp],
   )
 
   // Double tap on open ground toggles the interface; on a glorp it only
@@ -160,11 +228,8 @@ const App = () => {
         const now = performance.now()
         if (now - lastInspectorUpdate < INSPECTOR_INTERVAL_MS) return
         lastInspectorUpdate = now
-        if (selectedIndex < 0) {
-          clearSelection()
-        } else {
-          setSelected(readGlorp(world, selectedIndex))
-        }
+        // Dead glorps are still shown, read from their lineage record.
+        setSelected(readGlorpView(world, id))
       },
     })
     loop.start()
@@ -174,7 +239,7 @@ const App = () => {
       resizeObserver.disconnect()
       renderer.dispose()
     }
-  }, [world, clearSelection, handleCameraChange])
+  }, [world, handleCameraChange])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -223,7 +288,15 @@ const App = () => {
           <span>Settings</span>
         </button>
       </div>
-      <GlorpInspector glorp={selected} onClose={clearSelection} />
+      <GlorpInspector
+        key={selected?.id ?? 'none'}
+        glorp={selected}
+        onClose={clearSelection}
+        onBack={goBack}
+        canGoBack={canGoBack}
+        onNavigate={navigateTo}
+        onRename={renameGlorp}
+      />
       <ControlDock
         zoom={zoom}
         onZoomIn={() => zoomBy(1.25)}

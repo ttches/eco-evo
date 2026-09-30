@@ -1,0 +1,122 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 660;
+  letter-spacing: 0.01em;
+}
+
+.rename,
+.back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.rename:hover,
+.back:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.rename svg,
+.back svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.nameInput {
+  width: 100%;
+  min-width: 0;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: rgb(255 255 255 / 6%);
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 660;
+  letter-spacing: 0.01em;
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.deceased {
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgb(161 161 170 / 18%);
+  color: var(--muted-foreground);
+  font-size: 0.6rem;
+  font-weight: 640;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  transition: background 140ms ease;
+}
+
+.close:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.close svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+@media (pointer: coarse) {
+  .close,
+  .back,
+  .rename {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}

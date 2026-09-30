@@ -1,0 +1,27 @@
+.badge {
+  border-radius: 999px;
+  font-weight: 640;
+  text-transform: uppercase;
+}
+
+.default {
+  padding: 0.12rem 0.45rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+.small {
+  padding: 0.06rem 0.32rem;
+  font-size: 0.54rem;
+  letter-spacing: 0.06em;
+}
+
+.prey {
+  background: rgb(47 143 107 / 22%);
+  color: #7fe0ad;
+}
+
+.hunter {
+  background: rgb(224 107 51 / 22%);
+  color: #f0a075;
+}

@@ -1,0 +1,100 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.meterHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.meterLabel {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 560;
+}
+
+.meterValue {
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 0.34rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 160ms ease;
+}
+
+.energy {
+  background: linear-gradient(90deg, #2f8f6b, #7fe0ad);
+}
+
+.stamina {
+  background: linear-gradient(90deg, #c98a2f, #f0c875);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.1rem;
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.35rem;
+  border-radius: 0.45rem;
+}
+
+.stat:nth-child(odd) {
+  background: rgb(255 255 255 / 3%);
+}
+
+.statIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+
+.statIcon svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.statLabel {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.statValue {
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}

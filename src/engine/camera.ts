@@ -72,6 +72,10 @@ export const fitCamera = (viewport: Viewport): Camera =>
 export const resizeCamera = (camera: Camera, viewport: Viewport): Camera =>
   clampCamera({ ...camera, viewport })
 
+/** Center the camera on a world point, keeping its zoom and world clamps. */
+export const centerCamera = (camera: Camera, x: number, y: number): Camera =>
+  clampCamera({ ...camera, x, y })
+
 /** World-space rectangle currently visible through the viewport. */
 export const viewBounds = (camera: Camera): ViewBounds => {
   const halfWidth = camera.viewport.width / camera.zoom / 2

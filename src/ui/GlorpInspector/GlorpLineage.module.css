@@ -1,0 +1,84 @@
+.lineage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.lineageHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted-foreground);
+}
+
+.lineageHeader svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.lineageTitle {
+  font-size: 0.68rem;
+  font-weight: 640;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.generation {
+  margin-left: auto;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.parents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.parentButton {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: rgb(255 255 255 / 3%);
+  text-align: left;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.parentButton:hover {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.parentRole {
+  color: var(--muted-foreground);
+  font-size: 0.66rem;
+  font-weight: 560;
+}
+
+.parentName {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parentDead {
+  opacity: 0.6;
+}

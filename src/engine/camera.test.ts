@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  centerCamera,
   clampCamera,
   createCamera,
   fitCamera,
@@ -111,6 +112,22 @@ describe('resizeCamera', () => {
     expect(rotated.zoom).toBe(1)
     expect(rotated.x).toBeCloseTo(900)
     expect(rotated.y).toBeCloseTo(500)
+  })
+})
+
+describe('centerCamera', () => {
+  it('centers on a world point, keeping zoom', () => {
+    const centered = centerCamera(at(0, 0, 1), 900, 500)
+    expect(centered.x).toBeCloseTo(900)
+    expect(centered.y).toBeCloseTo(500)
+    expect(centered.zoom).toBe(1)
+  })
+
+  it('clamps near the world edge', () => {
+    const centered = centerCamera(at(0, 0, 1), -500, 9999)
+    const bounds = viewBounds(centered)
+    expect(bounds.left).toBeGreaterThanOrEqual(-1e-9)
+    expect(bounds.bottom).toBeLessThanOrEqual(WORLD.height + 1e-9)
   })
 })
 
