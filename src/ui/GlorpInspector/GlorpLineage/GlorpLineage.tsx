@@ -1,6 +1,6 @@
 import { GitBranch } from 'lucide-react'
 import type { GlorpView } from '@/sim/inspect'
-import GlorpTypeBadge from './GlorpTypeBadge'
+import GlorpTypeBadge from '../GlorpTypeBadge/GlorpTypeBadge'
 import styles from './GlorpLineage.module.css'
 
 type GlorpLineageProps = {

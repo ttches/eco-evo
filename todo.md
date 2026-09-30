@@ -1,6 +1,3 @@
-click ui pannel allow us to rename glorps and click into parent. The button should be small to edit the name, maybe an icon next to their name.
-click UI shows parent 1 / 2, click opens the parent's information wick a back icon. There should already be a lineage feature we can use for this
-
 prey should not get stuck in corners when being chased
 
 settings pannel

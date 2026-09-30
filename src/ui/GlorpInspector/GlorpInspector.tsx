@@ -1,7 +1,7 @@
 import type { GlorpView } from '@/sim/inspect'
-import GlorpHeader from './GlorpHeader'
-import GlorpLineage from './GlorpLineage'
-import GlorpStats from './GlorpStats'
+import GlorpHeader from './GlorpHeader/GlorpHeader'
+import GlorpLineage from './GlorpLineage/GlorpLineage'
+import GlorpStats from './GlorpStats/GlorpStats'
 import styles from './GlorpInspector.module.css'
 
 type GlorpInspectorProps = {

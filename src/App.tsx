@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Settings2 } from 'lucide-react'
 import {
   centerCamera,
   createCamera,
@@ -22,12 +21,13 @@ import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import { createWorld, step, type World } from '@/sim/world'
-import ControlDock from '@/ui/FloatingUI/ControlDock'
-import SettingsPanel from '@/ui/FloatingUI/SettingsPanel'
+import Brand from '@/ui/FloatingUI/Brand/Brand'
+import ControlDock from '@/ui/FloatingUI/ControlDock/ControlDock'
+import SettingsPanel from '@/ui/FloatingUI/SettingsPanel/SettingsPanel'
+import TopActions from '@/ui/FloatingUI/TopActions/TopActions'
 import GlorpInspector from '@/ui/GlorpInspector/GlorpInspector'
-import Stage from '@/ui/Stage'
+import Stage from '@/ui/Stage/Stage'
 import { useCanvasControls } from '@/ui/useCanvasControls'
-import styles from './App.module.css'
 
 /** How often the inspector refreshes from the live simulation, in ms. */
 const INSPECTOR_INTERVAL_MS = 100
@@ -274,20 +274,8 @@ const App = () => {
 
   const overlay = showInterface ? (
     <>
-      <header className={styles.brand}>
-        <h1 className={styles.wordmark}>eco-evo</h1>
-      </header>
-      <div className={styles.topActions}>
-        <button
-          type="button"
-          className={styles.settingsTrigger}
-          onClick={() => setSettingsOpen(true)}
-          aria-label="Open settings"
-        >
-          <Settings2 aria-hidden="true" />
-          <span>Settings</span>
-        </button>
-      </div>
+      <Brand />
+      <TopActions onOpenSettings={() => setSettingsOpen(true)} />
       <GlorpInspector
         key={selected?.id ?? 'none'}
         glorp={selected}

@@ -1,0 +1,20 @@
+.brand {
+  position: absolute;
+  top: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-top));
+  left: max(clamp(0.6rem, 1.8vw, 1.1rem), env(safe-area-inset-left));
+  padding: 0.46rem 0.72rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  box-shadow:
+    0 10px 34px rgb(0 0 0 / 24%),
+    inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 660;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
