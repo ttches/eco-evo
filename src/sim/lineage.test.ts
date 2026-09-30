@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
-import { applyDeath, applyEating } from '@/sim/lifecycle'
+import { GESTATION_SECONDS, GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
+import { applyDeath } from '@/sim/lifecycle'
+import { applyEating } from '@/sim/predation'
 import {
   DEATH_CAUSE,
   NO_GLORP,
@@ -11,7 +12,11 @@ import {
   readLineage,
   setName,
 } from '@/sim/lineage'
-import { applyPairReproduction, applyReproduction } from '@/sim/reproduction'
+import {
+  applyGestation,
+  applyPairReproduction,
+  applyReproduction,
+} from '@/sim/reproduction'
 import { spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
@@ -56,9 +61,12 @@ describe('lineage births', () => {
     world.x[1] = 100 + MATE_RANGE / 2
 
     applyPairReproduction(world)
+    applyGestation(world, GESTATION_SECONDS)
 
     const child = readLineage(world.lineage, world.id[2])
-    expect([child?.parentA, child?.parentB]).toEqual([world.id[0], world.id[1]])
+    expect([child?.parentA, child?.parentB].sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual(
+      [world.id[0], world.id[1]].sort((a, b) => a - b),
+    )
     expect(child?.generation).toBe(1)
   })
 })
@@ -87,6 +95,8 @@ describe('lineage deaths', () => {
     world.y[0] = 100
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
+    world.strength[0] = 6
+    world.strength[1] = 3
     const hunterId = world.id[0]
     const preyId = world.id[1]
 

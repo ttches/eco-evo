@@ -8,10 +8,12 @@ import {
 } from '@/sim/config'
 import { updateBehavior } from '@/sim/behavior'
 import { createGrass, regrowGrass } from '@/sim/grass'
-import { applyDeath, applyEating, applyMetabolism } from '@/sim/lifecycle'
+import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
 import { integrateMotion, updateStamina } from '@/sim/motion'
+import { applyEating } from '@/sim/predation'
 import {
+  applyGestation,
   applyPairReproduction,
   applyReproduction,
   tickCooldowns,
@@ -72,7 +74,8 @@ export const step = (world: World, deltaSeconds: number): void => {
   // Reproduction must run before metabolism: eating tops `fed` up to exactly
   // FED_MAX, and metabolism would immediately drain it below the threshold.
   applyReproduction(world)
-  applyPairReproduction(world)
+  applyPairReproduction(world, deltaSeconds)
+  applyGestation(world, deltaSeconds)
   applyMetabolism(world, deltaSeconds)
   updateStamina(world, deltaSeconds)
   applyDeath(world)

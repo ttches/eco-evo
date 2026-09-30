@@ -107,14 +107,14 @@ const grow = (log: LineageLog): void => {
 }
 
 /**
- * Log a newborn once its type, directive and traits are set. Pass parent
- * indices (not ids) into the live world, or `NO_GLORP`.
+ * Log a newborn once its type, directive and traits are set, linking parents by
+ * their stable ids. Pass `NO_GLORP` for a missing parent.
  */
-export const recordBirth = (
+export const recordBirthFromIds = (
   world: World,
   index: number,
-  parentA = NO_GLORP,
-  parentB = NO_GLORP,
+  idA: number,
+  idB: number,
 ): void => {
   const log = world.lineage
   const id = world.id[index]
@@ -122,8 +122,6 @@ export const recordBirth = (
   if (id !== log.size) throw new Error(`Lineage out of sync at glorp ${id}`)
   if (log.size === log.capacity) grow(log)
 
-  const idA = parentA === NO_GLORP ? NO_GLORP : world.id[parentA]
-  const idB = parentB === NO_GLORP ? NO_GLORP : world.id[parentB]
   const generationA = idA === NO_GLORP ? -1 : log.generation[idA]
   const generationB = idB === NO_GLORP ? -1 : log.generation[idB]
 
@@ -138,6 +136,21 @@ export const recordBirth = (
   log.directive[id] = world.directive[index]
   for (const key of TRAIT_KEYS) log.traits[key][id] = world[key][index]
   log.size += 1
+}
+
+/**
+ * Log a newborn once its type, directive and traits are set. Pass parent
+ * indices (not ids) into the live world, or `NO_GLORP`.
+ */
+export const recordBirth = (
+  world: World,
+  index: number,
+  parentA = NO_GLORP,
+  parentB = NO_GLORP,
+): void => {
+  const idA = parentA === NO_GLORP ? NO_GLORP : world.id[parentA]
+  const idB = parentB === NO_GLORP ? NO_GLORP : world.id[parentB]
+  recordBirthFromIds(world, index, idA, idB)
 }
 
 /** Log a death. Call while the glorp (and any killer) is still at `index`. */

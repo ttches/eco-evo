@@ -77,6 +77,7 @@ export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
     'meanStamina',
     'meanMetabolism',
     'meanReproCooldown',
+    'meanStrength',
     'meanGeneration',
     'grassMean',
   ].join(',')
@@ -91,6 +92,7 @@ export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
       row.meanStamina.toFixed(4),
       row.meanMetabolism.toFixed(4),
       row.meanReproCooldown.toFixed(4),
+      row.meanStrength.toFixed(4),
       row.meanGeneration.toFixed(4),
       row.grassMean.toFixed(6),
     ].join(','),

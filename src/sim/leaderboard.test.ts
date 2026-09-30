@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
+import { GESTATION_SECONDS, GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
 import {
   buildLeaderboard,
   filterStats,
@@ -8,8 +8,13 @@ import {
   traitExtremesFromStats,
   type GlorpStat,
 } from '@/sim/leaderboard'
-import { applyDeath, applyEating } from '@/sim/lifecycle'
-import { applyPairReproduction, applyReproduction } from '@/sim/reproduction'
+import { applyDeath } from '@/sim/lifecycle'
+import { applyEating } from '@/sim/predation'
+import {
+  applyGestation,
+  applyPairReproduction,
+  applyReproduction,
+} from '@/sim/reproduction'
 import { spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
@@ -42,6 +47,8 @@ describe('buildLeaderboard', () => {
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
     world.time = 5
+    world.strength[0] = 6
+    world.strength[1] = 3
 
     applyEating(world, 0.1)
 
@@ -64,6 +71,7 @@ describe('buildLeaderboard', () => {
     world.x[1] = 100 + MATE_RANGE / 2
 
     applyPairReproduction(world)
+    applyGestation(world, GESTATION_SECONDS)
 
     const stats = buildLeaderboard(world)
     expect(stats[0]).toMatchObject({ offspring: 1, descendants: 1 })
@@ -79,6 +87,8 @@ describe('buildLeaderboard', () => {
     world.y[0] = 100
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
+    world.strength[0] = 6
+    world.strength[1] = 3
 
     applyEating(world, 0.1)
     world.fed[0] = 0
@@ -115,6 +125,7 @@ describe('sortStats', () => {
       staminaMax: value,
       metabolism: value,
       reproCooldown: value,
+      strength: value,
     },
     ...overrides,
   })
@@ -148,7 +159,13 @@ describe('filterStats', () => {
     kills: 0,
     offspring: 0,
     descendants: 0,
-    traits: { speed: 0, staminaMax: 0, metabolism: 0, reproCooldown: 0 },
+    traits: {
+      speed: 0,
+      staminaMax: 0,
+      metabolism: 0,
+      reproCooldown: 0,
+      strength: 0,
+    },
   })
 
   const entries = [

@@ -1,13 +1,24 @@
-prey should not get stuck in corners when being chased
+hunter mate seeking heart animation
 
-settings pannel
-UI button to kill all glorps
+clicking glorp from stats should center camera on them
+
+research how stats work and better math algos that will give us more variance in traits and less average. consider reproduction, evolutionary directive
+
+add render cycle test to make sure we don't impact performance between commits
 
 evolution directive attribute highlighted on glorp click ui
+
+mutation granted every 10 generations
+hunters have a chance to inherit eaten mutation
+7 mutations max, then no additions
+children get their parents mutations up to 5 for hunters, all for prey. all minus 1 if generational mutation for prey
 
 mutation mechanism will animalize glops - cold blooded lowers metabolism and speed
 mutations will affect behavior as well so behavior will need to be composable
 twins / triplets (more energy) / eggs (use less energy but easy food for predators) / photosynthetic (always full energy)
+vampiric: doesn't consume their food but fed half as much
+poison (prey): doesn't provide energy when eaten, (pred): ignore strength
+dig: can dig underground to avoid predators (predators): can eat dug prey
 
 biomes break the game up naturally instead of one full square. swamps / sand / mountains, slow creatures without mutations so that others likely die before reaching new habitable zone.
 

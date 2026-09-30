@@ -76,7 +76,7 @@ describe('step', () => {
     }
   })
 
-  it('pair-reproduces nearby well-fed hunters', () => {
+  it('starts a pregnancy that births after gestation', () => {
     const world = createWorld(2, 31)
     world.type[0] = GLORP_TYPE.hunter
     world.type[1] = GLORP_TYPE.hunter
@@ -90,6 +90,17 @@ describe('step', () => {
     world.cooldown[1] = 0
 
     step(world, 1 / 60)
+    expect(world.count).toBe(2)
+    expect(world.pregnant[0] + world.pregnant[1]).toBeGreaterThan(0)
+
+    // Keep both parents fed so they survive to term, and let the sim step.
+    let steps = 0
+    while (world.count < 3 && steps < 60 * 60) {
+      world.fed[0] = 90
+      world.fed[1] = 90
+      step(world, 1 / 60)
+      steps += 1
+    }
 
     expect(world.count).toBe(3)
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
