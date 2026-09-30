@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { computeSteering, updateBehavior } from '@/sim/behavior'
 import {
+  GESTATION_SECONDS,
   GLORP_RADIUS,
   HUNTER_KILL_FED,
   MATE_FED_MIN,
@@ -11,15 +12,18 @@ import {
   OFFSPRING_FED,
   STAMINA,
 } from '@/sim/config'
-import { applyDeath, applyEating, applyMetabolism } from '@/sim/lifecycle'
+import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
+import { applyEating } from '@/sim/predation'
+import { readLineage } from '@/sim/lineage'
 import { updateStamina } from '@/sim/motion'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import {
+  applyGestation,
   applyPairReproduction,
   applyReproduction,
   tickCooldowns,
 } from '@/sim/reproduction'
-import { TRAITS } from '@/sim/traits'
+import { TRAITS, TRAIT_KEYS } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -141,18 +145,28 @@ describe('applyPairReproduction', () => {
     return world
   }
 
-  it('inherits from two nearby, well-fed hunters', () => {
+  it('conceives without spawning, then births at term', () => {
     const world = setupPair()
 
     applyPairReproduction(world)
 
+    // Conception leaves only a pregnancy behind: no child is allocated.
+    expect(world.count).toBe(2)
+    const mother = world.pregnant[0] > 0 ? 0 : 1
+    const father = mother === 0 ? 1 : 0
+    expect(world.pregnant[mother]).toBeCloseTo(GESTATION_SECONDS)
+    expect(world.gestationFather[mother]).toBe(world.id[father])
+    expect(world.cooldown[0]).toBeCloseTo(10)
+    expect(world.cooldown[1]).toBeCloseTo(20)
+
+    applyGestation(world, GESTATION_SECONDS)
+
     expect(world.count).toBe(3)
+    expect(world.pregnant[mother]).toBe(0)
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
     expect(world.fed[2]).toBe(OFFSPRING_FED)
     expect(world.stamina[2]).toBeCloseTo(world.staminaMax[2])
     expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
-    expect(world.cooldown[0]).toBeCloseTo(10)
-    expect(world.cooldown[1]).toBeCloseTo(20)
     expect(world.speed[2]).toBeGreaterThanOrEqual(TRAITS.speed.min)
     expect(world.speed[2]).toBeLessThanOrEqual(TRAITS.speed.max)
     expect(world.staminaMax[2]).toBeGreaterThanOrEqual(TRAITS.staminaMax.min)
@@ -163,6 +177,40 @@ describe('applyPairReproduction', () => {
       TRAITS.reproCooldown.min,
     )
     expect(world.reproCooldown[2]).toBeLessThanOrEqual(TRAITS.reproCooldown.max)
+  })
+
+  it('loses the pregnancy if the mother is gone before term', () => {
+    const world = setupPair()
+    applyPairReproduction(world)
+    const mother = world.pregnant[0] > 0 ? 0 : 1
+
+    // Models a mother removed before the gestation tick (e.g. eaten); note that
+    // in `step` gestation runs before starvation death, so a starved mother
+    // would actually give birth first.
+    world.fed[mother] = 0
+    applyDeath(world)
+    applyGestation(world, GESTATION_SECONDS)
+
+    // Only the surviving parent remains; no orphan is born.
+    expect(world.count).toBe(1)
+  })
+
+  it('keeps using a dead father\u2019s genes at birth', () => {
+    const world = setupPair()
+    applyPairReproduction(world)
+    const mother = world.pregnant[0] > 0 ? 0 : 1
+    const father = mother === 0 ? 1 : 0
+    const motherId = world.id[mother]
+    const fatherId = world.id[father]
+
+    world.fed[father] = 0
+    applyDeath(world)
+    applyGestation(world, GESTATION_SECONDS)
+
+    expect(world.count).toBe(2)
+    const child = readLineage(world.lineage, world.id[1])
+    expect([child?.parentA, child?.parentB]).toEqual([motherId, fatherId])
+    expect(child?.generation).toBe(1)
   })
 
   it('trends toward the globally favorable parent across many matings', () => {
@@ -177,14 +225,23 @@ describe('applyPairReproduction', () => {
       world.fed[1] = 100
       world.cooldown[0] = 0
       world.cooldown[1] = 0
+      world.pregnant[0] = 0
+      world.pregnant[1] = 0
       world.speed[0] = 40
       world.speed[1] = 60
       world.metabolism[0] = 2
       world.metabolism[1] = 4
       world.reproCooldown[0] = 10
       world.reproCooldown[1] = 20
+      // Deferred birth reads the father's immutable lineage record, so mirror
+      // the values we just set onto the records for parents 0 and 1.
+      for (const key of TRAIT_KEYS) {
+        world.lineage.traits[key][0] = world[key][0]
+        world.lineage.traits[key][1] = world[key][1]
+      }
 
       applyPairReproduction(world)
+      applyGestation(world, GESTATION_SECONDS)
 
       speed += world.speed[2]
       metabolism += world.metabolism[2]
@@ -201,6 +258,8 @@ describe('applyPairReproduction', () => {
     far.x[1] = 100 + MATE_RANGE * 2
     applyPairReproduction(far)
     expect(far.count).toBe(2)
+    expect(far.pregnant[0]).toBe(0)
+    expect(far.pregnant[1]).toBe(0)
 
     const cooling = setupPair()
     cooling.cooldown[1] = 5
@@ -211,6 +270,8 @@ describe('applyPairReproduction', () => {
     hungry.fed[1] = MATE_FED_MIN
     applyPairReproduction(hungry)
     expect(hungry.count).toBe(2)
+    expect(hungry.pregnant[0]).toBe(0)
+    expect(hungry.pregnant[1]).toBe(0)
   })
 
   it('respects the population cap', () => {
@@ -227,6 +288,7 @@ describe('applyPairReproduction', () => {
     world.y[1] = 100
 
     applyPairReproduction(world)
+    applyGestation(world, GESTATION_SECONDS)
 
     expect(world.count).toBe(MAX_GLORPS)
   })
@@ -242,6 +304,8 @@ describe('applyEating', () => {
     world.x[1] = 100 + 2 * GLORP_RADIUS - 1
     world.y[1] = 100
     world.fed[0] = hunterFed
+    world.strength[0] = 6
+    world.strength[1] = 3
     return world
   }
 

@@ -11,5 +11,7 @@ export type RenderableWorld = {
   readonly radius: number
   readonly type: Uint8Array
   readonly fed: Float32Array
+  /** Gestation seconds remaining; 0 when not pregnant. */
+  readonly pregnant: Float32Array
   readonly grass: GrassField
 }

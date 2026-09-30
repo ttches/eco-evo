@@ -18,6 +18,14 @@ const STATE_COLUMNS = {
   directive: Uint8Array,
   /** Stable per-glorp identity, unaffected by swap-removal compaction. */
   id: Uint32Array,
+  /** Gestation seconds remaining; 0 when not pregnant. */
+  pregnant: Float32Array,
+  /** Stable id of the other parent while pregnant, else -1. */
+  gestationFather: Int32Array,
+  /** RNG seed captured at conception, used to derive the child at birth. */
+  gestationSeed: Uint32Array,
+  /** Seconds spent beside an eligible mate, for courtship dwell. */
+  mateContact: Float32Array,
 } as const
 
 type StateColumns = {
@@ -39,7 +47,10 @@ const COLUMN_KEYS: readonly ColumnKey[] = [
 ]
 
 export const createColumns = (): GlorpColumns => {
-  const columns: Record<string, Float32Array | Uint8Array | Uint32Array> = {}
+  const columns: Record<
+    string,
+    Float32Array | Uint8Array | Uint32Array | Int32Array
+  > = {}
   for (const [key, ArrayType] of Object.entries(STATE_COLUMNS)) {
     columns[key] = new ArrayType(MAX_GLORPS)
   }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
+import { GESTATION_SECONDS, GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
 import { readGlorpView } from '@/sim/inspect'
-import { applyDeath, applyEating } from '@/sim/lifecycle'
+import { applyDeath } from '@/sim/lifecycle'
+import { applyEating } from '@/sim/predation'
 import { DEATH_CAUSE, setName } from '@/sim/lineage'
 import {
+  applyGestation,
   applyPairReproduction,
   applyReproduction,
 } from '@/sim/reproduction'
@@ -69,12 +71,12 @@ describe('readGlorpView', () => {
     world.x[0] = 100
     world.x[1] = 100 + MATE_RANGE / 2
     applyPairReproduction(world)
+    applyGestation(world, GESTATION_SECONDS)
 
     const view = readGlorpView(world, world.id[2])
-    expect(view?.parents.map((parent) => parent.id)).toEqual([
-      world.id[0],
-      world.id[1],
-    ])
+    expect(
+      view?.parents.map((parent) => parent.id).sort((a, b) => a - b),
+    ).toEqual([world.id[0], world.id[1]].sort((a, b) => a - b))
   })
 
   it('marks a dead parent as not alive', () => {
@@ -106,6 +108,8 @@ describe('readGlorpView', () => {
     world.y[0] = 100
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
+    world.strength[0] = 6
+    world.strength[1] = 3
     const hunterId = world.id[0]
     const preyId = world.id[1]
     setName(world.lineage, hunterId, 'Hunter')

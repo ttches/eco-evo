@@ -16,6 +16,7 @@ export const TRAITS = {
   staminaMax: { min: 2, max: 8, favorsHigher: true },
   metabolism: { min: 1.5, max: 4.0, favorsHigher: false },
   reproCooldown: { min: 8, max: 25, favorsHigher: false },
+  strength: { min: 1, max: 10, favorsHigher: true },
 } as const satisfies Record<string, TraitSpec>
 
 export type TraitKey = keyof typeof TRAITS

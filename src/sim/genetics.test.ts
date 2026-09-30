@@ -14,7 +14,7 @@ import {
   prefersHigher,
   rollDirective,
 } from '@/sim/genetics'
-import { TRAIT_BIT, TRAITS } from '@/sim/traits'
+import { TRAIT_BIT, TRAIT_KEYS, TRAITS } from '@/sim/traits'
 
 const popcount = (value: number): number => {
   let count = 0
@@ -119,7 +119,7 @@ describe('mutateDirective', () => {
     for (let i = 0; i < samples; i += 1) {
       bits += popcount(mutateDirective(random, 0))
     }
-    const ratio = bits / (samples * 4)
+    const ratio = bits / (samples * TRAIT_KEYS.length)
     expect(ratio).toBeGreaterThan(DIRECTIVE_FLIP_CHANCE - 0.02)
     expect(ratio).toBeLessThan(DIRECTIVE_FLIP_CHANCE + 0.02)
   })
@@ -131,9 +131,9 @@ describe('mixDirective', () => {
     const samples = 20000
     let bits = 0
     for (let i = 0; i < samples; i += 1) {
-      bits += popcount(mixDirective(random, 0, 0b1111))
+      bits += popcount(mixDirective(random, 0, (1 << TRAIT_KEYS.length) - 1))
     }
-    const ratio = bits / (samples * 4)
+    const ratio = bits / (samples * TRAIT_KEYS.length)
     expect(ratio).toBeGreaterThan(0.42)
     expect(ratio).toBeLessThan(0.58)
   })
@@ -142,7 +142,7 @@ describe('mixDirective', () => {
 describe('rollDirective', () => {
   it('only ever sets known trait bits', () => {
     const random = new XorShift32(13)
-    const valid = TRAIT_BIT.speed | TRAIT_BIT.staminaMax | TRAIT_BIT.metabolism | TRAIT_BIT.reproCooldown
+    const valid = TRAIT_KEYS.reduce((mask, key) => mask | TRAIT_BIT[key], 0)
     for (let i = 0; i < 500; i += 1) {
       const directive = rollDirective(random)
       expect(directive & ~valid).toBe(0)

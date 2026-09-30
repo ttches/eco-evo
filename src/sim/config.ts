@@ -31,6 +31,37 @@ export const MATE_RANGE = 48;
 /** Minimum fed each parent needs to pair-reproduce. */
 export const MATE_FED_MIN = HUNGER;
 
+/**
+ * When false, hunters reproduce only by mating and never by asexual
+ * duplication. Prey are unaffected.
+ */
+export const HUNTER_ASEXUAL = true;
+
+/** Energy each parent spends at conception. */
+export const MATE_ENERGY_COST = 0;
+
+/**
+ * Seconds a pregnant glorp carries its offspring before it is born. At
+ * conception nothing is allocated: the child does not exist until this timer
+ * expires. Zero means the child is born immediately.
+ */
+export const GESTATION_SECONDS = 45;
+
+/** Top-speed multiplier applied while pregnant. */
+export const PREGNANT_SPEED_FACTOR = 0.7;
+
+/** Whether a pregnant glorp may sprint. */
+export const PREGNANT_CAN_SPRINT = true;
+
+/**
+ * Seconds a pair must stay within `MATE_RANGE` before conceiving. Zero mates
+ * on first contact, as before.
+ */
+export const MATE_CONTACT_SECONDS = 0;
+
+/** Well-fed, off-cooldown hunters actively steer toward eligible mates. */
+export const MATE_SEEKING = false;
+
 /** Chance a pair-reproduced child inherits the more favorable parent's value. */
 export const INHERIT_BEST_CHANCE = 0.75;
 
@@ -109,3 +140,25 @@ export const PREY_ENERGY_PER_SECOND = 18;
 
 /** Energy gained from a successful hunt. */
 export const HUNTER_KILL_FED = 30;
+
+/** Starving hunters may prey on other hunters when this is true. */
+export const CANNIBALISM = true;
+
+/** Below this fed a hunter will prey on other hunters. */
+export const CANNIBAL_HUNGER = 20;
+
+/** Energy gained from eating another hunter. */
+export const CANNIBAL_KILL_FED = 15;
+
+/**
+ * When true, predation is gated by strength: a hunter can eat a glorp only if
+ * its floored `strength` tier is within `STRENGTH_EDGE` of the target's.
+ */
+export const STRENGTH_GATES_PREDATION = true;
+
+/**
+ * How many strength tiers above its own a hunter can still eat. Zero means it
+ * must match or exceed the prey's tier. The default of 4 keeps the gate
+ * meaningful without starving low-tier hunters early (see sim sweeps).
+ */
+export const STRENGTH_EDGE = 4;

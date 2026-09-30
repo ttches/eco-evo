@@ -2,11 +2,16 @@ import {
   HUNGER,
   HUNTER_SIGHT,
   HUNTER_SPRINT_MULTIPLIER,
+  MATE_SEEKING,
   MOVEMENT,
+  PREGNANT_CAN_SPRINT,
+  PREGNANT_SPEED_FACTOR,
   PREY_FLEE,
   STEER_RATE,
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
+import { isEligibleMate } from '@/sim/mate'
+import { canEatTier, strengthTier } from '@/sim/predation'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { steerFlee } from '@/sim/steering/context-steering'
@@ -30,10 +35,17 @@ const walkSpeed = (world: World, index: number): number =>
 const canSprint = (world: World, index: number): boolean =>
   world.stamina[index] > 0
 
-/** Hungry hunters with stamina left sprint at the nearest prey in sight. */
+/** Hungry hunters with stamina left sprint at the nearest edible prey in sight. */
 const chasePrey: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER || !canSprint(world, index)) return null
-  const prey = nearestOfType(world, index, GLORP_TYPE.prey, HUNTER_SIGHT)
+  const hunterTier = strengthTier(world, index)
+  const prey = nearestOfType(
+    world,
+    index,
+    GLORP_TYPE.prey,
+    HUNTER_SIGHT,
+    (candidate) => canEatTier(world, hunterTier, candidate),
+  )
   if (prey < 0) return null
   return steerToward(
     world,
@@ -78,10 +90,57 @@ const seekGrass: Drive = (world, index, dt) => {
   )
 }
 
+/** Well-fed, off-cooldown hunters walk toward the nearest eligible mate. */
+const seekMate: Drive = (world, index, dt) => {
+  if (!MATE_SEEKING) return null
+  if (world.fed[index] < HUNGER) return null
+  if (!isEligibleMate(world, index)) return null
+  const mate = nearestOfType(
+    world,
+    index,
+    GLORP_TYPE.hunter,
+    HUNTER_SIGHT,
+    (candidate) => isEligibleMate(world, candidate),
+  )
+  if (mate < 0) return null
+  return steerToward(
+    world,
+    index,
+    world.x[mate],
+    world.y[mate],
+    walkSpeed(world, index),
+    false,
+    dt,
+  )
+}
+
 /** Drives per glorp type, highest priority first. Wandering is the fallback. */
 const DRIVES: Readonly<Record<GlorpType, readonly Drive[]>> = {
   [GLORP_TYPE.prey]: [fleeHunters, seekGrass],
-  [GLORP_TYPE.hunter]: [chasePrey],
+  [GLORP_TYPE.hunter]: [chasePrey, seekMate],
+}
+
+/** Pick the steering one glorp would take with no pregnancy modifier. */
+const decideSteering = (world: World, index: number, dt: number): Steering => {
+  for (const drive of DRIVES[world.type[index] as GlorpType]) {
+    const steering = drive(world, index, dt)
+    if (steering) return steering
+  }
+  return steerWander(world, index, walkSpeed(world, index), dt)
+}
+
+/** Slow a pregnant glorp down (and optionally stop it sprinting). */
+const applyPregnancy = (
+  world: World,
+  index: number,
+  steering: Steering,
+): Steering => {
+  if (world.pregnant[index] <= 0) return steering
+  return {
+    x: steering.x * PREGNANT_SPEED_FACTOR,
+    y: steering.y * PREGNANT_SPEED_FACTOR,
+    sprint: PREGNANT_CAN_SPRINT ? steering.sprint : false,
+  }
 }
 
 /** Decide where one glorp wants to go this step. */
@@ -89,13 +148,7 @@ export const computeSteering = (
   world: World,
   index: number,
   dt: number,
-): Steering => {
-  for (const drive of DRIVES[world.type[index] as GlorpType]) {
-    const steering = drive(world, index, dt)
-    if (steering) return steering
-  }
-  return steerWander(world, index, walkSpeed(world, index), dt)
-}
+): Steering => applyPregnancy(world, index, decideSteering(world, index, dt))
 
 /** Steer every glorp's velocity toward its desired velocity. */
 export const updateBehavior = (world: World, dt: number): void => {

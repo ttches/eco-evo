@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GESTATION_SECONDS, PREGNANT_SPEED_FACTOR } from '@/sim/config'
 import { computeSteering } from '@/sim/behavior'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { GLORP_TYPE } from '@/sim/types'
@@ -58,6 +59,8 @@ describe('hunter steering', () => {
     world.y[1] = 100
     world.fed[0] = 50
     world.stamina[0] = 5
+    world.strength[0] = 6
+    world.strength[1] = 3
 
     rebuildSpatialGrid(world)
     const steering = computeSteering(world, 0, DT)
@@ -82,5 +85,22 @@ describe('hunter steering', () => {
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.sprint).toBe(false)
+  })
+})
+
+describe('pregnancy', () => {
+  it('slows a pregnant glorp by the configured factor', () => {
+    const world = createWorld(1, 5)
+    world.type[0] = GLORP_TYPE.hunter
+    world.fed[0] = 100
+    rebuildSpatialGrid(world)
+    const normal = computeSteering(world, 0, DT)
+
+    world.pregnant[0] = GESTATION_SECONDS
+    const pregnant = computeSteering(world, 0, DT)
+
+    expect(Math.hypot(pregnant.x, pregnant.y)).toBeCloseTo(
+      Math.hypot(normal.x, normal.y) * PREGNANT_SPEED_FACTOR,
+    )
   })
 })

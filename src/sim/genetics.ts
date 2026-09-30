@@ -94,10 +94,11 @@ const mutateInto = (
   child: number,
   key: TraitKey,
   value: number,
+  random: XorShift32,
 ): void => {
   const { min, max } = TRAITS[key]
   const higher = prefersHigher(world.directive[child], TRAIT_BIT[key])
-  world[key][child] = mutateTrait(world.random, value, min, max, higher)
+  world[key][child] = mutateTrait(random, value, min, max, higher)
 }
 
 /**
@@ -110,27 +111,29 @@ export const cloneTraits = (
   child: number,
 ): void => {
   for (const key of TRAIT_KEYS) {
-    mutateInto(world, child, key, world[key][parent])
+    mutateInto(world, child, key, world[key][parent], world.random)
   }
 }
 
 /**
- * Paired inheritance: each trait is taken from the globally favorable parent
- * (usually), then mutated toward the child's directive. Set the directive first.
+ * Paired inheritance from explicit parent trait values, for cases where the
+ * parents are no longer live (e.g. deferred birth after a father has died).
+ * Set the child's directive first.
  */
-export const crossTraits = (
+export const crossTraitsFrom = (
   world: World,
-  a: number,
-  b: number,
   child: number,
+  valuesA: Readonly<Record<TraitKey, number>>,
+  valuesB: Readonly<Record<TraitKey, number>>,
+  random: XorShift32,
 ): void => {
   for (const key of TRAIT_KEYS) {
     const value = inheritTrait(
-      world.random,
-      world[key][a],
-      world[key][b],
+      random,
+      valuesA[key],
+      valuesB[key],
       TRAITS[key].favorsHigher,
     )
-    mutateInto(world, child, key, value)
+    mutateInto(world, child, key, value, random)
   }
 }

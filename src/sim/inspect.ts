@@ -22,6 +22,8 @@ export type GlorpLiveState = {
   readonly fed: number
   readonly stamina: number
   readonly cooldown: number
+  /** Gestation seconds remaining; 0 when not pregnant. */
+  readonly pregnant: number
   readonly x: number
   readonly y: number
 }
@@ -82,6 +84,7 @@ export const readGlorpView = (world: World, id: number): GlorpView | null => {
           fed: world.fed[index],
           stamina: world.stamina[index],
           cooldown: world.cooldown[index],
+          pregnant: world.pregnant[index],
           x: world.x[index],
           y: world.y[index],
         }

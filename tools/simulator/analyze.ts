@@ -42,6 +42,7 @@ export type SampleRow = {
   meanStamina: number
   meanMetabolism: number
   meanReproCooldown: number
+  meanStrength: number
   meanGeneration: number
   grassMean: number
 }
@@ -160,6 +161,7 @@ export const sampleWorld = (world: World): SampleRow => {
     meanStamina: columnMean(world.staminaMax, count),
     meanMetabolism: columnMean(world.metabolism, count),
     meanReproCooldown: columnMean(world.reproCooldown, count),
+    meanStrength: columnMean(world.strength, count),
     meanGeneration: count === 0 ? 0 : generationSum / count,
     grassMean: grass.length === 0 ? 0 : grassSum / grass.length,
   }

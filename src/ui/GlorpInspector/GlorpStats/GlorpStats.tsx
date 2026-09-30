@@ -5,6 +5,7 @@ import {
   Gauge,
   HeartPulse,
   MapPin,
+  Shield,
   Skull,
   Utensils,
   Zap,
@@ -73,6 +74,7 @@ const TRAIT_DISPLAY = {
   metabolism: { icon: <Gauge />, label: 'Metabolism' },
   staminaMax: { icon: <Activity />, label: 'Stamina max' },
   reproCooldown: { icon: <HeartPulse />, label: 'Repro cooldown' },
+  strength: { icon: <Shield />, label: 'Strength' },
 } satisfies Record<TraitKey, TraitDisplay>
 
 const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][]
@@ -117,6 +119,13 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => (
       ))}
       {glorp.live ? (
         <>
+          {glorp.live.pregnant > 0 ? (
+            <Stat
+              icon={<HeartPulse />}
+              label="Pregnant"
+              value={`${glorp.live.pregnant.toFixed(1)}s`}
+            />
+          ) : null}
           <Stat
             icon={<Utensils />}
             label="Repro status"
