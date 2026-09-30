@@ -17,6 +17,14 @@ import {
   type GlorpView,
 } from '@/sim/inspect'
 import { setName } from '@/sim/lineage'
+import {
+  buildLeaderboard,
+  summarizePopulation,
+  traitExtremes,
+  type GlorpStat,
+  type PopulationSummary,
+  type TraitExtreme,
+} from '@/sim/leaderboard'
 import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
@@ -24,13 +32,17 @@ import { createWorld, step, type World } from '@/sim/world'
 import Brand from '@/ui/FloatingUI/Brand/Brand'
 import ControlDock from '@/ui/FloatingUI/ControlDock/ControlDock'
 import SettingsPanel from '@/ui/FloatingUI/SettingsPanel/SettingsPanel'
+import StatsPanel from '@/ui/FloatingUI/StatsPanel/StatsPanel'
 import TopActions from '@/ui/FloatingUI/TopActions/TopActions'
 import GlorpInspector from '@/ui/GlorpInspector/GlorpInspector'
 import Stage from '@/ui/Stage/Stage'
 import { useCanvasControls } from '@/ui/useCanvasControls'
 
-/** How often the inspector refreshes from the live simulation, in ms. */
-const INSPECTOR_INTERVAL_MS = 100
+/** How often the floating UI refreshes from the live simulation, in ms. */
+const UI_REFRESH_MS = 100
+
+/** How often the open stats panel rebuilds its leaderboard, in ms. */
+const STATS_INTERVAL_MS = 500
 
 /** Extra screen-space tolerance (px) for clicking a small glorp. */
 const PICK_TOLERANCE_PX = 8
@@ -55,6 +67,15 @@ const App = () => {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [selected, setSelected] = useState<GlorpView | null>(null)
   const [canGoBack, setCanGoBack] = useState(false)
+  const [statsOpen, setStatsOpen] = useState(false)
+  const [stats, setStats] = useState<readonly GlorpStat[]>([])
+  const [summary, setSummary] = useState<PopulationSummary>(() =>
+    summarizePopulation(world),
+  )
+  const [extremes, setExtremes] = useState<readonly TraitExtreme[]>(() =>
+    traitExtremes(world),
+  )
+  const statsOpenRef = useRef(false)
 
   const handleCameraChange = useCallback(() => {
     needsDrawRef.current = true
@@ -183,6 +204,36 @@ const App = () => {
   const spawnPrey = useCallback(() => spawn(GLORP_TYPE.prey), [spawn])
   const spawnPredator = useCallback(() => spawn(GLORP_TYPE.hunter), [spawn])
 
+  /** Stable accessor so the brand clock can poll sim time without App churn. */
+  const getSimTime = useCallback(() => world.time, [world])
+
+  const refreshStats = useCallback(() => {
+    setStats(buildLeaderboard(world))
+    setSummary(summarizePopulation(world))
+    setExtremes(traitExtremes(world))
+  }, [world])
+
+  const toggleStats = useCallback(() => {
+    const next = !statsOpenRef.current
+    statsOpenRef.current = next
+    if (next) {
+      setSettingsOpen(false)
+      refreshStats()
+    }
+    setStatsOpen(next)
+  }, [refreshStats])
+
+  const closeStats = useCallback(() => {
+    statsOpenRef.current = false
+    setStatsOpen(false)
+  }, [])
+
+  const openSettings = useCallback(() => {
+    statsOpenRef.current = false
+    setStatsOpen(false)
+    setSettingsOpen(true)
+  }, [])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -195,7 +246,8 @@ const App = () => {
     cameraRef.current = createCamera(initial)
     handleCameraChange()
     const renderer = new Renderer(canvas, initial)
-    let lastInspectorUpdate = 0
+    let lastUiUpdate = 0
+    let lastStatsUpdate = 0
 
     // Rotations and window resizes reshape the view, never the world.
     const resizeObserver = new ResizeObserver(() => {
@@ -224,12 +276,20 @@ const App = () => {
         const selectedIndex = id === null ? -1 : findGlorpById(world, id)
         renderer.draw(world, cameraRef.current, selectedIndex)
 
-        if (id === null) return
+        if (id === null && !statsOpenRef.current) return
         const now = performance.now()
-        if (now - lastInspectorUpdate < INSPECTOR_INTERVAL_MS) return
-        lastInspectorUpdate = now
+        if (now - lastUiUpdate < UI_REFRESH_MS) return
+        lastUiUpdate = now
         // Dead glorps are still shown, read from their lineage record.
-        setSelected(readGlorpView(world, id))
+        if (id !== null) setSelected(readGlorpView(world, id))
+        // The all-time board scans the whole lineage log, so throttle it.
+        if (
+          statsOpenRef.current &&
+          now - lastStatsUpdate >= STATS_INTERVAL_MS
+        ) {
+          lastStatsUpdate = now
+          refreshStats()
+        }
       },
     })
     loop.start()
@@ -239,7 +299,7 @@ const App = () => {
       resizeObserver.disconnect()
       renderer.dispose()
     }
-  }, [world, handleCameraChange])
+  }, [world, handleCameraChange, refreshStats])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -285,8 +345,11 @@ const App = () => {
       />
       {showInterface && (
         <>
-          <Brand />
-          <TopActions onOpenSettings={() => setSettingsOpen(true)} />
+          <Brand getTime={getSimTime} />
+          <TopActions
+            onOpenStats={toggleStats}
+            onOpenSettings={openSettings}
+          />
           <ControlDock
             zoom={zoom}
             onZoomIn={() => zoomBy(1.25)}
@@ -299,6 +362,14 @@ const App = () => {
           <SettingsPanel
             open={settingsOpen}
             onClose={() => setSettingsOpen(false)}
+          />
+          <StatsPanel
+            open={statsOpen}
+            onClose={closeStats}
+            stats={stats}
+            summary={summary}
+            extremes={extremes}
+            onNavigate={navigateTo}
           />
         </>
       )}

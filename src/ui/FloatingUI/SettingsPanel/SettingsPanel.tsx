@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import { useEscapeKey } from '@/ui/useEscapeKey'
 import styles from './SettingsPanel.module.css'
 
 type SettingsPanelProps = {
@@ -8,14 +8,7 @@ type SettingsPanelProps = {
 }
 
 const SettingsPanel = ({ open, onClose }: SettingsPanelProps) => {
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  useEscapeKey(open, onClose)
 
   if (!open) return null
 

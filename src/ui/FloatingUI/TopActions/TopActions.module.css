@@ -14,7 +14,7 @@
     inset 0 1px 0 rgb(255 255 255 / 7%);
 }
 
-.settingsTrigger {
+.actionTrigger {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -29,28 +29,28 @@
   transition: background 140ms ease;
 }
 
-.settingsTrigger:hover {
+.actionTrigger:hover {
   background: var(--accent);
 }
 
-.settingsTrigger svg {
+.actionTrigger svg {
   width: 0.95rem;
   height: 0.95rem;
 }
 
 @media (max-width: 700px), (pointer: coarse) {
-  .settingsTrigger {
+  .actionTrigger {
     justify-content: center;
     width: 2.75rem;
     height: 2.75rem;
     padding: 0;
   }
 
-  .settingsTrigger span {
+  .actionTrigger span {
     display: none;
   }
 
-  .settingsTrigger svg {
+  .actionTrigger svg {
     width: 1.2rem;
     height: 1.2rem;
   }
