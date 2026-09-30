@@ -44,9 +44,6 @@ describe('traitValue', () => {
     expect(traitValue('speed', TRAIT_MAX)).toBeGreaterThan(
       traitValue('speed', TRAIT_MIN),
     )
-    expect(traitValue('efficiency', TRAIT_MAX)).toBeLessThan(
-      traitValue('efficiency', TRAIT_MIN),
-    )
     expect(traitValue('fertility', TRAIT_MAX)).toBeLessThan(
       traitValue('fertility', TRAIT_MIN),
     )

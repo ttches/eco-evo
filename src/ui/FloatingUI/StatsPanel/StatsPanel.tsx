@@ -60,7 +60,6 @@ const STATUSES: readonly { value: StatusFilter; label: string }[] = [
 const TRAIT_LABEL: Record<TraitKey, string> = {
   speed: 'Fastest',
   staminaMax: 'Most stamina',
-  efficiency: 'Most efficient',
   fertility: 'Most fertile',
   strength: 'Strongest',
 }

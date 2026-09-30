@@ -9,7 +9,7 @@ export const DEFAULT_SEED = 0x00c0ffee;
 /** Population the world starts with. */
 export const START_PREY = 120;
 
-export const START_HUNTERS = 8;
+export const START_HUNTERS = 10;
 
 /** Initial energy every glorp spawns with, as a percentage of satiation. */
 export const FED_START = 50;
@@ -18,6 +18,9 @@ export const FED_START = 50;
 export const OFFSPRING_FED = 50;
 
 export const FED_MAX = 100;
+
+/** Energy every glorp burns per second, whatever its traits. */
+export const METABOLISM = 2.75;
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
 export const HUNGER = 70;
@@ -29,7 +32,7 @@ export const HUNGER = 70;
 export const MATE_RANGE = 48;
 
 /** Minimum fed each parent needs to pair-reproduce. */
-export const MATE_FED_MIN = HUNGER;
+export const MATE_FED_MIN = 50;
 
 /**
  * When false, hunters reproduce only by mating and never by asexual
@@ -45,7 +48,7 @@ export const MATE_ENERGY_COST = 0;
  * conception nothing is allocated: the child does not exist until this timer
  * expires. Zero means the child is born immediately.
  */
-export const GESTATION_SECONDS = 45;
+export const GESTATION_SECONDS = 30;
 
 /** Top-speed multiplier applied while pregnant. */
 export const PREGNANT_SPEED_FACTOR = 0.7;
@@ -60,15 +63,15 @@ export const PREGNANT_CAN_SPRINT = true;
 export const MATE_CONTACT_SECONDS = 0;
 
 /** Well-fed, off-cooldown hunters actively steer toward eligible mates. */
-export const MATE_SEEKING = false;
+export const MATE_SEEKING = true;
 
 /**
  * Levels a glorp of each type starts from before `SPAWN_SHUFFLES`. Must sum to
  * the trait budget (any difference is rebalanced at random).
  */
 export const SPAWN_BASE = {
-  prey: { speed: 4, staminaMax: 4, efficiency: 4, fertility: 4, strength: 4 },
-  hunter: { speed: 4, staminaMax: 4, efficiency: 4, fertility: 4, strength: 4 },
+  prey: { speed: 4, staminaMax: 4, fertility: 4, strength: 4 },
+  hunter: { speed: 4, staminaMax: 4, fertility: 4, strength: 4 },
 } as const;
 
 /** Point transfers applied to an all-base build when a glorp is first spawned. */
@@ -141,9 +144,8 @@ export const GRASS_TILE = 32;
 /**
  * Grass regrows at this fraction per second, capped at 1. Total regrowth is
  * `tiles * GRASS_REGROW` (~33 grass/s across the 120x68 grid), which sets the
- * carrying capacity: prey need ~`metabolism / PREY_ENERGY_PER_SECOND` grass per second (metabolism
- * comes from the `efficiency` level), so this sustains roughly 400 prey before
- * food becomes limiting.
+ * carrying capacity: prey need ~`METABOLISM / PREY_ENERGY_PER_SECOND` grass per second, so this
+ * sustains roughly 400 prey before food becomes limiting.
  */
 export const GRASS_REGROW = 0.004;
 

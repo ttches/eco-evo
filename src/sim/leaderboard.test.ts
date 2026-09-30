@@ -123,7 +123,6 @@ describe('sortStats', () => {
     traits: {
       speed: value,
       staminaMax: value,
-      efficiency: value,
       fertility: value,
       strength: value,
     },
@@ -144,7 +143,7 @@ describe('sortStats', () => {
   it('sorts every trait highest first', () => {
     const entries = [stat(0, 3), stat(1, 9), stat(2, 9)]
     expect(sortStats(entries, 'speed').map((e) => e.id)).toEqual([1, 2, 0])
-    expect(sortStats(entries, 'efficiency').map((e) => e.id)).toEqual([1, 2, 0])
+    expect(sortStats(entries, 'strength').map((e) => e.id)).toEqual([1, 2, 0])
   })
 })
 
@@ -161,7 +160,6 @@ describe('filterStats', () => {
     traits: {
       speed: 0,
       staminaMax: 0,
-      efficiency: 0,
       fertility: 0,
       strength: 0,
     },
@@ -215,13 +213,13 @@ describe('traitExtremesFromStats', () => {
     const world = createWorld(2, 7)
     world.lineage.traits.speed[0] = 3
     world.lineage.traits.speed[1] = 7
-    world.lineage.traits.efficiency[0] = 2
-    world.lineage.traits.efficiency[1] = 5
+    world.lineage.traits.strength[0] = 2
+    world.lineage.traits.strength[1] = 5
 
     const extremes = traitExtremesFromStats(buildLeaderboard(world))
     const byKey = Object.fromEntries(extremes.map((e) => [e.key, e]))
     expect(byKey.speed.id).toBe(1)
-    expect(byKey.efficiency.id).toBe(1)
+    expect(byKey.strength.id).toBe(1)
   })
 
   it('breaks trait ties toward the lower id', () => {

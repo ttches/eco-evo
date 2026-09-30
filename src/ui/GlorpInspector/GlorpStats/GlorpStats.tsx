@@ -2,7 +2,6 @@ import { type ReactNode } from 'react'
 import {
   Activity,
   CalendarClock,
-  Gauge,
   HeartPulse,
   MapPin,
   Shield,
@@ -71,7 +70,6 @@ type TraitDisplay = {
 /** How each trait is shown, in display order. Every trait must have an entry. */
 const TRAIT_DISPLAY = {
   speed: { icon: <Zap />, label: 'Speed' },
-  efficiency: { icon: <Gauge />, label: 'Efficiency' },
   staminaMax: { icon: <Activity />, label: 'Stamina max' },
   fertility: { icon: <HeartPulse />, label: 'Fertility' },
   strength: { icon: <Shield />, label: 'Strength' },

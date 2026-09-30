@@ -7,6 +7,7 @@ import {
   MATE_FED_MIN,
   MATE_RANGE,
   MAX_GLORPS,
+  METABOLISM,
   OFFSPRING_FED,
   STAMINA,
 } from '@/sim/config'
@@ -36,11 +37,11 @@ const levelTotal = (world: ReturnType<typeof createWorld>, index: number) =>
   TRAIT_KEYS.reduce((sum, key) => sum + world[key][index], 0)
 
 describe('applyMetabolism', () => {
-  it('drains fed by the metabolism its efficiency level maps to', () => {
+  it('drains fed by the fixed metabolism', () => {
     const world = createWorld(4, 5)
     const before = world.fed[0]
     applyMetabolism(world, 1)
-    expect(world.fed[0]).toBeCloseTo(before - traitValue('efficiency', world.efficiency[0]))
+    expect(world.fed[0]).toBeCloseTo(before - METABOLISM)
   })
 })
 
@@ -122,8 +123,8 @@ describe('applyReproduction', () => {
 describe('applyPairReproduction', () => {
   /** Two distinct, in-budget builds so a child's blend is observable. */
   const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
-    const a = { speed: 6, staminaMax: 2, efficiency: 5, fertility: 3, strength: 4 }
-    const b = { speed: 2, staminaMax: 6, efficiency: 3, fertility: 5, strength: 4 }
+    const a = { speed: 6, staminaMax: 2, fertility: 3, strength: 5 }
+    const b = { speed: 2, staminaMax: 6, fertility: 5, strength: 3 }
     for (const key of TRAIT_KEYS) {
       world[key][0] = a[key]
       world[key][1] = b[key]

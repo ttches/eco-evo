@@ -24,8 +24,6 @@ type TraitSpec = {
 export const TRAITS = {
   speed: { atMin: 30, atMax: 70 },
   staminaMax: { atMin: 2, atMax: 8 },
-  /** Level maps to metabolism (energy drained per second): more is cheaper. */
-  efficiency: { atMin: 4.0, atMax: 1.5 },
   /** Level maps to reproduction cooldown in seconds: more is faster. */
   fertility: { atMin: 25, atMax: 8 },
   strength: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
