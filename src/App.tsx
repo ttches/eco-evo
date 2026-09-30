@@ -272,10 +272,8 @@ const App = () => {
     handleCameraChange()
   }
 
-  const overlay = showInterface ? (
+  const overlay = (
     <>
-      <Brand />
-      <TopActions onOpenSettings={() => setSettingsOpen(true)} />
       <GlorpInspector
         key={selected?.id ?? 'none'}
         glorp={selected}
@@ -285,21 +283,27 @@ const App = () => {
         onNavigate={navigateTo}
         onRename={renameGlorp}
       />
-      <ControlDock
-        zoom={zoom}
-        onZoomIn={() => zoomBy(1.25)}
-        onZoomOut={() => zoomBy(0.8)}
-        onFitView={fitView}
-        onHideInterface={() => setShowInterface(false)}
-        onSpawnPrey={spawnPrey}
-        onSpawnPredator={spawnPredator}
-      />
-      <SettingsPanel
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
+      {showInterface && (
+        <>
+          <Brand />
+          <TopActions onOpenSettings={() => setSettingsOpen(true)} />
+          <ControlDock
+            zoom={zoom}
+            onZoomIn={() => zoomBy(1.25)}
+            onZoomOut={() => zoomBy(0.8)}
+            onFitView={fitView}
+            onHideInterface={() => setShowInterface(false)}
+            onSpawnPrey={spawnPrey}
+            onSpawnPredator={spawnPredator}
+          />
+          <SettingsPanel
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+          />
+        </>
+      )}
     </>
-  ) : null
+  )
 
   return <Stage canvasRef={canvasRef} overlay={overlay} />
 }
