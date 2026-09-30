@@ -3,6 +3,7 @@ import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
 import { GlorpLayer } from '@/render/glorp-layer'
 import { GrassLayer } from '@/render/grass-layer'
 import { GroundPass } from '@/render/ground'
+import { HeartLayer } from '@/render/heart-layer'
 import { WORLD_BACKGROUND } from '@/render/palette'
 import { SelectionRing } from '@/render/selection-ring'
 import type { RenderableWorld } from '@/sim/view'
@@ -14,6 +15,7 @@ export class Renderer {
   private readonly ground = new GroundPass()
   private readonly grass = new GrassLayer()
   private readonly glorps = new GlorpLayer()
+  private readonly hearts = new HeartLayer()
   private readonly selection = new SelectionRing()
 
   public constructor(canvas: HTMLCanvasElement, viewport: Viewport) {
@@ -36,6 +38,7 @@ export class Renderer {
       this.ground.mesh,
       this.grass.mesh,
       this.glorps.mesh,
+      this.hearts.mesh,
       this.selection.mesh,
     )
   }
@@ -59,6 +62,7 @@ export class Renderer {
 
     this.grass.update(world)
     this.glorps.update(world, bounds)
+    this.hearts.update(world, bounds, camera.zoom)
     this.selection.update(world, selectedIndex)
 
     this.renderer.render(this.scene, this.camera)
@@ -68,6 +72,7 @@ export class Renderer {
     this.ground.dispose()
     this.grass.dispose()
     this.glorps.dispose()
+    this.hearts.dispose()
     this.selection.dispose()
     this.renderer.dispose()
   }

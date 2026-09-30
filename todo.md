@@ -1,6 +1,4 @@
-hunter mate seeking heart animation
-
-clicking glorp from stats should center camera on them
+stamina while in pursuit or running away needs to be rethought. it just stays at 0 while they jog
 
 research how stats work and better math algos that will give us more variance in traits and less average. consider reproduction, evolutionary directive
 

@@ -72,9 +72,18 @@ export const fitCamera = (viewport: Viewport): Camera =>
 export const resizeCamera = (camera: Camera, viewport: Viewport): Camera =>
   clampCamera({ ...camera, viewport })
 
-/** Center the camera on a world point, keeping its zoom and world clamps. */
-export const centerCamera = (camera: Camera, x: number, y: number): Camera =>
-  clampCamera({ ...camera, x, y })
+/**
+ * Center on a world point and zoom in to at least `zoom`, so a one-shot jump
+ * from a zoomed-out view actually brings the target into sight. A closer
+ * current zoom is kept.
+ */
+export const focusCamera = (
+  camera: Camera,
+  x: number,
+  y: number,
+  zoom: number,
+): Camera =>
+  clampCamera({ ...camera, x, y, zoom: Math.max(camera.zoom, zoom) })
 
 /** World-space rectangle currently visible through the viewport. */
 export const viewBounds = (camera: Camera): ViewBounds => {

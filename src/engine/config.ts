@@ -28,6 +28,11 @@ export const CAMERA = {
    */
   startView: { width: WORLD.width / 2, height: WORLD.height / 2 },
   maxZoom: 4,
+  /**
+   * Zoom a one-shot focus (stats or lineage link) raises the camera to at most.
+   * Keeps the centered glorp large enough to read when the view was zoomed out.
+   */
+  focusZoom: 0.5,
   wheelSensitivity: 0.0015,
   /** Extra world units rendered beyond the view edge, to avoid pop-in. */
   cullMargin: 32,

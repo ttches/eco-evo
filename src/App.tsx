@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  centerCamera,
   createCamera,
   fitCamera,
+  focusCamera,
   resizeCamera,
   viewportFor,
   zoomAt,
   type Camera,
 } from '@/engine/camera'
-import { FIXED_STEP } from '@/engine/config'
+import { CAMERA, FIXED_STEP } from '@/engine/config'
 import { createLoop } from '@/engine/loop'
 import { Renderer } from '@/render/renderer'
 import {
@@ -81,8 +81,8 @@ const App = () => {
   }, [])
 
   /**
-   * Show a glorp. `center` is set only when following a lineage link, so a
-   * direct click on the world never yanks the camera.
+   * Show a glorp. `center` is set only when following a lineage or stats link,
+   * so a direct click on the world never yanks the camera.
    */
   const showGlorp = useCallback(
     (id: number, center: boolean) => {
@@ -93,10 +93,11 @@ const App = () => {
       if (!center) return
       const index = findGlorpById(world, id)
       if (index < 0) return
-      cameraRef.current = centerCamera(
+      cameraRef.current = focusCamera(
         cameraRef.current,
         world.x[index],
         world.y[index],
+        CAMERA.focusZoom,
       )
       handleCameraChange()
     },
@@ -116,8 +117,9 @@ const App = () => {
   const navigateTo = useCallback(
     (id: number) => {
       const current = selectedIdRef.current
-      if (current === id) return
-      if (current !== null) historyRef.current.push(current)
+      // Re-focusing the current glorp still re-centers the camera, but a
+      // repeat click should not stack duplicate history entries.
+      if (current !== null && current !== id) historyRef.current.push(current)
       setCanGoBack(historyRef.current.length > 0)
       showGlorp(id, true)
     },
