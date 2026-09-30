@@ -39,7 +39,10 @@ export type SampleRow = {
   aliveTotal: number
   everBorn: number
   meanSpeed: number
-  meanStamina: number
+  meanStaminaMax: number
+  meanLiveStamina: number
+  sprintDutyCycle: number
+  exhaustedFraction: number
   meanMetabolism: number
   meanReproCooldown: number
   meanStrength: number
@@ -69,6 +72,17 @@ export type RunAnalysis = {
     generationTimeMean: number | null
     /** Mean offspring produced per individual that ever reproduced. */
     offspringPerParentMean: number
+  }
+  stamina: {
+    /** Cumulative 0->1 sprint transitions across the run. */
+    sprintStarts: number
+    /** Cumulative times a glorp entered exhaustion. */
+    exhaustionEvents: number
+    /**
+     * Sprint transitions per glorp per simulated second. High values indicate
+     * the old per-frame sprint/walk flicker; low values are distinct bursts.
+     */
+    sprintStartsPerGlorpSecond: number
   }
   traits: {
     overall: TraitMeans
@@ -147,6 +161,14 @@ export const sampleWorld = (world: World): SampleRow => {
   for (let index = 0; index < count; index += 1) {
     generationSum += world.lineage.generation[world.id[index]]
   }
+  let liveStaminaSum = 0
+  let sprintingCount = 0
+  let exhaustedCount = 0
+  for (let index = 0; index < count; index += 1) {
+    liveStaminaSum += world.stamina[index]
+    sprintingCount += world.sprinting[index]
+    exhaustedCount += world.exhausted[index]
+  }
   let grassSum = 0
   const grass = world.grass.values
   for (let index = 0; index < grass.length; index += 1) grassSum += grass[index]
@@ -158,7 +180,10 @@ export const sampleWorld = (world: World): SampleRow => {
     aliveTotal: alive.total,
     everBorn: world.lineage.size,
     meanSpeed: columnMean(world.speed, count),
-    meanStamina: columnMean(world.staminaMax, count),
+    meanStaminaMax: columnMean(world.staminaMax, count),
+    meanLiveStamina: count === 0 ? 0 : liveStaminaSum / count,
+    sprintDutyCycle: count === 0 ? 0 : sprintingCount / count,
+    exhaustedFraction: count === 0 ? 0 : exhaustedCount / count,
     meanMetabolism: columnMean(world.metabolism, count),
     meanReproCooldown: columnMean(world.reproCooldown, count),
     meanStrength: columnMean(world.strength, count),
@@ -274,6 +299,8 @@ export const analyzeWorld = (world: World): RunAnalysis => {
   const lifespan: Record<'prey' | 'hunter', number[]> = { prey: [], hunter: [] }
   const lifespanEaten: Record<'prey' | 'hunter', number[]> = { prey: [], hunter: [] }
   const lifespanStarved: Record<'prey' | 'hunter', number[]> = { prey: [], hunter: [] }
+  /** Total lived seconds summed over every glorp ever born (glorp-seconds). */
+  let glorpSeconds = 0
 
   const traits: TraitAccumulator = { sums: zeroTraits(), byGeneration: new Map() }
   const lineage: LineageAccumulator = {
@@ -322,7 +349,10 @@ export const analyzeWorld = (world: World): RunAnalysis => {
       lineage.generationTimeCount += 1
     }
 
-    if (log.deathCause[id] === DEATH_CAUSE.alive) {
+    const isAlive = log.deathCause[id] === DEATH_CAUSE.alive
+    glorpSeconds += (isAlive ? world.time : log.diedAt[id]) - log.bornAt[id]
+
+    if (isAlive) {
       alive[key] += 1
       alive.total += 1
       continue
@@ -376,6 +406,12 @@ export const analyzeWorld = (world: World): RunAnalysis => {
       born.hunter,
     ),
     lineage: summarizeLineage(lineage),
+    stamina: {
+      sprintStarts: world.sprintStarts,
+      exhaustionEvents: world.exhaustionEvents,
+      sprintStartsPerGlorpSecond:
+        glorpSeconds === 0 ? 0 : world.sprintStarts / glorpSeconds,
+    },
     traits: summarizeTraits(traits, log.size),
     ageAtDeath: {
       bucketSeconds: AGE_BUCKET_SECONDS,

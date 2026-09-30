@@ -32,12 +32,31 @@ export type Drive = (world: World, index: number, dt: number) => Steering | null
 const walkSpeed = (world: World, index: number): number =>
   world.speed[index] * MOVEMENT.walkFactor
 
-const canSprint = (world: World, index: number): boolean =>
-  world.stamina[index] > 0
+const jogSpeed = (world: World, index: number): number =>
+  world.speed[index] * MOVEMENT.jogFactor
 
-/** Hungry hunters with stamina left sprint at the nearest edible prey in sight. */
+/**
+ * Speed for a glorp actively pursuing or fleeing: sprint when fresh, otherwise
+ * jog. `sprintMultiplier` scales the sprint only (hunters close faster than
+ * prey). Keeping speed and the sprint flag together stops the two from drifting
+ * out of sync.
+ */
+const pursuitSpeed = (
+  world: World,
+  index: number,
+  sprint: boolean,
+  sprintMultiplier = 1,
+): number =>
+  sprint ? world.speed[index] * sprintMultiplier : jogSpeed(world, index)
+
+// The latch normally implies `stamina === 0` while exhausted, but the explicit
+// `stamina > 0` guard also stops a zero-capacity glorp from sprinting forever.
+const canSprint = (world: World, index: number): boolean =>
+  world.exhausted[index] === 0 && world.stamina[index] > 0
+
+/** Hungry hunters sprint at prey in sight, jogging once exhausted. */
 const chasePrey: Drive = (world, index, dt) => {
-  if (world.fed[index] >= HUNGER || !canSprint(world, index)) return null
+  if (world.fed[index] >= HUNGER) return null
   const hunterTier = strengthTier(world, index)
   const prey = nearestOfType(
     world,
@@ -47,18 +66,19 @@ const chasePrey: Drive = (world, index, dt) => {
     (candidate) => canEatTier(world, hunterTier, candidate),
   )
   if (prey < 0) return null
+  const sprint = canSprint(world, index)
   return steerToward(
     world,
     index,
     world.x[prey],
     world.y[prey],
-    world.speed[index] * HUNTER_SPRINT_MULTIPLIER,
-    true,
+    pursuitSpeed(world, index, sprint, HUNTER_SPRINT_MULTIPLIER),
+    sprint,
     dt,
   )
 }
 
-/** Prey run from the nearest hunter in range, sprinting while they can. */
+/** Prey run from the nearest hunter, sprinting while fresh and jogging after. */
 const fleeHunters: Drive = (world, index, dt) => {
   const hunter = nearestOfType(world, index, GLORP_TYPE.hunter, PREY_FLEE)
   if (hunter < 0) return null
@@ -68,7 +88,7 @@ const fleeHunters: Drive = (world, index, dt) => {
     index,
     world.x[hunter],
     world.y[hunter],
-    sprint ? world.speed[index] : walkSpeed(world, index),
+    pursuitSpeed(world, index, sprint),
     sprint,
     dt,
   )
@@ -156,6 +176,9 @@ export const updateBehavior = (world: World, dt: number): void => {
   const blend = 1 - Math.exp(-STEER_RATE * dt)
   for (let index = 0; index < world.count; index += 1) {
     const steering = computeSteering(world, index, dt)
+    if (world.sprinting[index] === 0 && steering.sprint) {
+      world.sprintStarts += 1
+    }
     world.sprinting[index] = steering.sprint ? 1 : 0
     world.vx[index] += (steering.x - world.vx[index]) * blend
     world.vy[index] += (steering.y - world.vy[index]) * blend

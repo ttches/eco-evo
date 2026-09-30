@@ -1,6 +1,16 @@
+reload doesn't change seed? game always has glorp 125 with same stats
+
+simulator: split born by predator / prey
+
+speed and stamina both need to be viable
+
+remove global genetic directive
+
 stamina while in pursuit or running away needs to be rethought. it just stays at 0 while they jog
 
 research how stats work and better math algos that will give us more variance in traits and less average. consider reproduction, evolutionary directive
+
+should heart layer be a whole layer? should it be more generic
 
 add render cycle test to make sure we don't impact performance between commits
 

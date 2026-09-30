@@ -37,6 +37,10 @@ export type World = RenderableWorld &
     readonly lineage: LineageLog
     /** Simulation seconds elapsed. */
     time: number
+    /** Cumulative 0->1 sprint transitions, for fatigue/flicker analysis. */
+    sprintStarts: number
+    /** Cumulative times a glorp entered exhaustion. */
+    exhaustionEvents: number
   }
 
 const DEFAULT_COUNT = START_PREY + START_HUNTERS
@@ -53,6 +57,8 @@ export const createWorld = (
     neighbors: createSpatialGrid(),
     lineage: createLineage(),
     time: 0,
+    sprintStarts: 0,
+    exhaustionEvents: 0,
     grass: createGrass(seed),
     radius: GLORP_RADIUS,
   }

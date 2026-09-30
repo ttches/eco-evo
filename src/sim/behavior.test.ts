@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GESTATION_SECONDS, PREGNANT_SPEED_FACTOR } from '@/sim/config'
+import { GESTATION_SECONDS, MOVEMENT, PREGNANT_SPEED_FACTOR } from '@/sim/config'
 import { computeSteering } from '@/sim/behavior'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { GLORP_TYPE } from '@/sim/types'
@@ -85,6 +85,30 @@ describe('hunter steering', () => {
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.sprint).toBe(false)
+  })
+
+  it('jogs toward prey when exhausted instead of giving up the chase', () => {
+    const world = createWorld(2, 4)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.prey
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 150
+    world.y[1] = 100
+    world.fed[0] = 50
+    world.stamina[0] = 0
+    world.exhausted[0] = 1
+    world.strength[0] = 6
+    world.strength[1] = 3
+
+    rebuildSpatialGrid(world)
+    const steering = computeSteering(world, 0, DT)
+
+    expect(steering.x).toBeGreaterThan(0)
+    expect(steering.sprint).toBe(false)
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
+      world.speed[0] * MOVEMENT.jogFactor,
+    )
   })
 })
 

@@ -370,4 +370,47 @@ describe('stamina', () => {
 
     expect(steering.sprint).toBe(false)
   })
+
+  it('does not flicker between sprint and walk at low stamina', () => {
+    const world = setupChase()
+    world.strength[0] = 6
+    world.strength[1] = 3
+    world.stamina[0] = 1
+    world.stamina[1] = 1
+    const before = world.sprintStarts
+
+    for (let step = 0; step < 600; step += 1) {
+      updateBehavior(world, 1 / 60)
+      updateStamina(world, 1 / 60)
+    }
+
+    const starts = world.sprintStarts - before
+    expect(starts).toBeGreaterThan(0)
+    expect(starts).toBeLessThanOrEqual(8)
+  })
+
+  it('latches into exhaustion when stamina empties', () => {
+    const world = setupChase()
+    world.stamina[0] = STAMINA.drainPerSecond / 120
+    world.sprinting[0] = 1
+
+    updateStamina(world, 1 / 60)
+
+    expect(world.stamina[0]).toBe(0)
+    expect(world.exhausted[0]).toBe(1)
+  })
+
+  it('stays exhausted until stamina recovers to the ready fraction', () => {
+    const world = setupChase()
+    world.exhausted[0] = 1
+    world.stamina[0] = world.staminaMax[0] * STAMINA.sprintReadyFraction - 0.01
+    rebuildSpatialGrid(world)
+
+    expect(computeSteering(world, 0, 1 / 60).sprint).toBe(false)
+
+    world.stamina[0] = world.staminaMax[0] * STAMINA.sprintReadyFraction
+    updateStamina(world, 0)
+    expect(world.exhausted[0]).toBe(0)
+    expect(computeSteering(world, 0, 1 / 60).sprint).toBe(true)
+  })
 })
