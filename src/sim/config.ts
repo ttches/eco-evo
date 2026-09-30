@@ -77,6 +77,11 @@ export const DIRECTIVE_FLIP_CHANCE = 0.05;
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
   walkFactor: 0.45,
+  /**
+   * Fraction of top speed used when a pursuing glorp is too exhausted to
+   * sprint. Between walking and sprinting, so fatigue still leaves some agency.
+   */
+  jogFactor: 0.7,
 } as const;
 
 /** How quickly velocity is steered toward its target, in 1/s. */
@@ -88,6 +93,13 @@ export const WANDER_TURN_RATE = 2;
 export const STAMINA = {
   drainPerSecond: 1.0,
   recoverPerSecond: 0.6,
+  /**
+   * A glorp that drains its stamina to empty latches into exhaustion and cannot
+   * sprint again until stamina recovers to this fraction of `staminaMax`. This
+   * hysteresis is what stops the per-frame sprint/walk flicker that pinned
+   * stamina at zero.
+   */
+  sprintReadyFraction: 0.5,
 } as const;
 
 /**

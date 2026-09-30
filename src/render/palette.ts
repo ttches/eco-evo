@@ -9,3 +9,6 @@ export const GRASS_GREEN = 0x2f8f43
 
 /** Soft mint highlight drawn around the currently inspected glorp. */
 export const SELECTION_COLOR = 0x9df5c9
+
+/** Pink hearts that burst above a glorp at conception. */
+export const HEART_COLOR = 0xf28cd9

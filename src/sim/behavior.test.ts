@@ -1,106 +1,151 @@
-import { describe, expect, it } from 'vitest'
-import { GESTATION_SECONDS, PREGNANT_SPEED_FACTOR } from '@/sim/config'
-import { computeSteering } from '@/sim/behavior'
-import { rebuildSpatialGrid } from '@/sim/spatial'
-import { GLORP_TYPE } from '@/sim/types'
-import { createWorld } from '@/sim/world'
+import { describe, expect, it } from "vitest";
+import {
+  GESTATION_SECONDS,
+  MOVEMENT,
+  PREGNANT_SPEED_FACTOR,
+} from "@/sim/config";
+import { computeSteering } from "@/sim/behavior";
+import { rebuildSpatialGrid } from "@/sim/spatial";
+import { GLORP_TYPE } from "@/sim/types";
+import { createWorld } from "@/sim/world";
 
-const DT = 1 / 60
+const DT = 1 / 60;
 
-describe('prey steering', () => {
-  it('points away from a nearby hunter', () => {
-    const world = createWorld(2, 3)
-    world.type[0] = GLORP_TYPE.prey
-    world.type[1] = GLORP_TYPE.hunter
-    world.x[0] = 100
-    world.y[0] = 100
-    world.x[1] = 140
-    world.y[1] = 100
-    world.fed[0] = 50
-    world.stamina[0] = 5
+describe("prey steering", () => {
+  it("points away from a nearby hunter", () => {
+    const world = createWorld(2, 3);
+    world.type[0] = GLORP_TYPE.prey;
+    world.type[1] = GLORP_TYPE.hunter;
+    world.x[0] = 100;
+    world.y[0] = 100;
+    world.x[1] = 140;
+    world.y[1] = 100;
+    world.fed[0] = 50;
+    world.stamina[0] = 5;
 
-    rebuildSpatialGrid(world)
-    const steering = computeSteering(world, 0, DT)
+    rebuildSpatialGrid(world);
+    const steering = computeSteering(world, 0, DT);
 
-    expect(steering.x).toBeLessThan(0)
-    expect(Math.abs(steering.y)).toBeLessThan(1e-6)
-    expect(steering.sprint).toBe(true)
-  })
+    expect(steering.x).toBeLessThan(0);
+    expect(Math.abs(steering.y)).toBeLessThan(1e-6);
+    expect(steering.sprint).toBe(true);
+  });
 
-  it('escapes a corner instead of pressing into it', () => {
-    const world = createWorld(2, 3)
-    world.type[0] = GLORP_TYPE.prey
-    world.type[1] = GLORP_TYPE.hunter
-    world.x[0] = world.radius
-    world.y[0] = world.radius
-    world.x[1] = world.radius + 80
-    world.y[1] = world.radius + 80
-    world.fed[0] = 50
-    world.stamina[0] = 5
+  it("escapes a corner instead of pressing into it", () => {
+    const world = createWorld(2, 3);
+    world.type[0] = GLORP_TYPE.prey;
+    world.type[1] = GLORP_TYPE.hunter;
+    world.x[0] = world.radius;
+    world.y[0] = world.radius;
+    world.x[1] = world.radius + 80;
+    world.y[1] = world.radius + 80;
+    world.fed[0] = 50;
+    world.stamina[0] = 5;
 
-    rebuildSpatialGrid(world)
-    const steering = computeSteering(world, 0, DT)
+    rebuildSpatialGrid(world);
+    const steering = computeSteering(world, 0, DT);
 
-    expect(steering.x).toBeGreaterThanOrEqual(0)
-    expect(steering.y).toBeGreaterThanOrEqual(0)
-    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(world.speed[0])
-    expect(steering.sprint).toBe(true)
-  })
-})
+    expect(steering.x).toBeGreaterThanOrEqual(0);
+    expect(steering.y).toBeGreaterThanOrEqual(0);
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(world.speed[0]);
+    expect(steering.sprint).toBe(true);
+  });
+});
 
-describe('hunter steering', () => {
-  it('moves toward a nearby prey when hungry', () => {
-    const world = createWorld(2, 4)
-    world.type[0] = GLORP_TYPE.hunter
-    world.type[1] = GLORP_TYPE.prey
-    world.x[0] = 100
-    world.y[0] = 100
-    world.x[1] = 150
-    world.y[1] = 100
-    world.fed[0] = 50
-    world.stamina[0] = 5
-    world.strength[0] = 6
-    world.strength[1] = 3
+describe("hunter steering", () => {
+  it("moves toward a nearby prey when hungry", () => {
+    const world = createWorld(2, 4);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.type[1] = GLORP_TYPE.prey;
+    world.x[0] = 100;
+    world.y[0] = 100;
+    world.x[1] = 150;
+    world.y[1] = 100;
+    world.fed[0] = 50;
+    world.stamina[0] = 5;
+    world.strength[0] = 6;
+    world.strength[1] = 3;
 
-    rebuildSpatialGrid(world)
-    const steering = computeSteering(world, 0, DT)
+    rebuildSpatialGrid(world);
+    const steering = computeSteering(world, 0, DT);
 
-    expect(steering.x).toBeGreaterThan(0)
-    expect(Math.abs(steering.y)).toBeLessThan(1e-6)
-    expect(steering.sprint).toBe(true)
-  })
+    expect(steering.x).toBeGreaterThan(0);
+    expect(Math.abs(steering.y)).toBeLessThan(1e-6);
+    expect(steering.sprint).toBe(true);
+  });
 
-  it('ignores prey when well fed', () => {
-    const world = createWorld(2, 4)
-    world.type[0] = GLORP_TYPE.hunter
-    world.type[1] = GLORP_TYPE.prey
-    world.x[0] = 100
-    world.y[0] = 100
-    world.x[1] = 150
-    world.y[1] = 100
-    world.fed[0] = 100
-    world.stamina[0] = 5
+  it("ignores prey when well fed", () => {
+    const world = createWorld(2, 4);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.type[1] = GLORP_TYPE.prey;
+    world.x[0] = 100;
+    world.y[0] = 100;
+    world.x[1] = 150;
+    world.y[1] = 100;
+    world.fed[0] = 100;
+    world.stamina[0] = 5;
 
-    rebuildSpatialGrid(world)
-    const steering = computeSteering(world, 0, DT)
+    rebuildSpatialGrid(world);
+    const steering = computeSteering(world, 0, DT);
 
-    expect(steering.sprint).toBe(false)
-  })
-})
+    expect(steering.sprint).toBe(false);
+  });
 
-describe('pregnancy', () => {
-  it('slows a pregnant glorp by the configured factor', () => {
-    const world = createWorld(1, 5)
-    world.type[0] = GLORP_TYPE.hunter
-    world.fed[0] = 100
-    rebuildSpatialGrid(world)
-    const normal = computeSteering(world, 0, DT)
+  it("jogs toward prey when exhausted instead of giving up the chase", () => {
+    const world = createWorld(2, 4);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.type[1] = GLORP_TYPE.prey;
+    world.x[0] = 100;
+    world.y[0] = 100;
+    world.x[1] = 150;
+    world.y[1] = 100;
+    world.fed[0] = 50;
+    world.stamina[0] = 0;
+    world.exhausted[0] = 1;
+    world.strength[0] = 6;
+    world.strength[1] = 3;
 
-    world.pregnant[0] = GESTATION_SECONDS
-    const pregnant = computeSteering(world, 0, DT)
+    rebuildSpatialGrid(world);
+    const steering = computeSteering(world, 0, DT);
+
+    expect(steering.x).toBeGreaterThan(0);
+    expect(steering.sprint).toBe(false);
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
+      world.speed[0] * MOVEMENT.jogFactor,
+    );
+  });
+});
+
+describe("pregnancy", () => {
+  it("slows a pregnant glorp by the configured factor", () => {
+    const world = createWorld(1, 5);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.fed[0] = 100;
+    rebuildSpatialGrid(world);
+    const normal = computeSteering(world, 0, DT);
+
+    world.pregnant[0] = GESTATION_SECONDS;
+    const pregnant = computeSteering(world, 0, DT);
 
     expect(Math.hypot(pregnant.x, pregnant.y)).toBeCloseTo(
       Math.hypot(normal.x, normal.y) * PREGNANT_SPEED_FACTOR,
-    )
-  })
-})
+    );
+  });
+});
+
+describe("pregnancy", () => {
+  it("slows a pregnant glorp by the configured factor", () => {
+    const world = createWorld(1, 5);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.fed[0] = 100;
+    rebuildSpatialGrid(world);
+    const normal = computeSteering(world, 0, DT);
+
+    world.pregnant[0] = GESTATION_SECONDS;
+    const pregnant = computeSteering(world, 0, DT);
+
+    expect(Math.hypot(pregnant.x, pregnant.y)).toBeCloseTo(
+      Math.hypot(normal.x, normal.y) * PREGNANT_SPEED_FACTOR,
+    );
+  });
+});

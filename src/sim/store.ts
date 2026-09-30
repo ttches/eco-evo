@@ -12,6 +12,8 @@ const STATE_COLUMNS = {
   fed: Float32Array,
   stamina: Float32Array,
   sprinting: Uint8Array,
+  /** Latch: 1 while too exhausted to sprint until stamina recovers. */
+  exhausted: Uint8Array,
   cooldown: Float32Array,
   wanderSeed: Float32Array,
   /** Per-trait mutation bias: one bit per trait, 1 = lineage prefers higher. */

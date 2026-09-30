@@ -87,6 +87,14 @@ export const formatSummary = (summary: RunSummary): string => {
   lines.push(`  offspring per parent ${num(l.offspringPerParentMean)}`)
   lines.push('')
 
+  const st = analysis.stamina
+  lines.push('STAMINA')
+  lines.push(
+    `  sprint starts ${st.sprintStarts}  exhaustions ${st.exhaustionEvents}  ` +
+      `sprint starts/glorp/s ${num(st.sprintStartsPerGlorpSecond, 3)}`,
+  )
+  lines.push('')
+
   lines.push('TRAITS (all ever born)')
   for (const [key, value] of Object.entries(analysis.traits.overall)) {
     lines.push(`  ${pad(key, 15)} ${num(value)}`)
@@ -137,6 +145,8 @@ const DIFF_METRICS: { label: string; path: string }[] = [
   { label: 'kills per hunter', path: 'analysis.predation.meanKillsPerHunter' },
   { label: 'max generation', path: 'analysis.lineage.maxGeneration' },
   { label: 'generation time', path: 'analysis.lineage.generationTimeMean' },
+  { label: 'sprint starts/glorp/s', path: 'analysis.stamina.sprintStartsPerGlorpSecond' },
+  { label: 'exhaustion events', path: 'analysis.stamina.exhaustionEvents' },
   { label: 'mean speed', path: 'analysis.traits.overall.speed' },
   { label: 'mean metabolism', path: 'analysis.traits.overall.metabolism' },
 ]

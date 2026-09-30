@@ -2,16 +2,33 @@ import { WORLD } from '@/engine/config'
 import { STAMINA } from '@/sim/config'
 import type { World } from '@/sim/world'
 
-/** Sprinting drains stamina; everything else recharges it. */
+/**
+ * Sprinting drains stamina; everything else recharges it. Draining to empty
+ * latches a glorp into exhaustion until stamina recovers to
+ * `sprintReadyFraction`, which replaces the old `stamina > 0` per-frame
+ * sprint/walk flicker with distinct bursts and rest gaps.
+ */
 export const updateStamina = (world: World, dt: number): void => {
   for (let index = 0; index < world.count; index += 1) {
     if (world.sprinting[index] === 1 && world.stamina[index] > 0) {
       const next = world.stamina[index] - STAMINA.drainPerSecond * dt
-      world.stamina[index] = next > 0 ? next : 0
+      if (next > 0) {
+        world.stamina[index] = next
+      } else {
+        world.stamina[index] = 0
+        world.exhausted[index] = 1
+        world.exhaustionEvents += 1
+      }
     } else {
+      const max = world.staminaMax[index]
       const next = world.stamina[index] + STAMINA.recoverPerSecond * dt
-      world.stamina[index] =
-        next < world.staminaMax[index] ? next : world.staminaMax[index]
+      world.stamina[index] = next < max ? next : max
+      if (
+        world.exhausted[index] === 1 &&
+        world.stamina[index] >= max * STAMINA.sprintReadyFraction
+      ) {
+        world.exhausted[index] = 0
+      }
     }
   }
 }

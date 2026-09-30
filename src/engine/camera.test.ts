@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  centerCamera,
   clampCamera,
   createCamera,
   fitCamera,
   fitZoom,
+  focusCamera,
   panBy,
   resizeCamera,
   screenToWorld,
@@ -115,17 +115,21 @@ describe('resizeCamera', () => {
   })
 })
 
-describe('centerCamera', () => {
-  it('centers on a world point, keeping zoom', () => {
-    const centered = centerCamera(at(0, 0, 1), 900, 500)
-    expect(centered.x).toBeCloseTo(900)
-    expect(centered.y).toBeCloseTo(500)
-    expect(centered.zoom).toBe(1)
+describe('focusCamera', () => {
+  it('centers and raises a zoomed-out camera to the focus zoom', () => {
+    const focused = focusCamera(at(0, 0, fitZoom(LANDSCAPE)), 900, 500, 0.5)
+    expect(focused.x).toBeCloseTo(900)
+    expect(focused.y).toBeCloseTo(500)
+    expect(focused.zoom).toBe(0.5)
+  })
+
+  it('keeps a zoom closer than the focus zoom', () => {
+    expect(focusCamera(at(900, 500, 2), 900, 500, 0.5).zoom).toBe(2)
   })
 
   it('clamps near the world edge', () => {
-    const centered = centerCamera(at(0, 0, 1), -500, 9999)
-    const bounds = viewBounds(centered)
+    const focused = focusCamera(at(0, 0, 1), -500, 9999, 0.5)
+    const bounds = viewBounds(focused)
     expect(bounds.left).toBeGreaterThanOrEqual(-1e-9)
     expect(bounds.bottom).toBeLessThanOrEqual(WORLD.height + 1e-9)
   })
