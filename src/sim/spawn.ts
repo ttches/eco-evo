@@ -1,9 +1,10 @@
 import { WORLD } from '@/engine/config'
 import { clamp } from '@/engine/math'
 import { FED_START } from '@/sim/config'
-import { rollDirective, rollTraits } from '@/sim/genetics'
+import { rollTraits } from '@/sim/genetics'
 import { recordBirth } from '@/sim/lineage'
 import { allocGlorp } from '@/sim/store'
+import { traitValue } from '@/sim/traits'
 import type { GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
@@ -26,8 +27,7 @@ export const spawnGlorp = (
   world.fed[index] = FED_START
   world.wanderSeed[index] = world.random.unit()
   rollTraits(world, index)
-  world.stamina[index] = world.staminaMax[index]
-  world.directive[index] = rollDirective(world.random)
+  world.stamina[index] = traitValue('staminaMax', world.staminaMax[index])
   recordBirth(world, index)
   return index
 }

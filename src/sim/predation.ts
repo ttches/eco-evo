@@ -33,35 +33,31 @@ const eaten = new Int32Array(MAX_GLORPS)
 /** Scratch flags marking glorps already claimed by a cannibal this step. */
 const cannibalEaten = new Uint8Array(MAX_GLORPS)
 
-/** Integer strength tier used for all strength comparisons. */
-export const strengthTier = (world: World, index: number): number =>
-  Math.floor(world.strength[index])
-
 /**
- * Whether a hunter of `hunterTier` can eat `prey`. Takes a precomputed tier so
- * hot scans don't recompute the attacker's floor for every candidate.
+ * Whether a hunter of strength level `hunterLevel` can eat `prey`. Takes the
+ * attacker's level so hot scans don't re-read it for every candidate.
  */
-export const canEatTier = (
+export const canEatLevel = (
   world: World,
-  hunterTier: number,
+  hunterLevel: number,
   prey: number,
 ): boolean =>
   !STRENGTH_GATES_PREDATION ||
-  hunterTier + STRENGTH_EDGE >= strengthTier(world, prey)
+  hunterLevel + STRENGTH_EDGE >= world.strength[prey]
 
 /** Whether `hunter` is strong enough to eat `prey`. */
 export const canEat = (world: World, hunter: number, prey: number): boolean =>
-  canEatTier(world, strengthTier(world, hunter), prey)
+  canEatLevel(world, world.strength[hunter], prey)
 
 /**
  * Whether attacker `a` wins a cannibalism contest against `b`: higher strength
- * tier, then higher energy, then older (smaller `bornAt`), then a deterministic
+ * level, then higher energy, then older (smaller `bornAt`), then a deterministic
  * coin flip derived from the pair's ids so both scan directions agree.
  */
 export const cannibalWins = (world: World, a: number, b: number): boolean => {
-  const tierA = strengthTier(world, a)
-  const tierB = strengthTier(world, b)
-  if (tierA !== tierB) return tierA > tierB
+  const levelA = world.strength[a]
+  const levelB = world.strength[b]
+  if (levelA !== levelB) return levelA > levelB
 
   if (world.fed[a] !== world.fed[b]) return world.fed[a] > world.fed[b]
 

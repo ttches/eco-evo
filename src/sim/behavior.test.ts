@@ -6,6 +6,7 @@ import {
 } from "@/sim/config";
 import { computeSteering } from "@/sim/behavior";
 import { rebuildSpatialGrid } from "@/sim/spatial";
+import { traitValue } from "@/sim/traits";
 import { GLORP_TYPE } from "@/sim/types";
 import { createWorld } from "@/sim/world";
 
@@ -47,7 +48,7 @@ describe("prey steering", () => {
 
     expect(steering.x).toBeGreaterThanOrEqual(0);
     expect(steering.y).toBeGreaterThanOrEqual(0);
-    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(world.speed[0]);
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(traitValue('speed', world.speed[0]));
     expect(steering.sprint).toBe(true);
   });
 });
@@ -111,7 +112,7 @@ describe("hunter steering", () => {
     expect(steering.x).toBeGreaterThan(0);
     expect(steering.sprint).toBe(false);
     expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
-      world.speed[0] * MOVEMENT.jogFactor,
+      traitValue('speed', world.speed[0]) * MOVEMENT.jogFactor,
     );
   });
 });

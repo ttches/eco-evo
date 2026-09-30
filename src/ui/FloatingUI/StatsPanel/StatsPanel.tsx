@@ -60,8 +60,8 @@ const STATUSES: readonly { value: StatusFilter; label: string }[] = [
 const TRAIT_LABEL: Record<TraitKey, string> = {
   speed: 'Fastest',
   staminaMax: 'Most stamina',
-  metabolism: 'Lowest metabolism',
-  reproCooldown: 'Fastest breeder',
+  efficiency: 'Most efficient',
+  fertility: 'Most fertile',
   strength: 'Strongest',
 }
 
@@ -126,7 +126,7 @@ const StatsPanel = ({
     () =>
       isStatKey(active)
         ? TABS[active].format
-        : (value: number) => formatTraitValue(active, value),
+        : formatTraitValue,
     [active],
   )
   const rows = sorted.slice(0, MAX_ROWS)
@@ -211,7 +211,7 @@ const StatsPanel = ({
             </span>
             <span className={styles.extremeName}>{extreme.name}</span>
             <span className={styles.extremeValue}>
-              {formatTraitValue(extreme.key, extreme.value)}
+              {formatTraitValue(extreme.value)}
             </span>
           </button>
         ))}

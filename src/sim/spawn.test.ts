@@ -6,12 +6,18 @@ import {
   MAX_GLORPS,
 } from '@/sim/config'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
-import { TRAITS } from '@/sim/traits'
+import {
+  TRAIT_BUDGET,
+  TRAIT_KEYS,
+  TRAIT_MAX,
+  TRAIT_MIN,
+  traitValue,
+} from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
 describe('spawnGlorp', () => {
-  it('adds a glorp with traits inside the configured ranges', () => {
+  it('adds a glorp with levels on the scale that sum to the budget', () => {
     const world = createWorld(4, 5)
     const before = world.count
 
@@ -21,13 +27,17 @@ describe('spawnGlorp', () => {
     expect(world.count).toBe(before + 1)
     expect(world.type[index]).toBe(GLORP_TYPE.hunter)
     expect(world.fed[index]).toBe(FED_START)
-    expect(world.speed[index]).toBeGreaterThanOrEqual(TRAITS.speed.min)
-    expect(world.speed[index]).toBeLessThanOrEqual(TRAITS.speed.max)
-    expect(world.metabolism[index]).toBeGreaterThanOrEqual(
-      TRAITS.metabolism.min,
+    let total = 0
+    for (const key of TRAIT_KEYS) {
+      expect(Number.isInteger(world[key][index])).toBe(true)
+      expect(world[key][index]).toBeGreaterThanOrEqual(TRAIT_MIN)
+      expect(world[key][index]).toBeLessThanOrEqual(TRAIT_MAX)
+      total += world[key][index]
+    }
+    expect(total).toBe(TRAIT_BUDGET)
+    expect(world.stamina[index]).toBe(
+      traitValue('staminaMax', world.staminaMax[index]),
     )
-    expect(world.metabolism[index]).toBeLessThanOrEqual(TRAITS.metabolism.max)
-    expect(world.stamina[index]).toBe(world.staminaMax[index])
   })
 
   it('clamps the spawn position inside the world', () => {

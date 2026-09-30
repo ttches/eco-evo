@@ -5,7 +5,7 @@ import {
   readLineage,
   type DeathCause,
 } from '@/sim/lineage'
-import type { TraitKey } from '@/sim/traits'
+import type { TraitLevels } from '@/sim/traits'
 import type { GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
@@ -44,7 +44,7 @@ export type GlorpView = {
   readonly deathCause: DeathCause
   readonly killer: GlorpRef | null
   readonly parents: readonly GlorpRef[]
-  readonly traits: Readonly<Record<TraitKey, number>>
+  readonly traits: Readonly<TraitLevels>
   readonly live: GlorpLiveState | null
 }
 

@@ -1,5 +1,6 @@
 import { WORLD } from '@/engine/config'
 import { STAMINA } from '@/sim/config'
+import { traitValue } from '@/sim/traits'
 import type { World } from '@/sim/world'
 
 /**
@@ -20,7 +21,7 @@ export const updateStamina = (world: World, dt: number): void => {
         world.exhaustionEvents += 1
       }
     } else {
-      const max = world.staminaMax[index]
+      const max = traitValue('staminaMax', world.staminaMax[index])
       const next = world.stamina[index] + STAMINA.recoverPerSecond * dt
       world.stamina[index] = next < max ? next : max
       if (

@@ -1,5 +1,5 @@
 import { NO_GLORP, displayName, isAlive } from '@/sim/lineage'
-import { TRAITS, TRAIT_KEYS, type TraitKey } from '@/sim/traits'
+import { TRAIT_KEYS, type TraitKey, type TraitLevels } from '@/sim/traits'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
@@ -31,7 +31,7 @@ export type GlorpStat = {
   /** Every descendant in the family tree, direct or not. */
   readonly descendants: number
   /** Heritable trait values, as rolled or inherited at birth. */
-  readonly traits: Readonly<Record<TraitKey, number>>
+  readonly traits: Readonly<TraitLevels>
 }
 
 /** Diet restriction for the leaderboard, or `all`. */
@@ -122,7 +122,7 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
   for (let id = 0; id < size; id += 1) {
     const alive = isAlive(log, id)
     const endedAt = alive ? world.time : log.diedAt[id]
-    const traits = {} as Record<TraitKey, number>
+    const traits = {} as TraitLevels
     for (const key of TRAIT_KEYS) traits[key] = log.traits[key][id]
     stats[id] = {
       id,
@@ -158,11 +158,7 @@ export const sortStats = (
   key: SortKey,
 ): GlorpStat[] =>
   [...stats].sort((a, b) => {
-    // Tallies are always "higher is better"; traits have a favored direction.
-    const higher = isTraitKey(key) ? TRAITS[key].favorsHigher : true
-    const delta = higher
-      ? sortValue(b, key) - sortValue(a, key)
-      : sortValue(a, key) - sortValue(b, key)
+    const delta = sortValue(b, key) - sortValue(a, key)
     return delta !== 0 ? delta : a.id - b.id
   })
 
@@ -189,9 +185,8 @@ export const summarizeStats = (
 }
 
 /**
- * The best glorp for each trait, in the direction the lineage favors: highest
- * speed and stamina, lowest metabolism and reproduction cooldown. Ties keep the
- * earlier stat, so the lower id wins.
+ * The glorp with the highest level in each trait. Ties keep the earlier stat,
+ * so the lower id wins.
  */
 export const traitExtremesFromStats = (
   stats: readonly GlorpStat[],
@@ -199,12 +194,11 @@ export const traitExtremesFromStats = (
   if (stats.length === 0) return []
 
   return TRAIT_KEYS.map((key) => {
-    const favorsHigher = TRAITS[key].favorsHigher
     let best = stats[0]
     for (const stat of stats) {
       const value = stat.traits[key]
       const bestValue = best.traits[key]
-      if (favorsHigher ? value > bestValue : value < bestValue) best = stat
+      if (value > bestValue) best = stat
     }
     return { key, id: best.id, name: best.name, value: best.traits[key] }
   })

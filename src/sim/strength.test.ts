@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { CANNIBAL_HUNGER, CANNIBAL_KILL_FED, GLORP_RADIUS, HUNTER_KILL_FED } from '@/sim/config'
+import {
+  CANNIBAL_HUNGER,
+  CANNIBAL_KILL_FED,
+  GLORP_RADIUS,
+  HUNTER_KILL_FED,
+  STRENGTH_EDGE,
+} from '@/sim/config'
 import { applyEating } from '@/sim/predation'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
@@ -21,32 +27,32 @@ const setupHunt = (hunterStrength: number, preyStrength: number) => {
 }
 
 describe('strength predation gate', () => {
-  it('eats a prey of a lower strength tier', () => {
+  it('eats a prey of a lower strength level', () => {
     const world = setupHunt(6, 3)
     applyEating(world, 0.1)
     expect(world.count).toBe(1)
     expect(world.fed[0]).toBeCloseTo(50 + HUNTER_KILL_FED)
   })
 
-  it('eats a prey of the same tier', () => {
-    const world = setupHunt(5.0, 5.9)
+  it('eats a prey of the same level', () => {
+    const world = setupHunt(5, 5)
     applyEating(world, 0.1)
     expect(world.count).toBe(1)
   })
 
-  it('refuses a prey of a higher strength tier', () => {
-    const world = setupHunt(1, 9)
+  it('refuses a prey beyond the strength edge', () => {
+    const world = setupHunt(1, 1 + STRENGTH_EDGE + 1)
     applyEating(world, 0.1)
     expect(world.count).toBe(2)
     expect(world.fed[0]).toBeCloseTo(50)
   })
 
-  it('eats at exactly the strength edge and refuses one tier beyond', () => {
-    const atEdge = setupHunt(3, 7)
+  it('eats at exactly the strength edge and refuses one level beyond', () => {
+    const atEdge = setupHunt(3, 3 + STRENGTH_EDGE)
     applyEating(atEdge, 0.1)
     expect(atEdge.count).toBe(1)
 
-    const beyond = setupHunt(3, 8)
+    const beyond = setupHunt(3, 3 + STRENGTH_EDGE + 1)
     applyEating(beyond, 0.1)
     expect(beyond.count).toBe(2)
   })
@@ -88,7 +94,7 @@ describe('strength cannibalism contest', () => {
     expect(world.count).toBe(2)
   })
 
-  it('breaks an equal tier by energy', () => {
+  it('breaks an equal level by energy', () => {
     const world = setupCannibals(5, 5, 15, 10)
     applyEating(world, 0.1)
     expect(world.count).toBe(1)
@@ -96,7 +102,7 @@ describe('strength cannibalism contest', () => {
     expect(world.fed[0]).toBeCloseTo(15 + CANNIBAL_KILL_FED)
   })
 
-  it('breaks an equal tier and energy by age (older lives)', () => {
+  it('breaks an equal level and energy by age (older lives)', () => {
     const world = setupCannibals(5, 5, 10, 10)
     world.lineage.bornAt[world.id[0]] = 0
     world.lineage.bornAt[world.id[1]] = 5

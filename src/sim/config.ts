@@ -62,17 +62,26 @@ export const MATE_CONTACT_SECONDS = 0;
 /** Well-fed, off-cooldown hunters actively steer toward eligible mates. */
 export const MATE_SEEKING = false;
 
-/** Chance a pair-reproduced child inherits the more favorable parent's value. */
-export const INHERIT_BEST_CHANCE = 0.75;
+/**
+ * Levels a glorp of each type starts from before `SPAWN_SHUFFLES`. Must sum to
+ * the trait budget (any difference is rebalanced at random).
+ */
+export const SPAWN_BASE = {
+  prey: { speed: 4, staminaMax: 4, efficiency: 4, fertility: 4, strength: 4 },
+  hunter: { speed: 4, staminaMax: 4, efficiency: 4, fertility: 4, strength: 4 },
+} as const;
 
-/** Symmetric relative mutation spread (±) applied per trait to any offspring. */
-export const MUTATION_RATE = 0.08;
+/** Point transfers applied to an all-base build when a glorp is first spawned. */
+export const SPAWN_SHUFFLES = 12;
 
-/** Extra relative drift per trait in the direction the glorp's directive prefers. */
-export const MUTATION_BIAS = 0.02;
+/** Chance a clone moves one trait point. Clones stay close to their parent. */
+export const CLONE_MUTATION_CHANCE = 0.25;
 
-/** Chance each directive bit flips when passed to an offspring. */
-export const DIRECTIVE_FLIP_CHANCE = 0.05;
+/**
+ * Chance a pair-born child moves one trait point, on top of the variance from
+ * recombining two parents.
+ */
+export const MATED_MUTATION_CHANCE = 0.5;
 
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
@@ -132,8 +141,9 @@ export const GRASS_TILE = 32;
 /**
  * Grass regrows at this fraction per second, capped at 1. Total regrowth is
  * `tiles * GRASS_REGROW` (~33 grass/s across the 120x68 grid), which sets the
- * carrying capacity: prey need ~`metabolism / GRASS_ENERGY` grass per second,
- * so this sustains roughly 400 prey before food becomes limiting.
+ * carrying capacity: prey need ~`metabolism / PREY_ENERGY_PER_SECOND` grass per second (metabolism
+ * comes from the `efficiency` level), so this sustains roughly 400 prey before
+ * food becomes limiting.
  */
 export const GRASS_REGROW = 0.004;
 
@@ -164,13 +174,19 @@ export const CANNIBAL_KILL_FED = 15;
 
 /**
  * When true, predation is gated by strength: a hunter can eat a glorp only if
- * its floored `strength` tier is within `STRENGTH_EDGE` of the target's.
+ * its `strength` level is within `STRENGTH_EDGE` of the target's.
  */
 export const STRENGTH_GATES_PREDATION = true;
 
 /**
- * How many strength tiers above its own a hunter can still eat. Zero means it
- * must match or exceed the prey's tier. The default of 4 keeps the gate
- * meaningful without starving low-tier hunters early (see sim sweeps).
+ * How many strength levels above its own a hunter can still eat. Zero means it
+ * must match or exceed the prey's level.
  */
-export const STRENGTH_EDGE = 4;
+export const STRENGTH_EDGE = 3;
+
+/**
+ * Speed every glorp walks and wanders at, whatever its `speed` trait (this is
+ * the base level's value). Speed then only pays off in pursuit and flight, so
+ * prey don't evolve top speed just to graze faster and hunters can catch them.
+ */
+export const WALK_SPEED = 50;

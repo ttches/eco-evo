@@ -39,7 +39,6 @@ export const writeLineageCsv = (path: string, world: World): void => {
     'alive',
     'deathCause',
     'killer',
-    'directive',
     ...TRAIT_KEYS,
   ].join(',')
   const rows = [header]
@@ -57,8 +56,7 @@ export const writeLineageCsv = (path: string, world: World): void => {
         alive ? 1 : 0,
         CAUSE_NAME[log.deathCause[id]] ?? log.deathCause[id],
         log.killer[id],
-        log.directive[id],
-        ...TRAIT_KEYS.map((key) => log.traits[key][id].toFixed(4)),
+        ...TRAIT_KEYS.map((key) => log.traits[key][id]),
       ].join(','),
     )
   }
@@ -78,8 +76,8 @@ export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
     'meanLiveStamina',
     'sprintDutyCycle',
     'exhaustedFraction',
-    'meanMetabolism',
-    'meanReproCooldown',
+    'meanEfficiency',
+    'meanFertility',
     'meanStrength',
     'meanGeneration',
     'grassMean',
@@ -96,8 +94,8 @@ export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
       row.meanLiveStamina.toFixed(4),
       row.sprintDutyCycle.toFixed(4),
       row.exhaustedFraction.toFixed(4),
-      row.meanMetabolism.toFixed(4),
-      row.meanReproCooldown.toFixed(4),
+      row.meanEfficiency.toFixed(4),
+      row.meanFertility.toFixed(4),
       row.meanStrength.toFixed(4),
       row.meanGeneration.toFixed(4),
       row.grassMean.toFixed(6),

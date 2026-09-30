@@ -43,8 +43,8 @@ export type SampleRow = {
   meanLiveStamina: number
   sprintDutyCycle: number
   exhaustedFraction: number
-  meanMetabolism: number
-  meanReproCooldown: number
+  meanEfficiency: number
+  meanFertility: number
   meanStrength: number
   meanGeneration: number
   grassMean: number
@@ -184,8 +184,8 @@ export const sampleWorld = (world: World): SampleRow => {
     meanLiveStamina: count === 0 ? 0 : liveStaminaSum / count,
     sprintDutyCycle: count === 0 ? 0 : sprintingCount / count,
     exhaustedFraction: count === 0 ? 0 : exhaustedCount / count,
-    meanMetabolism: columnMean(world.metabolism, count),
-    meanReproCooldown: columnMean(world.reproCooldown, count),
+    meanEfficiency: columnMean(world.efficiency, count),
+    meanFertility: columnMean(world.fertility, count),
     meanStrength: columnMean(world.strength, count),
     meanGeneration: count === 0 ? 0 : generationSum / count,
     grassMean: grass.length === 0 ? 0 : grassSum / grass.length,

@@ -10,26 +10,21 @@ import {
   MOVEMENT,
   OFFSPRING_FED,
 } from '@/sim/config'
-import {
-  cloneTraits,
-  crossTraitsFrom,
-  mixDirective,
-  mutateDirective,
-} from '@/sim/genetics'
+import { cloneTraits, crossTraitsFrom, readLevels } from '@/sim/genetics'
 import { NO_GLORP, recordBirth, recordBirthFromIds } from '@/sim/lineage'
 import { isEligibleMate } from '@/sim/mate'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { allocGlorp } from '@/sim/store'
-import { TRAIT_KEYS, type TraitKey } from '@/sim/traits'
+import { traitValue } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
 
 /** Newborn state shared by every reproduction path, once traits are set. */
 const initOffspring = (world: World, child: number): void => {
   world.fed[child] = OFFSPRING_FED
-  world.stamina[child] = world.staminaMax[child]
-  world.cooldown[child] = world.reproCooldown[child]
+  world.stamina[child] = traitValue('staminaMax', world.staminaMax[child])
+  world.cooldown[child] = traitValue('fertility', world.fertility[child])
   // Its own wander seed, so parent and child don't move in lockstep.
   world.wanderSeed[child] = hashUnit(child ^ 0x9e3779b9)
 }
@@ -41,7 +36,7 @@ const placeOffspring = (
   child: number,
 ): void => {
   const angle = hashUnit(child) * TAU
-  const walk = world.speed[child] * MOVEMENT.walkFactor
+  const walk = traitValue('speed', world.speed[child]) * MOVEMENT.walkFactor
   world.x[child] = clamp(
     world.x[parentIndex] + Math.cos(angle) * world.radius,
     world.radius,
@@ -65,20 +60,6 @@ export const tickCooldowns = (world: World, dt: number): void => {
   }
 }
 
-/** Snapshot one glorp's live trait values, keyed by trait. */
-const liveTraits = (world: World, index: number): Record<TraitKey, number> => {
-  const values = {} as Record<TraitKey, number>
-  for (const key of TRAIT_KEYS) values[key] = world[key][index]
-  return values
-}
-
-/** Snapshot one (possibly dead) glorp's trait values from the lineage log. */
-const lineageTraits = (world: World, id: number): Record<TraitKey, number> => {
-  const values = {} as Record<TraitKey, number>
-  for (const key of TRAIT_KEYS) values[key] = world.lineage.traits[key][id]
-  return values
-}
-
 /**
  * Well-fed, off-cooldown glorps spawn an offspring at their position. Hunters
  * are skipped when `HUNTER_ASEXUAL` is off, forcing them to mate instead.
@@ -94,20 +75,14 @@ export const applyReproduction = (world: World): void => {
     const child = allocGlorp(world)
     if (child < 0) return
 
-    // A clone inherits the parent's directive (with occasional flips), then
-    // mutates each trait in the direction that directive prefers.
     world.type[child] = world.type[index]
-    world.directive[child] = mutateDirective(
-      world.random,
-      world.directive[index],
-    )
     cloneTraits(world, index, child)
     initOffspring(world, child)
     placeOffspring(world, index, child)
     recordBirth(world, child, index)
 
     world.fed[index] = FED_MAX
-    world.cooldown[index] = world.reproCooldown[index]
+    world.cooldown[index] = traitValue('fertility', world.fertility[index])
   }
 }
 
@@ -130,21 +105,16 @@ const birthMatedChild = (
   if (child < 0) return
 
   const motherId = world.id[motherIndex]
-  const motherDirective = world.directive[motherIndex]
-  const motherTraits = liveTraits(world, motherIndex)
+  const motherTraits = readLevels(world, motherIndex)
 
-  let fatherDirective = motherDirective
   let fatherTraits = motherTraits
   if (fatherIndex >= 0) {
-    fatherDirective = world.directive[fatherIndex]
-    fatherTraits = liveTraits(world, fatherIndex)
+    fatherTraits = readLevels(world, fatherIndex)
   } else if (fatherId !== NO_GLORP) {
-    fatherDirective = world.lineage.directive[fatherId]
-    fatherTraits = lineageTraits(world, fatherId)
+    fatherTraits = readLevels(world.lineage.traits, fatherId)
   }
 
   world.type[child] = GLORP_TYPE.hunter
-  world.directive[child] = mixDirective(random, motherDirective, fatherDirective)
   crossTraitsFrom(world, child, motherTraits, fatherTraits, random)
   initOffspring(world, child)
   placeOffspring(world, motherIndex, child)
@@ -162,8 +132,8 @@ const conceive = (world: World, a: number, b: number): void => {
 
   world.fed[a] = Math.max(0, world.fed[a] - MATE_ENERGY_COST)
   world.fed[b] = Math.max(0, world.fed[b] - MATE_ENERGY_COST)
-  world.cooldown[a] = world.reproCooldown[a]
-  world.cooldown[b] = world.reproCooldown[b]
+  world.cooldown[a] = traitValue('fertility', world.fertility[a])
+  world.cooldown[b] = traitValue('fertility', world.fertility[b])
   world.mateContact[a] = 0
   world.mateContact[b] = 0
 

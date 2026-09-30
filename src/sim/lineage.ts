@@ -1,4 +1,4 @@
-import { TRAIT_KEYS, type TraitKey } from '@/sim/traits'
+import { TRAIT_KEYS, type TraitKey, type TraitLevels } from '@/sim/traits'
 import type { GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
@@ -37,8 +37,7 @@ export type LineageLog = {
   deathCause: Uint8Array
   /** Id of the glorp that ate this one, or `NO_GLORP`. */
   killer: Int32Array
-  /** Directive and trait values as rolled or inherited at birth. */
-  directive: Uint8Array
+  /** Trait levels as rolled or inherited at birth. */
   traits: Record<TraitKey, Float32Array>
   /** User-given names, sparse because most glorps are never named. */
   readonly names: Map<number, string>
@@ -55,8 +54,7 @@ export type LineageRecord = {
   readonly diedAt: number
   readonly deathCause: DeathCause
   readonly killer: number
-  readonly directive: number
-  readonly traits: Readonly<Record<TraitKey, number>>
+  readonly traits: Readonly<TraitLevels>
   /** User-given name, or null if never named. */
   readonly name: string | null
 }
@@ -77,7 +75,6 @@ export const createLineage = (capacity = INITIAL_CAPACITY): LineageLog => ({
   diedAt: new Float64Array(capacity),
   deathCause: new Uint8Array(capacity),
   killer: new Int32Array(capacity),
-  directive: new Uint8Array(capacity),
   traits: createTraitColumns(capacity),
   names: new Map(),
 })
@@ -101,13 +98,12 @@ const grow = (log: LineageLog): void => {
   log.diedAt = grown(log.diedAt, capacity)
   log.deathCause = grown(log.deathCause, capacity)
   log.killer = grown(log.killer, capacity)
-  log.directive = grown(log.directive, capacity)
   for (const key of TRAIT_KEYS) log.traits[key] = grown(log.traits[key], capacity)
   log.capacity = capacity
 }
 
 /**
- * Log a newborn once its type, directive and traits are set, linking parents by
+ * Log a newborn once its type and traits are set, linking parents by
  * their stable ids. Pass `NO_GLORP` for a missing parent.
  */
 export const recordBirthFromIds = (
@@ -133,13 +129,12 @@ export const recordBirthFromIds = (
   log.diedAt[id] = Number.NaN
   log.deathCause[id] = DEATH_CAUSE.alive
   log.killer[id] = NO_GLORP
-  log.directive[id] = world.directive[index]
   for (const key of TRAIT_KEYS) log.traits[key][id] = world[key][index]
   log.size += 1
 }
 
 /**
- * Log a newborn once its type, directive and traits are set. Pass parent
+ * Log a newborn once its type and traits are set. Pass parent
  * indices (not ids) into the live world, or `NO_GLORP`.
  */
 export const recordBirth = (
@@ -198,10 +193,9 @@ export const readLineage = (
     diedAt: log.diedAt[id],
     deathCause: log.deathCause[id] as DeathCause,
     killer: log.killer[id],
-    directive: log.directive[id],
     traits: Object.fromEntries(
       TRAIT_KEYS.map((key) => [key, log.traits[key][id]]),
-    ) as Record<TraitKey, number>,
+    ) as TraitLevels,
     name: log.names.get(id) ?? null,
   }
 }

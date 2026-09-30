@@ -7,8 +7,6 @@ import {
   MATE_FED_MIN,
   MATE_RANGE,
   MAX_GLORPS,
-  MUTATION_BIAS,
-  MUTATION_RATE,
   OFFSPRING_FED,
   STAMINA,
 } from '@/sim/config'
@@ -23,16 +21,26 @@ import {
   applyReproduction,
   tickCooldowns,
 } from '@/sim/reproduction'
-import { TRAITS, TRAIT_KEYS } from '@/sim/traits'
+import {
+  TRAIT_BUDGET,
+  TRAIT_KEYS,
+  TRAIT_MAX,
+  TRAIT_MIN,
+  traitValue,
+} from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
+/** Sum of a glorp's trait levels. */
+const levelTotal = (world: ReturnType<typeof createWorld>, index: number) =>
+  TRAIT_KEYS.reduce((sum, key) => sum + world[key][index], 0)
+
 describe('applyMetabolism', () => {
-  it('drains fed in proportion to metabolism', () => {
+  it('drains fed by the metabolism its efficiency level maps to', () => {
     const world = createWorld(4, 5)
     const before = world.fed[0]
     applyMetabolism(world, 1)
-    expect(world.fed[0]).toBeCloseTo(before - world.metabolism[0])
+    expect(world.fed[0]).toBeCloseTo(before - traitValue('efficiency', world.efficiency[0]))
   })
 })
 
@@ -52,15 +60,11 @@ describe('applyDeath', () => {
 })
 
 describe('applyReproduction', () => {
-  it('spawns a mutated offspring when fed and off cooldown', () => {
+  it('spawns an offspring that keeps the parent budget', () => {
     const world = createWorld(2, 9)
     world.fed[0] = 100
     world.cooldown[0] = 0
     const type = world.type[0]
-    const speed = world.speed[0]
-    const staminaMax = world.staminaMax[0]
-    const metabolism = world.metabolism[0]
-    const reproCooldown = world.reproCooldown[0]
     const x = world.x[0]
     const y = world.y[0]
     const parentSeed = world.wanderSeed[0]
@@ -69,28 +73,22 @@ describe('applyReproduction', () => {
 
     expect(world.count).toBe(3)
     expect(world.fed[0]).toBe(100)
-    expect(world.cooldown[0]).toBeCloseTo(reproCooldown)
+    expect(world.cooldown[0]).toBeCloseTo(
+      traitValue('fertility', world.fertility[0]),
+    )
     expect(world.fed[2]).toBe(50)
     expect(world.type[2]).toBe(type)
-    expect(world.stamina[2]).toBeCloseTo(world.staminaMax[2])
-    expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
+    expect(world.stamina[2]).toBeCloseTo(
+      traitValue('staminaMax', world.staminaMax[2]),
+    )
+    expect(world.cooldown[2]).toBeCloseTo(
+      traitValue('fertility', world.fertility[2]),
+    )
 
-    // Traits mutate but stay inside the configured ranges and near the parent.
-    const envelope = MUTATION_RATE + MUTATION_BIAS + 1e-9
-    expect(Math.abs(world.speed[2] - speed) / speed).toBeLessThanOrEqual(
-      envelope,
-    )
-    expect(Math.abs(world.staminaMax[2] - staminaMax) / staminaMax).toBeLessThanOrEqual(
-      envelope,
-    )
-    expect(
-      Math.abs(world.metabolism[2] - metabolism) / metabolism,
-    ).toBeLessThanOrEqual(envelope)
-    expect(
-      Math.abs(world.reproCooldown[2] - reproCooldown) / reproCooldown,
-    ).toBeLessThanOrEqual(envelope)
-    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAITS.speed.min)
-    expect(world.speed[2]).toBeLessThanOrEqual(TRAITS.speed.max)
+    // A clone moves at most one point, so it stays within two traits of its parent.
+    expect(levelTotal(world, 2)).toBe(TRAIT_BUDGET)
+    const changed = TRAIT_KEYS.filter((key) => world[key][2] !== world[key][0])
+    expect(changed.length).toBeLessThanOrEqual(2)
 
     expect(Math.hypot(world.x[2] - x, world.y[2] - y)).toBeCloseTo(GLORP_RADIUS)
     expect(world.wanderSeed[2]).not.toBe(parentSeed)
@@ -122,6 +120,16 @@ describe('applyReproduction', () => {
 })
 
 describe('applyPairReproduction', () => {
+  /** Two distinct, in-budget builds so a child's blend is observable. */
+  const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
+    const a = { speed: 6, staminaMax: 2, efficiency: 5, fertility: 3, strength: 4 }
+    const b = { speed: 2, staminaMax: 6, efficiency: 3, fertility: 5, strength: 4 }
+    for (const key of TRAIT_KEYS) {
+      world[key][0] = a[key]
+      world[key][1] = b[key]
+    }
+  }
+
   const setupPair = (): ReturnType<typeof createWorld> => {
     const world = createWorld(2, 17)
     world.type[0] = GLORP_TYPE.hunter
@@ -134,14 +142,7 @@ describe('applyPairReproduction', () => {
     world.fed[1] = 100
     world.cooldown[0] = 0
     world.cooldown[1] = 0
-    world.speed[0] = 40
-    world.speed[1] = 60
-    world.staminaMax[0] = 4
-    world.staminaMax[1] = 8
-    world.metabolism[0] = 2
-    world.metabolism[1] = 4
-    world.reproCooldown[0] = 10
-    world.reproCooldown[1] = 20
+    setParentLevels(world)
     return world
   }
 
@@ -156,8 +157,8 @@ describe('applyPairReproduction', () => {
     const father = mother === 0 ? 1 : 0
     expect(world.pregnant[mother]).toBeCloseTo(GESTATION_SECONDS)
     expect(world.gestationFather[mother]).toBe(world.id[father])
-    expect(world.cooldown[0]).toBeCloseTo(10)
-    expect(world.cooldown[1]).toBeCloseTo(20)
+    expect(world.cooldown[0]).toBeCloseTo(traitValue('fertility', 3))
+    expect(world.cooldown[1]).toBeCloseTo(traitValue('fertility', 5))
 
     applyGestation(world, GESTATION_SECONDS)
 
@@ -165,18 +166,17 @@ describe('applyPairReproduction', () => {
     expect(world.pregnant[mother]).toBe(0)
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
     expect(world.fed[2]).toBe(OFFSPRING_FED)
-    expect(world.stamina[2]).toBeCloseTo(world.staminaMax[2])
-    expect(world.cooldown[2]).toBeCloseTo(world.reproCooldown[2])
-    expect(world.speed[2]).toBeGreaterThanOrEqual(TRAITS.speed.min)
-    expect(world.speed[2]).toBeLessThanOrEqual(TRAITS.speed.max)
-    expect(world.staminaMax[2]).toBeGreaterThanOrEqual(TRAITS.staminaMax.min)
-    expect(world.staminaMax[2]).toBeLessThanOrEqual(TRAITS.staminaMax.max)
-    expect(world.metabolism[2]).toBeGreaterThanOrEqual(TRAITS.metabolism.min)
-    expect(world.metabolism[2]).toBeLessThanOrEqual(TRAITS.metabolism.max)
-    expect(world.reproCooldown[2]).toBeGreaterThanOrEqual(
-      TRAITS.reproCooldown.min,
+    expect(world.stamina[2]).toBeCloseTo(
+      traitValue('staminaMax', world.staminaMax[2]),
     )
-    expect(world.reproCooldown[2]).toBeLessThanOrEqual(TRAITS.reproCooldown.max)
+    expect(world.cooldown[2]).toBeCloseTo(
+      traitValue('fertility', world.fertility[2]),
+    )
+    expect(levelTotal(world, 2)).toBe(TRAIT_BUDGET)
+    for (const key of TRAIT_KEYS) {
+      expect(world[key][2]).toBeGreaterThanOrEqual(TRAIT_MIN)
+      expect(world[key][2]).toBeLessThanOrEqual(TRAIT_MAX)
+    }
   })
 
   it('loses the pregnancy if the mother is gone before term', () => {
@@ -213,12 +213,10 @@ describe('applyPairReproduction', () => {
     expect(child?.generation).toBe(1)
   })
 
-  it('trends toward the globally favorable parent across many matings', () => {
+  it('blends both parents and holds the budget across many matings', () => {
     const world = setupPair()
     const samples = 600
     let speed = 0
-    let metabolism = 0
-    let reproCooldown = 0
     for (let i = 0; i < samples; i += 1) {
       world.count = 2
       world.fed[0] = 100
@@ -227,12 +225,7 @@ describe('applyPairReproduction', () => {
       world.cooldown[1] = 0
       world.pregnant[0] = 0
       world.pregnant[1] = 0
-      world.speed[0] = 40
-      world.speed[1] = 60
-      world.metabolism[0] = 2
-      world.metabolism[1] = 4
-      world.reproCooldown[0] = 10
-      world.reproCooldown[1] = 20
+      setParentLevels(world)
       // Deferred birth reads the father's immutable lineage record, so mirror
       // the values we just set onto the records for parents 0 and 1.
       for (const key of TRAIT_KEYS) {
@@ -243,14 +236,14 @@ describe('applyPairReproduction', () => {
       applyPairReproduction(world)
       applyGestation(world, GESTATION_SECONDS)
 
+      expect(levelTotal(world, 2)).toBe(TRAIT_BUDGET)
       speed += world.speed[2]
-      metabolism += world.metabolism[2]
-      reproCooldown += world.reproCooldown[2]
     }
 
-    expect(speed / samples).toBeGreaterThan(50)
-    expect(metabolism / samples).toBeLessThan(3)
-    expect(reproCooldown / samples).toBeLessThan(15)
+    // Parents hold speed 6 and 2, so children average near 4 with no pull
+    // toward either.
+    expect(speed / samples).toBeGreaterThan(3.6)
+    expect(speed / samples).toBeLessThan(4.4)
   })
 
   it('does not mate out of range, on cooldown, or while hungry', () => {
@@ -403,12 +396,13 @@ describe('stamina', () => {
   it('stays exhausted until stamina recovers to the ready fraction', () => {
     const world = setupChase()
     world.exhausted[0] = 1
-    world.stamina[0] = world.staminaMax[0] * STAMINA.sprintReadyFraction - 0.01
+    const staminaMax = traitValue('staminaMax', world.staminaMax[0])
+    world.stamina[0] = staminaMax * STAMINA.sprintReadyFraction - 0.01
     rebuildSpatialGrid(world)
 
     expect(computeSteering(world, 0, 1 / 60).sprint).toBe(false)
 
-    world.stamina[0] = world.staminaMax[0] * STAMINA.sprintReadyFraction
+    world.stamina[0] = staminaMax * STAMINA.sprintReadyFraction
     updateStamina(world, 0)
     expect(world.exhausted[0]).toBe(0)
     expect(computeSteering(world, 0, 1 / 60).sprint).toBe(true)

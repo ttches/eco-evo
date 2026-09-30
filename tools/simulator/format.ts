@@ -148,7 +148,7 @@ const DIFF_METRICS: { label: string; path: string }[] = [
   { label: 'sprint starts/glorp/s', path: 'analysis.stamina.sprintStartsPerGlorpSecond' },
   { label: 'exhaustion events', path: 'analysis.stamina.exhaustionEvents' },
   { label: 'mean speed', path: 'analysis.traits.overall.speed' },
-  { label: 'mean metabolism', path: 'analysis.traits.overall.metabolism' },
+  { label: 'mean efficiency', path: 'analysis.traits.overall.efficiency' },
 ]
 
 /** Compare a baseline summary against a current one, per-metric. */

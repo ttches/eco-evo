@@ -8,10 +8,13 @@ import {
   PREGNANT_SPEED_FACTOR,
   PREY_FLEE,
   STEER_RATE,
+  WALK_SPEED,
 } from "@/sim/config";
 import { nearestGrassTile } from "@/sim/grass";
 import { isEligibleMate } from "@/sim/mate";
-import { canEatTier, strengthTier } from "@/sim/predation";
+import { canEatLevel } from "@/sim/predation";
+import { traitValue } from "@/sim/traits";
+
 import { nearestOfType } from "@/sim/query";
 import { rebuildSpatialGrid } from "@/sim/spatial";
 import { steerFlee } from "@/sim/steering/context-steering";
@@ -33,11 +36,10 @@ export type Drive = (
   dt: number,
 ) => Steering | null;
 
-const walkSpeed = (world: World, index: number): number =>
-  world.speed[index] * MOVEMENT.walkFactor;
+const WALK = WALK_SPEED * MOVEMENT.walkFactor;
 
 const jogSpeed = (world: World, index: number): number =>
-  world.speed[index] * MOVEMENT.jogFactor;
+  traitValue('speed', world.speed[index]) * MOVEMENT.jogFactor;
 
 /**
  * Speed for a glorp actively pursuing or fleeing: sprint when fresh, otherwise
@@ -51,7 +53,7 @@ const pursuitSpeed = (
   sprint: boolean,
   sprintMultiplier = 1,
 ): number =>
-  sprint ? world.speed[index] * sprintMultiplier : jogSpeed(world, index);
+  sprint ? traitValue('speed', world.speed[index]) * sprintMultiplier : jogSpeed(world, index);
 
 // The latch normally implies `stamina === 0` while exhausted, but the explicit
 // `stamina > 0` guard also stops a zero-capacity glorp from sprinting forever.
@@ -61,13 +63,13 @@ const canSprint = (world: World, index: number): boolean =>
 /** Hungry hunters sprint at prey in sight, jogging once exhausted. */
 const chasePrey: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null;
-  const hunterTier = strengthTier(world, index);
+  const hunterLevel = world.strength[index];
   const prey = nearestOfType(
     world,
     index,
     GLORP_TYPE.prey,
     HUNTER_SIGHT,
-    (candidate) => canEatTier(world, hunterTier, candidate),
+    (candidate) => canEatLevel(world, hunterLevel, candidate),
   );
   if (prey < 0) return null;
   const sprint = canSprint(world, index);
@@ -108,7 +110,7 @@ const seekGrass: Drive = (world, index, dt) => {
     index,
     tile.x,
     tile.y,
-    walkSpeed(world, index),
+    WALK,
     false,
     dt,
   );
@@ -132,7 +134,7 @@ const seekMate: Drive = (world, index, dt) => {
     index,
     world.x[mate],
     world.y[mate],
-    walkSpeed(world, index),
+    WALK,
     false,
     dt,
   );
@@ -150,7 +152,7 @@ const decideSteering = (world: World, index: number, dt: number): Steering => {
     const steering = drive(world, index, dt);
     if (steering) return steering;
   }
-  return steerWander(world, index, walkSpeed(world, index), dt);
+  return steerWander(world, index, WALK, dt);
 };
 
 /** Slow a pregnant glorp down (and optionally stop it sprinting). */

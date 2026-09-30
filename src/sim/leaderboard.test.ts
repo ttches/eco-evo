@@ -123,8 +123,8 @@ describe('sortStats', () => {
     traits: {
       speed: value,
       staminaMax: value,
-      metabolism: value,
-      reproCooldown: value,
+      efficiency: value,
+      fertility: value,
       strength: value,
     },
     ...overrides,
@@ -141,11 +141,10 @@ describe('sortStats', () => {
     expect(sortStats(entries, 'descendants').map((e) => e.id)).toEqual([1, 2, 0])
   })
 
-  it('follows each trait favored direction', () => {
+  it('sorts every trait highest first', () => {
     const entries = [stat(0, 3), stat(1, 9), stat(2, 9)]
-    // Speed favors higher, metabolism favors lower.
     expect(sortStats(entries, 'speed').map((e) => e.id)).toEqual([1, 2, 0])
-    expect(sortStats(entries, 'metabolism').map((e) => e.id)).toEqual([0, 1, 2])
+    expect(sortStats(entries, 'efficiency').map((e) => e.id)).toEqual([1, 2, 0])
   })
 })
 
@@ -162,8 +161,8 @@ describe('filterStats', () => {
     traits: {
       speed: 0,
       staminaMax: 0,
-      metabolism: 0,
-      reproCooldown: 0,
+      efficiency: 0,
+      fertility: 0,
       strength: 0,
     },
   })
@@ -212,17 +211,17 @@ describe('summarizeStats', () => {
 })
 
 describe('traitExtremesFromStats', () => {
-  it('picks the highest or lowest value per the favored direction', () => {
+  it('picks the highest level for every trait', () => {
     const world = createWorld(2, 7)
-    world.lineage.traits.speed[0] = 30
-    world.lineage.traits.speed[1] = 70
-    world.lineage.traits.metabolism[0] = 2
-    world.lineage.traits.metabolism[1] = 4
+    world.lineage.traits.speed[0] = 3
+    world.lineage.traits.speed[1] = 7
+    world.lineage.traits.efficiency[0] = 2
+    world.lineage.traits.efficiency[1] = 5
 
     const extremes = traitExtremesFromStats(buildLeaderboard(world))
     const byKey = Object.fromEntries(extremes.map((e) => [e.key, e]))
     expect(byKey.speed.id).toBe(1)
-    expect(byKey.metabolism.id).toBe(0)
+    expect(byKey.efficiency.id).toBe(1)
   })
 
   it('breaks trait ties toward the lower id', () => {

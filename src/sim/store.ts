@@ -16,8 +16,6 @@ const STATE_COLUMNS = {
   exhausted: Uint8Array,
   cooldown: Float32Array,
   wanderSeed: Float32Array,
-  /** Per-trait mutation bias: one bit per trait, 1 = lineage prefers higher. */
-  directive: Uint8Array,
   /** Stable per-glorp identity, unaffected by swap-removal compaction. */
   id: Uint32Array,
   /** Gestation seconds remaining; 0 when not pregnant. */
