@@ -25,6 +25,26 @@ describe('prey steering', () => {
     expect(Math.abs(steering.y)).toBeLessThan(1e-6)
     expect(steering.sprint).toBe(true)
   })
+
+  it('escapes a corner instead of pressing into it', () => {
+    const world = createWorld(2, 3)
+    world.type[0] = GLORP_TYPE.prey
+    world.type[1] = GLORP_TYPE.hunter
+    world.x[0] = world.radius
+    world.y[0] = world.radius
+    world.x[1] = world.radius + 80
+    world.y[1] = world.radius + 80
+    world.fed[0] = 50
+    world.stamina[0] = 5
+
+    rebuildSpatialGrid(world)
+    const steering = computeSteering(world, 0, DT)
+
+    expect(steering.x).toBeGreaterThanOrEqual(0)
+    expect(steering.y).toBeGreaterThanOrEqual(0)
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(world.speed[0])
+    expect(steering.sprint).toBe(true)
+  })
 })
 
 describe('hunter steering', () => {

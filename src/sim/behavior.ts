@@ -9,12 +9,12 @@ import {
 import { nearestGrassTile } from '@/sim/grass'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
+import { steerFlee } from '@/sim/steering/context-steering'
 import {
-  steerAway,
   steerToward,
   steerWander,
   type Steering,
-} from '@/sim/steering'
+} from '@/sim/steering/steering'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
@@ -51,7 +51,7 @@ const fleeHunters: Drive = (world, index, dt) => {
   const hunter = nearestOfType(world, index, GLORP_TYPE.hunter, PREY_FLEE)
   if (hunter < 0) return null
   const sprint = canSprint(world, index)
-  return steerAway(
+  return steerFlee(
     world,
     index,
     world.x[hunter],

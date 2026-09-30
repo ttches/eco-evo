@@ -72,6 +72,12 @@ export const HUNTER_SIGHT = 220;
 export const PREY_FLEE = 120;
 
 /**
+ * How far ahead, in world units, a steering glorp checks the arena bounds when
+ * choosing a heading. Wide enough to begin turning before reaching a wall.
+ */
+export const STEER_LOOKAHEAD = 48;
+
+/**
  * Hunters sprint this much faster than their `speed` trait, so they can close
  * on fleeing prey. Without an edge predators never catch anything and starve.
  */
