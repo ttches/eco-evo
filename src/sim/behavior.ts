@@ -13,7 +13,7 @@ import {
 import { nearestGrassTile } from "@/sim/grass";
 import { isEligibleMate } from "@/sim/mate";
 import { canEatLevel } from "@/sim/predation";
-import { traitValue } from "@/sim/traits";
+import { TRAITS, TRAIT_MAX, TRAIT_MIN, traitValue } from "@/sim/traits";
 
 import { nearestOfType } from "@/sim/query";
 import { rebuildSpatialGrid } from "@/sim/spatial";
@@ -38,8 +38,27 @@ export type Drive = (
 
 const WALK = WALK_SPEED * MOVEMENT.walkFactor;
 
+/**
+ * Jog fraction per `staminaMax` level, precomputed so the pursuit hot path is a
+ * lookup. It interpolates from `jogFactorMin` (least stamina) to `jogFactorMax`
+ * (most), anchored so the base build jogs at the old flat rate.
+ */
+const JOG_FACTOR_BY_LEVEL = (() => {
+  const { atMin, atMax } = TRAITS.staminaMax;
+  const span = atMax - atMin;
+  const table = new Float64Array(TRAIT_MAX + 1);
+  for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
+    const t = (traitValue('staminaMax', level) - atMin) / span;
+    table[level] =
+      MOVEMENT.jogFactorMin +
+      (MOVEMENT.jogFactorMax - MOVEMENT.jogFactorMin) * t;
+  }
+  return table;
+})();
+
 const jogSpeed = (world: World, index: number): number =>
-  traitValue('speed', world.speed[index]) * MOVEMENT.jogFactor;
+  traitValue('speed', world.speed[index]) *
+  JOG_FACTOR_BY_LEVEL[world.staminaMax[index]];
 
 /**
  * Speed for a glorp actively pursuing or fleeing: sprint when fresh, otherwise

@@ -27,7 +27,7 @@ import type { World } from '@/sim/world'
 /** Energy gained per unit of grass eaten. */
 const GRASS_ENERGY = PREY_ENERGY_PER_SECOND / PREY_CONSUME_PER_SECOND
 
-/** Scratch list of glorps eaten this step, in descending index order. */
+/** Scratch list of glorps eaten this step; each pass sets its own removal order. */
 const eaten = new Int32Array(MAX_GLORPS)
 
 /** Scratch flags marking glorps already claimed by a cannibal this step. */
@@ -152,7 +152,12 @@ export const cannibalize = (
     eaten[kills] = victim
     kills += 1
   }
-  for (let kill = 0; kill < kills; kill += 1) removeGlorp(world, eaten[kill])
+  // Victims are found in nearest-first order, not by index, so sort before
+  // swap-removing: removing a lower index first would shift a survivor into
+  // the removed slot and a later higher index would evict the wrong glorp.
+  const victims = eaten.subarray(0, kills)
+  victims.sort()
+  for (let kill = kills - 1; kill >= 0; kill -= 1) removeGlorp(world, victims[kill])
 }
 
 /** Prey graze, hunters hunt, and starving hunters may cannibalize. */

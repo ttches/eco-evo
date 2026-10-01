@@ -348,11 +348,36 @@ describe('stamina', () => {
     const world = createWorld(2, 13)
     world.fed[0] = 100
     world.stamina[0] = 0
+    world.staminaMax[0] = 4 // mechanical value 5 === STAMINA.referenceMax
 
     updateBehavior(world, 1 / 60)
     updateStamina(world, 1 / 60)
 
     expect(world.stamina[0]).toBeCloseTo(STAMINA.recoverPerSecond / 60)
+  })
+
+  it('recovers faster with more stamina and slower with less', () => {
+    const world = createWorld(2, 13)
+    world.fed[0] = 100
+    world.fed[1] = 100
+    world.stamina[0] = 0
+    world.stamina[1] = 0
+    world.staminaMax[0] = 1 // mechanical value 2
+    world.staminaMax[1] = 7 // mechanical value 8
+
+    updateBehavior(world, 1 / 60)
+    updateStamina(world, 1 / 60)
+
+    expect(world.stamina[0]).toBeCloseTo(
+      (STAMINA.recoverPerSecond *
+        (traitValue('staminaMax', world.staminaMax[0]) / STAMINA.referenceMax)) /
+        60,
+    )
+    expect(world.stamina[1]).toBeCloseTo(
+      (STAMINA.recoverPerSecond *
+        (traitValue('staminaMax', world.staminaMax[1]) / STAMINA.referenceMax)) /
+        60,
+    )
   })
 
   it('cannot sprint at zero stamina', () => {

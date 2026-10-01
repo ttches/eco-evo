@@ -1,3 +1,5 @@
+import { TRAIT_BASE, traitValue } from '@/sim/traits'
+
 /** Maximum number of glorps the simulation can hold at once. */
 export const MAX_GLORPS = 2048;
 
@@ -90,10 +92,13 @@ export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
   walkFactor: 0.45,
   /**
-   * Fraction of top speed used when a pursuing glorp is too exhausted to
-   * sprint. Between walking and sprinting, so fatigue still leaves some agency.
+   * Jog tier: fraction of top speed an exhausted glorp keeps while pursuing or
+   * fleeing. It scales with `staminaMax`, interpolating from `jogFactorMin`
+   * (least stamina) to `jogFactorMax` (most), so endurance buys speed once
+   * tired instead of a flat rate for everyone.
    */
-  jogFactor: 0.7,
+  jogFactorMin: 0.55,
+  jogFactorMax: 0.85,
 } as const;
 
 /** How quickly velocity is steered toward its target, in 1/s. */
@@ -104,7 +109,15 @@ export const WANDER_TURN_RATE = 2;
 
 export const STAMINA = {
   drainPerSecond: 1.0,
+  /** Recovery rate at `referenceMax`; scales with a glorp's own capacity. */
   recoverPerSecond: 0.6,
+  /**
+   * `staminaMax` value at which recovery runs at `recoverPerSecond`. Recovery
+   * scales linearly with capacity relative to this, so a bigger reserve refills
+   * proportionally faster and spends a larger share of time sprinting. Anchored
+   * at the base build, so an all-base glorp behaves as it always did.
+   */
+  referenceMax: traitValue('staminaMax', TRAIT_BASE),
   /**
    * A glorp that drains its stamina to empty latches into exhaustion and cannot
    * sprint again until stamina recovers to this fraction of `staminaMax`. This

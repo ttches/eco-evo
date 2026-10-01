@@ -3,11 +3,15 @@ import { STAMINA } from '@/sim/config'
 import { traitValue } from '@/sim/traits'
 import type { World } from '@/sim/world'
 
+/** Recovery gained per second, per point of a glorp's stamina capacity. */
+const RECOVER_PER_CAPACITY = STAMINA.recoverPerSecond / STAMINA.referenceMax
+
 /**
- * Sprinting drains stamina; everything else recharges it. Draining to empty
- * latches a glorp into exhaustion until stamina recovers to
- * `sprintReadyFraction`, which replaces the old `stamina > 0` per-frame
- * sprint/walk flicker with distinct bursts and rest gaps.
+ * Sprinting drains stamina; everything else recharges it, scaled by the
+ * glorp's own capacity (`staminaMax / referenceMax`) so bigger reserves refill
+ * faster. Draining to empty latches a glorp into exhaustion until stamina
+ * recovers to `sprintReadyFraction`, which replaces the old `stamina > 0`
+ * per-frame sprint/walk flicker with distinct bursts and rest gaps.
  */
 export const updateStamina = (world: World, dt: number): void => {
   for (let index = 0; index < world.count; index += 1) {
@@ -22,7 +26,7 @@ export const updateStamina = (world: World, dt: number): void => {
       }
     } else {
       const max = traitValue('staminaMax', world.staminaMax[index])
-      const next = world.stamina[index] + STAMINA.recoverPerSecond * dt
+      const next = world.stamina[index] + max * RECOVER_PER_CAPACITY * dt
       world.stamina[index] = next < max ? next : max
       if (
         world.exhausted[index] === 1 &&
