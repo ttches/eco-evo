@@ -3,12 +3,9 @@ import { START_HUNTERS, START_PREY } from '@/sim/config'
 import { spawnGlorp } from '@/sim/spawn'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
-import {
-  analyzeWorld,
-  countAlive,
-  describe as describeDistribution,
-  sampleWorld,
-} from './analyze.ts'
+import { countAlive, sampleWorld } from './analysis/sampling.ts'
+import { describe as describeDistribution } from './analysis/stats.ts'
+import { analyzeWorld } from './analyze.ts'
 
 describe('describeDistribution', () => {
   it('is empty-safe', () => {
@@ -58,23 +55,42 @@ describe('analyzeWorld', () => {
 
     const analysis = analyzeWorld(world)
     for (const key of ['prey', 'hunter'] as const) {
-      const { born, alive, deaths } = analysis.population
+      const { born, alive, deaths } = analysis.overview
       expect(deaths[key].eaten + deaths[key].starved).toBe(deaths[key].total)
       expect(deaths[key].total + alive[key]).toBe(born[key])
     }
-    expect(analysis.population.alive.total).toBe(world.count)
-    expect(analysis.ageAtDeath.aliveCensored).toEqual(analysis.population.alive)
+    expect(analysis.overview.alive.total).toBe(world.count)
+    expect(analysis.integrity.failures).toEqual([])
   })
 
-  it('counts every kill exactly once', () => {
+  it('counts every kill exactly once, splitting cannibalism out', () => {
     const world = createWorld(64, 321)
     for (let tick = 0; tick < 1200; tick += 1) step(world, 1 / 60)
-    const analysis = analyzeWorld(world)
-    expect(analysis.predation.totalKills).toBe(
-      analysis.population.deaths.prey.eaten,
-    )
-    expect(analysis.predation.huntersEverBorn).toBe(
-      analysis.population.born.hunter,
-    )
+    const { overview } = analyzeWorld(world)
+    expect(overview.predation.preyKills).toBe(overview.deaths.prey.eaten)
+    expect(overview.predation.cannibalKills).toBe(overview.deaths.hunter.eaten)
+    expect(overview.predation.huntersEverBorn).toBe(overview.born.hunter)
+  })
+
+  it('is deterministic for a seed', () => {
+    const run = (): unknown => {
+      const world = createWorld(64, 77)
+      const samples = [sampleWorld(world)]
+      for (let tick = 1; tick <= 900; tick += 1) {
+        step(world, 1 / 60)
+        if (tick % 120 === 0) samples.push(sampleWorld(world))
+      }
+      return analyzeWorld(world, samples).headline
+    }
+    expect(run()).toEqual(run())
+  })
+
+  it('reports every headline metric as a finite number or null', () => {
+    const world = createWorld(64, 5)
+    for (let tick = 0; tick < 900; tick += 1) step(world, 1 / 60)
+    const { headline } = analyzeWorld(world)
+    for (const value of Object.values(headline)) {
+      expect(value === null || Number.isFinite(value)).toBe(true)
+    }
   })
 })

@@ -35,22 +35,24 @@ npm run test:simulator -- --seeds 1,2,3,4 --seconds 600 --jobs 4 --out runs/swee
 | `--seeds <a,b,c>` | explicit seed list | – |
 | `--runs <n>` | n consecutive seeds from `--seed` | – |
 | `--seconds <n>` | simulated seconds per run | `600` |
-| `--prey <n>` / `--hunters <n>` | starting population | `120` / `8` |
-| `--sample <s>` | time-series sampling interval | `5` |
+| `--prey <n>` / `--hunters <n>` | starting population | `120` / `10` |
+| `--sample <s>` | time-series sampling interval | `2` |
+| `--warmup <s>` | start-up period excluded from "settled" population stats (clamped to 25% of the run) | `120` |
+| `--epochs <n>` | equal time slices for epoch tables and birth cohorts | `5` |
+| `--settle <s>` | ignore births in the last N s for selection stats | `60` |
+| `--floor-prey <n>` / `--floor-hunter <n>` | near-crash floor (post-warmup) | 15% / 40% of start |
 | `--stop-on <mode>` | `total` \| `prey` \| `hunter` \| `either` \| `none` | `total` |
 | `--check-every <steps>` | extinction check interval | `1` |
 | `--jobs <n>` | parallel worker processes | cpus-1 |
-| `--out <dir>` | output directory | `runs/<timestamp>` |
-| `--label <name>` | label appended to the default output dir | – |
-| `--config <file>` | config overlay (repeatable, layered) | game config |
-| `--set KEY=VALUE` | config override (repeatable) | – |
-| `--baseline <path>` | `summary.json` or its dir to diff against | – |
+| `--out <dir>` / `--label <name>` | output directory / suffix for the default one | `runs/<timestamp>` |
+| `--config <file>` / `--set KEY=VALUE` | config overlays / overrides (repeatable) | game config |
+| `--baseline <path>` | run or sweep directory (or `sweep.json`) to compare against | – |
 | `--no-csv` | skip `lineage.csv` / `timeseries.csv` | – |
-| `--quiet` | suppress progress and single-run summary | – |
+| `--quiet` | suppress the printed report | – |
 
-`--stop-on total` (default) ends a run the instant `world.count` hits 0.
-`either` ends when **prey or hunters** first reach 0, which is useful for
-detecting destabilizing changes; the collapsed side is recorded as `stopReason`.
+Use `--stop-on none` when studying dynamics: the default `total` only stops when
+*everything* is dead, so a hunter extinction runs on (which is what you want for
+crash analysis). `either` ends a run the instant prey or hunters hit 0.
 
 ## Config overlays and `--set`
 
@@ -81,56 +83,106 @@ an override feeds an expression-based constant the loader warns on stderr.
 
 ## A/B a mechanics change
 
-The whole point: hold seeds constant, change one thing, diff.
+Hold seeds constant, change one thing, compare **sweeps** (single seeds are too
+noisy: prey/hunter dynamics diverge chaotically, so use 8+ seeds per side).
 
 ```bash
-# 1. baseline (game config)
-npm run test:simulator -- --seeds 1,2,3 --seconds 600 --out runs/before --no-csv
-
-# 2. change the mechanic (edit src/sim/config.ts or use an overlay)
-npm run test:simulator -- --seeds 1,2,3 --seconds 600 --out runs/after \
-  --config tools/simulator/configs/slow-hunters.ts --no-csv
-
-# 3. diff the same seed against the baseline
-npm run test:simulator -- --seed 1 --seconds 600 --baseline runs/before/seed-1/summary.json \
-  --config tools/simulator/configs/slow-hunters.ts --out runs/check --no-csv
+npm run test:simulator -- --seeds 1,2,3,4,5,6,7,8 --seconds 600 --stop-on none --out runs/before
+# change src/sim/config.ts or pass an overlay / --set
+npm run test:simulator -- --seeds 1,2,3,4,5,6,7,8 --seconds 600 --stop-on none --out runs/after \
+  --set MOVEMENT.jogFactor=0.45 --baseline runs/before
 ```
 
-The diff prints per-metric % deltas (population, time-to-death, predation,
-lineage, traits). Same seed + same config = byte-identical analysis.
+The comparison prints mean-across-seeds per metric and marks **sig ↑/↓** only
+where the change exceeds 2x the across-seed standard error. Unmarked = within
+seed noise. With ~90 metrics an isolated "sig" is often chance; trust patterns of
+related metrics moving together. With one run per side there is no noise
+estimate and every delta is descriptive only.
 
-## Metrics
+## What the report answers
 
-- **Time to dead prey / hunters** — lifespan distribution (mean/median/p10/p90)
-  of dead glorps, split by `eaten` vs `starved`. For prey, `eaten` is also
-  time-to-kill; the killer id is in `lineage.csv`.
-- **Predation** — total kills, hunters-with-kills, kills per hunter,
-  time-to-first-kill.
-- **Lineage** — max/mean generation, generation time (mean parent age at
-  offspring birth), offspring per parent, trait means by generation (evolution
-  drift).
-- **Population** — born/alive/death-cause counts, plus the sampled time series
-  of counts, mean traits, mean generation, and grass level.
-- **Age at death** — histogram in `summary.json` (`analysis.ageAtDeath`).
+`report.md` (printed for a single run; per seed on disk) is written for people
+and LLMs. Sections, and the design question each answers:
+
+- **Verdict + flags**: `CRASH` (a type went extinct, or a lineage integrity check
+  failed) / `NEAR-CRASH` (population fell to the floor after warmup) / `WARN` /
+  `OK`. Flag thresholds are the exported `THRESHOLDS` in `analysis/health.ts`.
+- **Population**: settled min/p10/median/mean/p90/max, exact extinction time,
+  worst peak-to-trough drawdown, cycle count/period/swing and whether cycles widen
+  (`growth`), first-vs-second-half trend, time spent at/below the floor, plus a
+  sparkline of each population. "Settled" excludes the warmup so the start-up
+  boom/bust does not count as a low.
+- **Epochs**: population, energy and grass per time slice, and births / starved /
+  eaten per slice (what is killing each type, when).
+- **Deaths, predation**: lifespans by cause, prey kills vs cannibal kills,
+  kills per hunter-minute, how concentrated kills are (top-10% share, gini),
+  hunters that never killed, and the top killers with their builds. Hunters eaten
+  at birth by a starving parent are counted separately.
+- **Selection** (per type): for each trait the drift from founders to the final
+  cohort, the share pinned at level 1 / 7, and a budget-aware selection gradient
+  (`effect`) against lifespan, offspring and (hunters) kills. Traits share a point
+  budget, so naive correlations mislead; `effect` measures moving one point into
+  the trait from the average of the others, in outcome-sd per trait-sd. Also an
+  outcome-by-level table. Verdicts: strong advantage / advantage / neutral
+  ("possibly a dead stat") / disadvantage / trade-off.
+- **Performer cohorts**: top-decile by offspring, by lifespan, by kills, and the
+  shortest-lived decile, each with trait mean and gap to the population in sd.
+  Big gap = that trait separates winners.
+- **Builds and variance**: per birth-cohort distinct builds, effective builds,
+  mean pairwise build distance (points to move between two random members) and
+  per-trait sd; verdict `diverging` / `converging` / `stable` versus the founders;
+  most common builds and best builds by offspring.
+
+Caveats built into the numbers: lifespan/offspring of glorps alive at the end are
+lower bounds (right-censored); births in the last `--settle` seconds are excluded
+from selection; hunter stats in a single run have tiny n (the report says so), so
+use a sweep, whose **pooled** section merges every seed's individuals.
+
+## Metrics glossary (headline keys)
+
+Every run exposes a flat `analysis.headline` (e.g. `prey.pop.min`,
+`hunter.extinctAt`, `prey.sel.speed.offspring`, `hunter.div.distance`). Sweeps
+aggregate these (mean/sd/min/max) in `sweep.json`; the curated display list is
+`metrics.ts`. Add a metric in `analyze.ts` `buildHeadline` and (to show it) `metrics.ts`.
 
 ## Artifacts
 
 Under the output directory (git-ignored):
 
-- `summary.json` — run config + full `analysis` (machine-readable).
-- `lineage.csv` — one row per glorp ever born: id, type, parents, generation,
-  bornAt, diedAt, alive, deathCause, killer, directive, traits.
-- `timeseries.csv` — sampled population/trait metrics over sim time.
-- `sweep.json` — aggregate key metrics across all seeds in a run.
+- `report.md` / `report.html`: the full report / the same verdict with interactive
+  charts (populations with warmup shading and floor line, energy, grass, trait drift).
+  A sweep's root `report.md/html` adds per-seed table, flag rollup, across-seed
+  metrics, pooled selection/performers/builds and a population overlay of all seeds.
+- `summary.json`: run config + full `analysis` (machine-readable).
+- `sweep.json`: per-seed headlines and across-seed aggregate (also written for
+  single runs, and is what `--baseline` reads).
+- `lineage.csv`, `timeseries.csv` (traits split by prey/hunter): raw exports.
+- `individuals.json`, `population.json` (multi-seed only): inputs for pooling.
 
 For multi-seed runs each seed gets `seed-<n>/`; single runs write to the root.
 
+## Code layout (`tools/simulator/`)
+
+- `run.ts` CLI orchestration (spawns workers, aggregates) · `worker.ts` one run · `cli/args.ts` flags.
+- `analyze.ts` wires a finished world into a `RunAnalysis`; the computation is in `analysis/`:
+  `sampling` (time-series rows), `dynamics` + `cycles` (population), `individuals` (per-glorp table),
+  `overview`, `selection`, `performers`, `diversity`, `health` (flags + `THRESHOLDS`),
+  `integrity`, `lineage-stats`, `headline` (flat metrics), `stats` (math helpers).
+- `report/` markdown sections, `charts/` HTML pages (`chart-client.ts` is the in-browser renderer),
+  `sweep/` across-seed `aggregate`, `compare` (A/B), `sweep-report`, `metrics` (curated display list).
+- Analyses over the individual table take a table, not a world, which is why the same code
+  serves one run and a pooled sweep. Add a new analysis there, then surface it in `report/`.
+
+## Trust
+
+The simulator checks itself: every run asserts lineage invariants (trait budget,
+parent/child ordering, every eaten glorp has a hunter killer, alive counts match
+the world) and a failure is reported as a `CRASH` flag. Runs are deterministic
+per seed; `--no-csv` does not change results.
+
 ## Tips
 
-- Runs are single-threaded; use `--jobs` for sweeps and `--no-csv` when you only
-  need `summary.json`.
-- Extinction is absorbing, so `--stop-on` saves the tail of a collapsed run.
-- `--check-every` > 1 trades exact extinction timestamps for speed.
-- Read `lineage.csv` for anything not summarized (family trees, killer
-  networks, per-trait selection).
+- Runs are single-threaded (~4s per 600 simulated seconds); use `--jobs` for sweeps.
+- A flag that fires in most seeds is a property of the design; in one seed it may be luck.
+- Read `lineage.csv` for anything not summarized (family trees, killer networks).
 - Always compare like-for-like: same seeds, same `--seconds`, same population.

@@ -1,13 +1,19 @@
 /**
- * Filesystem artifacts for a simulator run: the machine-readable summary and
- * the CSV exports. Kept apart from `format.ts` so the formatters stay pure.
+ * Filesystem artifacts for a simulator run: the machine-readable summary, the
+ * human/LLM reports and the CSV/JSON exports. Kept apart from the formatters
+ * so those stay pure.
  */
 import { writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { DEATH_CAUSE } from '@/sim/lineage'
 import { TRAIT_KEYS } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
-import type { SampleRow } from './analyze.ts'
+import { buildTable, serializeTable } from './analysis/individuals.ts'
+import type { SampleRow } from './analysis/sampling.ts'
+import { TYPE_NAMES } from './analysis/types.ts'
+import { renderRunHtml } from './charts/run-charts.ts'
+import { formatReport } from './report/run-report.ts'
 import type { RunSummary } from './types.ts'
 
 const TYPE_NAME: Record<number, string> = {
@@ -21,25 +27,49 @@ const CAUSE_NAME: Record<number, string> = {
   [DEATH_CAUSE.eaten]: 'eaten',
 }
 
-export const writeSummaryJson = (path: string, summary: RunSummary): void => {
-  writeFileSync(path, `${JSON.stringify(summary, null, 2)}\n`)
+export const writeSummaryJson = (file: string, summary: RunSummary): void => {
+  writeFileSync(file, `${JSON.stringify(summary, null, 2)}\n`)
+}
+
+/** `report.md` (for people and LLMs) and `report.html` (charts) for one run. */
+export const writeReports = (
+  dir: string,
+  summary: RunSummary,
+  samples: SampleRow[],
+): void => {
+  writeFileSync(path.join(dir, 'report.md'), `${formatReport(summary, samples)}\n`)
+  writeFileSync(path.join(dir, 'report.html'), renderRunHtml(summary, samples))
+}
+
+/** Per-individual table used to pool selection data across a sweep's seeds. */
+export const writePoolingData = (
+  dir: string,
+  world: World,
+  summary: RunSummary,
+  samples: SampleRow[],
+): void => {
+  const { epochs, settleSeconds, seed } = summary.run
+  writeFileSync(
+    path.join(dir, 'individuals.json'),
+    serializeTable(buildTable(world, { epochs, settleSeconds, seed })),
+  )
+  writeFileSync(
+    path.join(dir, 'population.json'),
+    JSON.stringify({
+      seed,
+      times: samples.map((row) => row.time),
+      prey: samples.map((row) => row.alivePrey),
+      hunter: samples.map((row) => row.aliveHunter),
+    }),
+  )
 }
 
 /** One CSV row per glorp ever born, for external analysis. */
-export const writeLineageCsv = (path: string, world: World): void => {
+export const writeLineageCsv = (file: string, world: World): void => {
   const log = world.lineage
   const header = [
-    'id',
-    'type',
-    'parentA',
-    'parentB',
-    'generation',
-    'bornAt',
-    'diedAt',
-    'alive',
-    'deathCause',
-    'killer',
-    ...TRAIT_KEYS,
+    'id', 'type', 'parentA', 'parentB', 'generation', 'bornAt', 'diedAt',
+    'alive', 'deathCause', 'killer', ...TRAIT_KEYS,
   ].join(',')
   const rows = [header]
   for (let id = 0; id < log.size; id += 1) {
@@ -60,26 +90,17 @@ export const writeLineageCsv = (path: string, world: World): void => {
       ].join(','),
     )
   }
-  writeFileSync(path, `${rows.join('\n')}\n`)
+  writeFileSync(file, `${rows.join('\n')}\n`)
 }
 
-/** Sampled live-population metrics over sim time. */
-export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
+/** Sampled live-population metrics over sim time, traits split by type. */
+export const writeTimeseriesCsv = (file: string, rows: SampleRow[]): void => {
   const header = [
-    'time',
-    'alivePrey',
-    'aliveHunter',
-    'aliveTotal',
-    'everBorn',
-    'meanSpeed',
-    'meanStaminaMax',
-    'meanLiveStamina',
-    'sprintDutyCycle',
-    'exhaustedFraction',
-    'meanFertility',
-    'meanStrength',
-    'meanGeneration',
-    'grassMean',
+    'time', 'alivePrey', 'aliveHunter', 'aliveTotal', 'everBorn',
+    'preyFed', 'hunterFed', 'hunterPregnant',
+    'meanGenerationPrey', 'meanGenerationHunter',
+    'sprintDutyCycle', 'exhaustedFraction', 'grassMean',
+    ...TYPE_NAMES.flatMap((type) => TRAIT_KEYS.map((key) => `${type}_${key}`)),
   ].join(',')
   const body = rows.map((row) =>
     [
@@ -88,16 +109,16 @@ export const writeTimeseriesCsv = (path: string, rows: SampleRow[]): void => {
       row.aliveHunter,
       row.aliveTotal,
       row.everBorn,
-      row.meanSpeed.toFixed(4),
-      row.meanStaminaMax.toFixed(4),
-      row.meanLiveStamina.toFixed(4),
+      row.preyFed.toFixed(3),
+      row.hunterFed.toFixed(3),
+      row.hunterPregnant,
+      row.meanGenerationPrey.toFixed(3),
+      row.meanGenerationHunter.toFixed(3),
       row.sprintDutyCycle.toFixed(4),
       row.exhaustedFraction.toFixed(4),
-      row.meanFertility.toFixed(4),
-      row.meanStrength.toFixed(4),
-      row.meanGeneration.toFixed(4),
       row.grassMean.toFixed(6),
+      ...TYPE_NAMES.flatMap((type) => TRAIT_KEYS.map((key) => row.traits[type][key].toFixed(3))),
     ].join(','),
   )
-  writeFileSync(path, `${[header, ...body].join('\n')}\n`)
+  writeFileSync(file, `${[header, ...body].join('\n')}\n`)
 }

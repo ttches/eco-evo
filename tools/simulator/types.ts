@@ -11,6 +11,15 @@ export type RunSettings = {
   simSeconds: number
   sampleSeconds: number
   stopOn: StopOn
+  /** Start-up seconds excluded from "settled" population statistics. */
+  warmupSeconds: number
+  /** Equal time slices for epoch tables and birth-cohort rows. */
+  epochs: number
+  /** Births in the final seconds are too young to judge and skipped in selection. */
+  settleSeconds: number
+  /** Near-crash floors; null derives them from the starting population. */
+  floorPrey: number | null
+  floorHunter: number | null
 }
 
 /** One simulation run requested by the CLI. */
@@ -18,6 +27,8 @@ export type Job = RunSettings & {
   checkEvery: number
   outDir: string
   writeCsv: boolean
+  /** Write `individuals.json` so a sweep can pool selection data across seeds. */
+  writeIndividuals: boolean
 }
 
 export type RunConfig = RunSettings & {

@@ -9,9 +9,12 @@ import { FIXED_STEP } from '@/engine/config'
 import { spawnRandom } from '@/sim/spawn'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
-import { analyzeWorld, countAlive, sampleWorld, type SampleRow } from './analyze.ts'
+import { countAlive, sampleWorld, type SampleRow } from './analysis/sampling.ts'
+import { analyzeWorld, defaultFloors } from './analyze.ts'
 import {
-  writeLineageCsv,
+    writeLineageCsv,
+  writePoolingData,
+  writeReports,
   writeSummaryJson,
   writeTimeseriesCsv,
 } from './artifacts.ts'
@@ -78,11 +81,15 @@ const advance = (
       }
     }
   }
+  // Always end on a sample so "end" statistics describe the final state.
+  if (timeseries[timeseries.length - 1].time < world.time) {
+    timeseries.push(sampleWorld(world))
+  }
   return { timeseries, stopReason, steps }
 }
 
 const run = (job: Job): void => {
-  const { checkEvery, outDir, writeCsv, ...settings } = job
+  const { checkEvery, outDir, writeCsv, writeIndividuals, ...settings } = job
   const world = seedWorld(settings)
   const started = performance.now()
   const { timeseries, stopReason, steps } = advance(
@@ -103,10 +110,23 @@ const run = (job: Job): void => {
     steps,
     lineageSize: world.lineage.size,
   }
-  const summary: RunSummary = { run: runConfig, analysis: analyzeWorld(world) }
+  const defaults = defaultFloors(settings.startPrey, settings.startHunters)
+  const analysis = analyzeWorld(world, timeseries, {
+    seed: settings.seed,
+    warmupSeconds: settings.warmupSeconds,
+    epochs: settings.epochs,
+    settleSeconds: settings.settleSeconds,
+    floors: {
+      prey: settings.floorPrey ?? defaults.prey,
+      hunter: settings.floorHunter ?? defaults.hunter,
+    },
+  })
+  const summary: RunSummary = { run: runConfig, analysis }
 
   mkdirSync(outDir, { recursive: true })
   writeSummaryJson(path.join(outDir, 'summary.json'), summary)
+  writeReports(outDir, summary, timeseries)
+  if (writeIndividuals) writePoolingData(outDir, world, summary, timeseries)
   if (writeCsv) {
     writeLineageCsv(path.join(outDir, 'lineage.csv'), world)
     writeTimeseriesCsv(path.join(outDir, 'timeseries.csv'), timeseries)
