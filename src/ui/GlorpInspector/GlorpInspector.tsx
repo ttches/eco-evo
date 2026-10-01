@@ -6,6 +6,8 @@ import styles from './GlorpInspector.module.css'
 
 type GlorpInspectorProps = {
   glorp: GlorpView | null
+  locked: boolean
+  onToggleLock: () => void
   onClose: () => void
   onBack: () => void
   canGoBack: boolean
@@ -16,6 +18,8 @@ type GlorpInspectorProps = {
 /** Panel shown when a glorp is clicked: identity, stats and lineage. */
 const GlorpInspector = ({
   glorp,
+  locked,
+  onToggleLock,
   onClose,
   onBack,
   canGoBack,
@@ -28,6 +32,8 @@ const GlorpInspector = ({
     <aside className={styles.panel} aria-label="Glorp inspector">
       <GlorpHeader
         glorp={glorp}
+        locked={locked}
+        onToggleLock={onToggleLock}
         canGoBack={canGoBack}
         onBack={onBack}
         onClose={onClose}

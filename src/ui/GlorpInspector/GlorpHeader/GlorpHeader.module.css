@@ -11,6 +11,13 @@
   gap: 0.3rem;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
 .badgeRow {
   display: flex;
   align-items: center;
@@ -31,7 +38,8 @@
 }
 
 .rename,
-.back {
+.back,
+.lock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -48,15 +56,22 @@
 }
 
 .rename:hover,
-.back:hover {
+.back:hover,
+.lock:hover {
   background: var(--accent);
   color: var(--foreground);
 }
 
 .rename svg,
-.back svg {
+.back svg,
+.lock svg {
   width: 0.82rem;
   height: 0.82rem;
+}
+
+.lockActive {
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .nameInput {
@@ -115,7 +130,8 @@
 @media (pointer: coarse) {
   .close,
   .back,
-  .rename {
+  .rename,
+  .lock {
     width: 2.75rem;
     height: 2.75rem;
   }

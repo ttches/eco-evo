@@ -21,6 +21,8 @@ type CanvasControlHandlers = {
   onClick: (point: Point) => void
   /** A second quick touch tap in the same spot. The first tap still clicks. */
   onDoubleTap: (point: Point) => void
+  /** The user dragged or pinched to pan the view. */
+  onUserPan: () => void
 }
 
 /** Convert client coordinates to viewport pixels, or null if not laid out. */
@@ -46,7 +48,7 @@ const clientToViewport = (
 export const useCanvasControls = (
   canvasRef: RefObject<HTMLCanvasElement | null>,
   cameraRef: RefObject<Camera>,
-  { onCameraChange, onClick, onDoubleTap }: CanvasControlHandlers,
+  { onCameraChange, onClick, onDoubleTap, onUserPan }: CanvasControlHandlers,
 ): RefObject<Cursor> => {
   const cursorRef = useRef<Cursor>({ x: 0, y: 0, over: false })
 
@@ -185,15 +187,18 @@ export const useCanvasControls = (
         lastX = mid.x
         lastY = mid.y
         lastSpread = spread
+        onUserPan()
         onCameraChange()
         return
       }
 
       if (
+        !moved &&
         Math.hypot(event.clientX - downX, event.clientY - downY) >
-        CLICK_DRAG_THRESHOLD_PX
+          CLICK_DRAG_THRESHOLD_PX
       ) {
         moved = true
+        onUserPan()
       }
       panClient(event.clientX - lastX, event.clientY - lastY)
       lastX = event.clientX
@@ -232,7 +237,7 @@ export const useCanvasControls = (
       canvas.removeEventListener('pointercancel', handlePointerUp)
       canvas.removeEventListener('pointerleave', handlePointerLeave)
     }
-  }, [canvasRef, cameraRef, onCameraChange, onClick, onDoubleTap])
+  }, [canvasRef, cameraRef, onCameraChange, onClick, onDoubleTap, onUserPan])
 
   return cursorRef
 }

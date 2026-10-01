@@ -85,6 +85,10 @@ export const focusCamera = (
 ): Camera =>
   clampCamera({ ...camera, x, y, zoom: Math.max(camera.zoom, zoom) })
 
+/** Recenter on a world point, keeping the current zoom, for a locked follow. */
+export const followCamera = (camera: Camera, x: number, y: number): Camera =>
+  clampCamera({ ...camera, x, y })
+
 /** World-space rectangle currently visible through the viewport. */
 export const viewBounds = (camera: Camera): ViewBounds => {
   const halfWidth = camera.viewport.width / camera.zoom / 2

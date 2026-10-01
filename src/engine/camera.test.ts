@@ -5,6 +5,7 @@ import {
   fitCamera,
   fitZoom,
   focusCamera,
+  followCamera,
   panBy,
   resizeCamera,
   screenToWorld,
@@ -130,6 +131,27 @@ describe('focusCamera', () => {
   it('clamps near the world edge', () => {
     const focused = focusCamera(at(0, 0, 1), -500, 9999, 0.5)
     const bounds = viewBounds(focused)
+    expect(bounds.left).toBeGreaterThanOrEqual(-1e-9)
+    expect(bounds.bottom).toBeLessThanOrEqual(WORLD.height + 1e-9)
+  })
+})
+
+describe('followCamera', () => {
+  it('recenters on a world point without changing zoom', () => {
+    const followed = followCamera(at(0, 0, 1), 900, 500)
+    expect(followed.x).toBeCloseTo(900)
+    expect(followed.y).toBeCloseTo(500)
+    expect(followed.zoom).toBe(1)
+  })
+
+  it('keeps a zoomed-out view zoomed out', () => {
+    const followed = followCamera(at(0, 0, fitZoom(LANDSCAPE)), 900, 500)
+    expect(followed.zoom).toBeCloseTo(fitZoom(LANDSCAPE))
+  })
+
+  it('clamps near the world edge', () => {
+    const followed = followCamera(at(0, 0, 1), -500, 9999)
+    const bounds = viewBounds(followed)
     expect(bounds.left).toBeGreaterThanOrEqual(-1e-9)
     expect(bounds.bottom).toBeLessThanOrEqual(WORLD.height + 1e-9)
   })

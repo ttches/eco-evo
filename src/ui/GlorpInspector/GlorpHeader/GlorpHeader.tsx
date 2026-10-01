@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { ArrowLeft, Pencil, X } from 'lucide-react'
+import { ArrowLeft, Lock, LockOpen, Pencil, X } from 'lucide-react'
 import type { GlorpView } from '@/sim/inspect'
 import GlorpTypeBadge from '../GlorpTypeBadge/GlorpTypeBadge'
 import styles from './GlorpHeader.module.css'
 
 type GlorpHeaderProps = {
   glorp: GlorpView
+  locked: boolean
+  onToggleLock: () => void
   canGoBack: boolean
   onBack: () => void
   onClose: () => void
@@ -14,10 +16,12 @@ type GlorpHeaderProps = {
 
 /**
  * Identity row: back navigation, type/deceased badges, the editable name and
- * the close button. Owns the transient rename input.
+ * the camera lock / close buttons. Owns the transient rename input.
  */
 const GlorpHeader = ({
   glorp,
+  locked,
+  onToggleLock,
   canGoBack,
   onBack,
   onClose,
@@ -90,14 +94,32 @@ const GlorpHeader = ({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        className={styles.close}
-        onClick={onClose}
-        aria-label="Close inspector"
-      >
-        <X aria-hidden="true" />
-      </button>
+      <div className={styles.actions}>
+        {glorp.alive ? (
+          <button
+            type="button"
+            className={`${styles.lock} ${locked ? styles.lockActive : ''}`}
+            onClick={onToggleLock}
+            aria-pressed={locked}
+            aria-label={locked ? 'Unlock camera' : 'Lock camera'}
+            aria-keyshortcuts="Space"
+          >
+            {locked ? (
+              <Lock aria-hidden="true" />
+            ) : (
+              <LockOpen aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={styles.close}
+          onClick={onClose}
+          aria-label="Close inspector"
+        >
+          <X aria-hidden="true" />
+        </button>
+      </div>
     </header>
   )
 }

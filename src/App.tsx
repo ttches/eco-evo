@@ -33,6 +33,8 @@ import StatsPanel from '@/ui/FloatingUI/StatsPanel/StatsPanel'
 import TopActions from '@/ui/FloatingUI/TopActions/TopActions'
 import GlorpInspector from '@/ui/GlorpInspector/GlorpInspector'
 import Stage from '@/ui/Stage/Stage'
+import { isEditableTarget } from '@/ui/keyboard'
+import { useCameraLock } from '@/ui/useCameraLock'
 import { useCanvasControls } from '@/ui/useCanvasControls'
 
 /** How often the floating UI refreshes from the live simulation, in ms. */
@@ -43,12 +45,6 @@ const STATS_INTERVAL_MS = 500
 
 /** Extra screen-space tolerance (px) for clicking a small glorp. */
 const PICK_TOLERANCE_PX = 8
-
-const isEditableTarget = (target: EventTarget | null): boolean =>
-  target instanceof HTMLInputElement ||
-  target instanceof HTMLTextAreaElement ||
-  target instanceof HTMLSelectElement ||
-  (target instanceof HTMLElement && target.isContentEditable)
 
 const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -76,13 +72,41 @@ const App = () => {
     setZoom(cameraRef.current.zoom)
   }, [])
 
+  /** Center on the selected glorp, if it is still alive in the world. */
+  const centerOnSelected = useCallback(() => {
+    const id = selectedIdRef.current
+    if (id === null) return
+    const index = findGlorpById(world, id)
+    if (index < 0) return
+    cameraRef.current = focusCamera(
+      cameraRef.current,
+      world.x[index],
+      world.y[index],
+      CAMERA.focusZoom,
+    )
+    handleCameraChange()
+  }, [world, handleCameraChange])
+
+  const {
+    locked,
+    toggleLock,
+    unlock: unlockCamera,
+    follow: followLocked,
+  } = useCameraLock({
+    cameraRef,
+    world,
+    selectedIdRef,
+    onCenter: centerOnSelected,
+  })
+
   const clearSelection = useCallback(() => {
     selectedIdRef.current = null
     historyRef.current = []
     needsDrawRef.current = true
     setCanGoBack(false)
     setSelected(null)
-  }, [])
+    unlockCamera()
+  }, [unlockCamera])
 
   /**
    * Show a glorp. `center` is set only when following a lineage or stats link,
@@ -93,19 +117,9 @@ const App = () => {
       selectedIdRef.current = id
       needsDrawRef.current = true
       setSelected(readGlorpView(world, id))
-
-      if (!center) return
-      const index = findGlorpById(world, id)
-      if (index < 0) return
-      cameraRef.current = focusCamera(
-        cameraRef.current,
-        world.x[index],
-        world.y[index],
-        CAMERA.focusZoom,
-      )
-      handleCameraChange()
+      if (center) centerOnSelected()
     },
-    [world, handleCameraChange],
+    [world, centerOnSelected],
   )
 
   /** A fresh world click resets the history and leaves the camera alone. */
@@ -183,6 +197,7 @@ const App = () => {
     onCameraChange: handleCameraChange,
     onClick: selectAt,
     onDoubleTap: handleDoubleTap,
+    onUserPan: unlockCamera,
   })
 
   const spawn = useCallback(
@@ -262,6 +277,7 @@ const App = () => {
     const loop = createLoop(FIXED_STEP, {
       step: (deltaSeconds) => step(world, deltaSeconds),
       frame: (steps) => {
+        if (followLocked()) needsDrawRef.current = true
         // Frames with no step and no view change would draw the same image.
         if (steps === 0 && !needsDrawRef.current) return
         needsDrawRef.current = false
@@ -293,7 +309,7 @@ const App = () => {
       resizeObserver.disconnect()
       renderer.dispose()
     }
-  }, [world, handleCameraChange, refreshStats])
+  }, [world, handleCameraChange, refreshStats, followLocked])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -331,6 +347,8 @@ const App = () => {
       <GlorpInspector
         key={selected?.id ?? 'none'}
         glorp={selected}
+        locked={locked}
+        onToggleLock={toggleLock}
         onClose={clearSelection}
         onBack={goBack}
         canGoBack={canGoBack}

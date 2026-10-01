@@ -1,7 +1,7 @@
-changelog focussed on gameplay changes + simulator run per version (not always) to document drift per patch
-
 add camera lock feature. glorpinspector should have icon that locks. turns off when clicked again or when user pans.
 clicking a living glorp in the stats panel should also center camera on glorp. with glorp inspector up, space on keyboard toggles lock icon
+
+positive Analytics metric longer lives for the most successful glorps living a similarly long amount of time (but not invincible)
 
 glorp inspector renders specific glorp next to name and can round to full seconds. show parents on right end of lineage bar.
 the "repro status" icon should look ike ovaries
@@ -9,6 +9,7 @@ repro status should show a status not a timer. consolidate pregnancy with it.
 the trait ratios should look cooler, maybe 7 segmented bar.
 let's remove position
 show time alive
+maybe lineage should be a row with two buttons parents (button somehow represents 2 parents or 1) and children, with totals. maybe theyre a drawer that expands upward on click with info rows of glorp summaries of ancestors or children?
 
 remove global genetic directive
 
