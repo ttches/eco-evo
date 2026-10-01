@@ -9,6 +9,8 @@ export type RenderableWorld = {
   readonly x: Float32Array
   readonly y: Float32Array
   readonly radius: number
+  /** Stable per-glorp identity, used to vary the blob silhouette. */
+  readonly id: Uint32Array
   readonly type: Uint8Array
   readonly fed: Float32Array
   /** Gestation seconds remaining; 0 when not pregnant. */

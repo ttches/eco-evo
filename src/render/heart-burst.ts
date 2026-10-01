@@ -23,12 +23,6 @@ export const HEART_SIZE = 8
 export const HEART_RISE = 10
 
 /**
- * Below this zoom hearts are too small to read, so the layer is skipped. Kept
- * at or below the camera's focus zoom so a focused glorp always shows them.
- */
-export const HEART_MIN_ZOOM = 0.5
-
-/**
  * Fraction (0..1) through one heart's life, or null when that heart is not on
  * screen yet or has already faded. `heartIndex` is its position in the burst.
  */

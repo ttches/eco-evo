@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { ViewBounds } from '@/engine/camera'
 import { CAMERA } from '@/engine/config'
 import { writeGlorpColor } from '@/render/appearance'
+import { DETAIL_MIN_ZOOM } from '@/render/lod'
 import { MAX_GLORPS } from '@/sim/config'
 import type { RenderableWorld } from '@/sim/view'
 
@@ -33,7 +34,17 @@ export class GlorpLayer {
     this.mesh.renderOrder = 2
   }
 
-  public update(world: RenderableWorld, bounds: ViewBounds): void {
+  public update(
+    world: RenderableWorld,
+    bounds: ViewBounds,
+    zoom: number,
+  ): void {
+    // Above this zoom the outlined detail layer takes over.
+    if (zoom >= DETAIL_MIN_ZOOM) {
+      this.mesh.count = 0
+      return
+    }
+
     const count = Math.min(world.count, MAX_GLORPS)
     const radius = world.radius
     const margin = radius + CAMERA.cullMargin

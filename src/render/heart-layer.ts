@@ -3,11 +3,11 @@ import type { ViewBounds } from '@/engine/camera'
 import { CAMERA } from '@/engine/config'
 import {
   HEARTS_PER_BURST,
-  HEART_MIN_ZOOM,
   HEART_RISE,
   HEART_SIZE,
   burstProgress,
 } from '@/render/heart-burst'
+import { DETAIL_MIN_ZOOM } from '@/render/lod'
 import { HEART_COLOR } from '@/render/palette'
 import { GESTATION_SECONDS, MAX_GLORPS } from '@/sim/config'
 import type { RenderableWorld } from '@/sim/view'
@@ -29,7 +29,8 @@ const createHeartGeometry = (): THREE.ShapeGeometry => {
 
 /**
  * Flat hearts that burst above a glorp at conception. One short pulse per
- * pregnancy, skipped entirely while zoomed out where a heart is sub-pixel.
+ * pregnancy, skipped while zoomed out past `DETAIL_MIN_ZOOM` where a heart is
+ * only a couple of pixels across.
  */
 export class HeartLayer {
   public readonly mesh: THREE.InstancedMesh
@@ -57,7 +58,7 @@ export class HeartLayer {
   }
 
   public update(world: RenderableWorld, bounds: ViewBounds, zoom: number): void {
-    if (zoom < HEART_MIN_ZOOM) {
+    if (zoom < DETAIL_MIN_ZOOM) {
       this.mesh.count = 0
       return
     }

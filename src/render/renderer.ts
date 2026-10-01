@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
+import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { GlorpLayer } from '@/render/glorp-layer'
 import { GrassLayer } from '@/render/grass-layer'
 import { GroundPass } from '@/render/ground'
@@ -15,6 +16,7 @@ export class Renderer {
   private readonly ground = new GroundPass()
   private readonly grass = new GrassLayer()
   private readonly glorps = new GlorpLayer()
+  private readonly glorpDetail = new GlorpDetailLayer()
   private readonly hearts = new HeartLayer()
   private readonly selection = new SelectionRing()
 
@@ -38,6 +40,7 @@ export class Renderer {
       this.ground.mesh,
       this.grass.mesh,
       this.glorps.mesh,
+      this.glorpDetail.mesh,
       this.hearts.mesh,
       this.selection.mesh,
     )
@@ -61,7 +64,8 @@ export class Renderer {
     this.camera.updateProjectionMatrix()
 
     this.grass.update(world)
-    this.glorps.update(world, bounds)
+    this.glorps.update(world, bounds, camera.zoom)
+    this.glorpDetail.update(world, bounds, camera.zoom)
     this.hearts.update(world, bounds, camera.zoom)
     this.selection.update(world, selectedIndex)
 
@@ -72,6 +76,7 @@ export class Renderer {
     this.ground.dispose()
     this.grass.dispose()
     this.glorps.dispose()
+    this.glorpDetail.dispose()
     this.hearts.dispose()
     this.selection.dispose()
     this.renderer.dispose()

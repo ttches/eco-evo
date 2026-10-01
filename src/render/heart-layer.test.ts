@@ -2,11 +2,10 @@ import { Matrix4, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import {
   HEARTS_PER_BURST,
-  HEART_MIN_ZOOM,
-  HEART_RISE,
   HEART_SIZE,
 } from '@/render/heart-burst'
 import { HeartLayer } from '@/render/heart-layer'
+import { DETAIL_MIN_ZOOM } from '@/render/lod'
 import { GESTATION_SECONDS } from '@/sim/config'
 import type { RenderableWorld } from '@/sim/view'
 
@@ -19,6 +18,7 @@ const makeWorld = (pregnant: number): RenderableWorld =>
     x: Float32Array.of(100),
     y: Float32Array.of(100),
     radius: 12,
+    id: new Uint32Array(1),
     type: new Uint8Array(1),
     fed: new Float32Array(1),
     pregnant: Float32Array.of(pregnant),
@@ -49,7 +49,7 @@ describe('HeartLayer', () => {
 
   it('skips the layer while zoomed out', () => {
     const layer = new HeartLayer()
-    layer.update(makeWorld(MID_BURST), BOUNDS, HEART_MIN_ZOOM - 0.01)
+    layer.update(makeWorld(MID_BURST), BOUNDS, DETAIL_MIN_ZOOM - 0.01)
     expect(layer.mesh.count).toBe(0)
     layer.dispose()
   })
@@ -70,7 +70,6 @@ describe('HeartLayer', () => {
     const size = matrix.getMaxScaleOnAxis()
     expect(size).toBeGreaterThan(0)
     expect(size).toBeLessThanOrEqual(HEART_SIZE)
-    expect(size).toBeLessThan(HEART_RISE)
     layer.dispose()
   })
 

@@ -1,6 +1,4 @@
-reload doesn't change seed? game always has glorp 125 with same stats
-
-simulator: split born by predator / prey
+add camera lock feature. glorpinspector should have icon that locks. turns off when clicked again or when user pans
 
 speed and stamina both need to be viable
 
