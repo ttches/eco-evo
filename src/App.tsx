@@ -23,8 +23,9 @@ import {
 } from '@/sim/leaderboard'
 import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
+import { resolveInitialSeed } from '@/sim/seed'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
-import { createWorld, step, type World } from '@/sim/world'
+import { createWorld, step } from '@/sim/world'
 import Brand from '@/ui/FloatingUI/Brand/Brand'
 import ControlDock from '@/ui/FloatingUI/ControlDock/ControlDock'
 import SettingsPanel from '@/ui/FloatingUI/SettingsPanel/SettingsPanel'
@@ -57,7 +58,10 @@ const App = () => {
   const historyRef = useRef<number[]>([])
   /** Set when the view or selection changed; steps redraw on their own. */
   const needsDrawRef = useRef(true)
-  const [world] = useState<World>(() => createWorld())
+  // Created once and mutated in place by the sim loop, never replaced.
+  const [world] = useState(() =>
+    createWorld(undefined, resolveInitialSeed(window.location.search)),
+  )
   const [zoom, setZoom] = useState<number>(() => createCamera().zoom)
   const [showInterface, setShowInterface] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -335,7 +339,7 @@ const App = () => {
       />
       {showInterface && (
         <>
-          <Brand getTime={getSimTime} />
+          <Brand getTime={getSimTime} seed={world.seed} />
           <TopActions
             onOpenStats={toggleStats}
             onOpenSettings={openSettings}

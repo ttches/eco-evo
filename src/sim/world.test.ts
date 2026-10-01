@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { WORLD } from '@/engine/config'
-import { MAX_GLORPS } from '@/sim/config'
+import { MAX_GLORPS, DEFAULT_SEED } from '@/sim/config'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 
@@ -24,6 +24,14 @@ describe('createWorld', () => {
       expect(world.y[index]).toBeGreaterThanOrEqual(world.radius)
       expect(world.y[index]).toBeLessThanOrEqual(WORLD.height - world.radius)
     }
+  })
+
+  it('records the seed it was built with', () => {
+    expect(createWorld(1, 42).seed).toBe(42)
+  })
+
+  it('normalizes a zero seed to the default, matching the RNG', () => {
+    expect(createWorld(1, 0).seed).toBe(DEFAULT_SEED)
   })
 
   it('is deterministic for a given seed', () => {

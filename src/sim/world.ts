@@ -29,6 +29,8 @@ export type World = RenderableWorld &
     count: number
     /** Next id handed out to a newborn or spawned glorp. */
     nextId: number
+    /** Seed every RNG stream in this world was derived from. */
+    readonly seed: number
     /** Seeded source of runtime randomness (spawns, offspring scatter). */
     readonly random: XorShift32
     /** Position buckets for range queries; see `rebuildSpatialGrid`. */
@@ -49,17 +51,21 @@ export const createWorld = (
   count = DEFAULT_COUNT,
   seed = DEFAULT_SEED,
 ): World => {
+  // `XorShift32` substitutes `DEFAULT_SEED` for a zero state, so record the seed
+  // actually in use rather than the raw argument.
+  const effectiveSeed = seed >>> 0 || DEFAULT_SEED
   const world: World = {
     ...createColumns(),
     count: 0,
     nextId: 0,
-    random: new XorShift32(seed),
+    seed: effectiveSeed,
+    random: new XorShift32(effectiveSeed),
     neighbors: createSpatialGrid(),
     lineage: createLineage(),
     time: 0,
     sprintStarts: 0,
     exhaustionEvents: 0,
-    grass: createGrass(seed),
+    grass: createGrass(effectiveSeed),
     radius: GLORP_RADIUS,
   }
 

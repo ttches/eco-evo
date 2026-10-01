@@ -31,11 +31,15 @@
   color: var(--accent);
 }
 
+.readout {
+  margin-top: 0.45rem;
+}
+
 .elapsed {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin: 0.45rem 0 0;
+  margin: 0;
   color: var(--muted-foreground);
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -47,4 +51,14 @@
 .elapsed svg {
   width: 0.8rem;
   height: 0.8rem;
+}
+
+.seed {
+  margin: 0.3rem 0 0;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
