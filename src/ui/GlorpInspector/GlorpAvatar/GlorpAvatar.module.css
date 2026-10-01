@@ -1,0 +1,8 @@
+.avatar {
+  display: block;
+  flex-shrink: 0;
+}
+
+.dead {
+  opacity: 0.55;
+}

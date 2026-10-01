@@ -98,3 +98,41 @@
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
+
+.traitBar {
+  position: relative;
+  width: 2.9rem;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 1px;
+  background-color: #0c1610;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(100% / 7 - 1px),
+    #050906 calc(100% / 7 - 1px),
+    #050906 calc(100% / 7)
+  );
+  box-shadow: inset 0 0 0 1px #050906;
+}
+
+.traitFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background-color: #46b268;
+  box-shadow: inset 0 0 0 1px #1e5a35;
+}
+
+.ready {
+  color: #7fe0ad;
+}
+
+.recovering {
+  color: #f0c875;
+}
+
+.pregnant {
+  color: #f28cd9;
+}

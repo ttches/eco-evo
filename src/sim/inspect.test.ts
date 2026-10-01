@@ -23,10 +23,71 @@ describe('readGlorpView', () => {
     expect(view?.alive).toBe(true)
     expect(view?.generation).toBe(0)
     expect(view?.parents).toEqual([])
+    expect(view?.children).toEqual([])
+    expect(view?.timeAlive).toBe(0)
     expect(view?.killer).toBeNull()
     expect(view?.live?.x).toBe(world.x[0])
     expect(view?.live?.fed).toBe(world.fed[0])
     expect(view?.traits.speed).toBe(world.speed[0])
+  })
+
+  it('reports time alive for a living glorp', () => {
+    const world = createWorld(1, 3)
+    world.time = 42.4
+    expect(readGlorpView(world, world.id[0])?.timeAlive).toBeCloseTo(42.4)
+  })
+
+  it('freezes lifespan once a glorp dies', () => {
+    const world = createWorld(1, 5)
+    const id = world.id[0]
+    world.time = 10
+    world.fed[0] = 0
+    applyDeath(world)
+    world.time = 99
+    expect(readGlorpView(world, id)?.timeAlive).toBe(10)
+  })
+
+  it('tracks new children across reads through the cache', () => {
+    const world = createWorld(1, 9)
+    world.fed[0] = 100
+    world.cooldown[0] = 0
+    applyReproduction(world)
+
+    const parentId = world.id[0]
+    const firstChild = world.id[1]
+    expect(readGlorpView(world, parentId)?.children.map((c) => c.id)).toEqual([
+      firstChild,
+    ])
+
+    world.fed[0] = 100
+    world.cooldown[0] = 0
+    applyReproduction(world)
+
+    expect(readGlorpView(world, parentId)?.children.map((c) => c.id)).toEqual([
+      firstChild,
+      world.id[2],
+    ])
+  })
+
+  it('isolates the child cache per glorp and per log', () => {
+    const world = createWorld(1, 9)
+    world.fed[0] = 100
+    world.cooldown[0] = 0
+    applyReproduction(world)
+
+    const parentId = world.id[0]
+    const childId = world.id[1]
+
+    // Switching ids and back must not drop or duplicate the parent's children.
+    expect(readGlorpView(world, childId)?.children).toEqual([])
+    expect(readGlorpView(world, parentId)?.children.map((c) => c.id)).toEqual([
+      childId,
+    ])
+    expect(readGlorpView(world, childId)?.children).toEqual([])
+
+    // A different log must not reuse the first log's cached children.
+    const other = createWorld(2, 3)
+    expect(readGlorpView(other, other.id[0])?.children).toEqual([])
   })
 
   it('keeps showing a glorp after it starves', () => {

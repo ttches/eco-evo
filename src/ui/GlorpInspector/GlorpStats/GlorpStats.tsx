@@ -1,9 +1,9 @@
 import { type ReactNode } from 'react'
 import {
   Activity,
-  CalendarClock,
+  Clock,
   HeartPulse,
-  MapPin,
+  Hourglass,
   Shield,
   Skull,
   Utensils,
@@ -11,10 +11,10 @@ import {
 } from 'lucide-react'
 import { clamp } from '@/engine/math'
 import { FED_MAX } from '@/sim/config'
-import type { GlorpView } from '@/sim/inspect'
+import type { GlorpLiveState, GlorpView } from '@/sim/inspect'
 import { DEATH_CAUSE, type DeathCause } from '@/sim/lineage'
-import { traitValue, type TraitKey } from '@/sim/traits'
-import { formatTraitValue } from '@/ui/traitFormat'
+import { TRAIT_MAX, traitValue, type TraitKey } from '@/sim/traits'
+import { formatDuration } from '@/ui/timeFormat'
 import styles from './GlorpStats.module.css'
 
 type GlorpStatsProps = {
@@ -25,15 +25,18 @@ type StatProps = {
   icon: ReactNode
   label: string
   value: string
+  valueClassName?: string
 }
 
-const Stat = ({ icon, label, value }: StatProps) => (
+const Stat = ({ icon, label, value, valueClassName }: StatProps) => (
   <div className={styles.stat}>
     <span className={styles.statIcon} aria-hidden="true">
       {icon}
     </span>
     <span className={styles.statLabel}>{label}</span>
-    <span className={styles.statValue}>{value}</span>
+    <span className={`${styles.statValue} ${valueClassName ?? ''}`}>
+      {value}
+    </span>
   </div>
 )
 
@@ -62,6 +65,37 @@ const Meter = ({ label, value, max, tone }: MeterProps) => {
   )
 }
 
+/** Two-lobed ovaries glyph for the reproduction status row. */
+const OvariesIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 7C9.5 5.6 6.8 8.2 7.6 11.4" />
+    <path d="M12 7c2.5-1.4 5.2 1.2 4.4 4.4" />
+    <ellipse cx="6.4" cy="15" rx="2.7" ry="3.6" />
+    <ellipse cx="17.6" cy="15" rx="2.7" ry="3.6" />
+  </svg>
+)
+
+/** A grooved track with a single fill run that stops on a notch. */
+const TraitBar = ({ level }: { level: number }) => (
+  <div
+    className={styles.traitBar}
+    role="img"
+    aria-label={`Level ${level} of ${TRAIT_MAX}`}
+  >
+    <span
+      className={styles.traitFill}
+      style={{ width: `${(level / TRAIT_MAX) * 100}%` }}
+    />
+  </div>
+)
+
 type TraitDisplay = {
   icon: ReactNode
   label: string
@@ -83,90 +117,95 @@ const DEATH_LABEL: Record<DeathCause, string> = {
   [DEATH_CAUSE.eaten]: 'Eaten',
 }
 
-/**
- * Body of the inspector: energy/stamina meters plus the trait list. Living
- * glorps show their current status; dead ones show birth, death and killer.
- */
-const GlorpStats = ({ glorp }: GlorpStatsProps) => (
-  <div className={styles.root}>
-    {glorp.live ? (
-      <div className={styles.meters}>
-        <Meter
-          label="Energy"
-          value={glorp.live.fed}
-          max={FED_MAX}
-          tone="energy"
-        />
-        <Meter
-          label="Stamina"
-          value={glorp.live.stamina}
-          max={traitValue('staminaMax', glorp.traits.staminaMax)}
-          tone="stamina"
-        />
-      </div>
-    ) : null}
+type ReproState = {
+  label: string
+  tone: 'ready' | 'recovering' | 'pregnant'
+}
 
-    <div className={styles.stats}>
-      {TRAIT_ROWS.map(([key, display]) => (
-        <Stat
-          key={key}
-          icon={display.icon}
-          label={display.label}
-          value={formatTraitValue(glorp.traits[key])}
-        />
-      ))}
+/** One status for the whole reproductive cycle, rather than timers. */
+const reproState = (live: GlorpLiveState): ReproState => {
+  if (live.pregnant > 0) return { label: 'Pregnant', tone: 'pregnant' }
+  if (live.cooldown > 0) return { label: 'Recovering', tone: 'recovering' }
+  return { label: 'Ready', tone: 'ready' }
+}
+
+/**
+ * Body of the inspector: energy/stamina meters plus the trait bars. Living
+ * glorps show their reproductive status and age; dead ones show their lifespan,
+ * cause of death and killer.
+ */
+const GlorpStats = ({ glorp }: GlorpStatsProps) => {
+  const repro = glorp.live ? reproState(glorp.live) : null
+
+  return (
+    <div className={styles.root}>
       {glorp.live ? (
-        <>
-          {glorp.live.pregnant > 0 ? (
+        <div className={styles.meters}>
+          <Meter
+            label="Energy"
+            value={glorp.live.fed}
+            max={FED_MAX}
+            tone="energy"
+          />
+          <Meter
+            label="Stamina"
+            value={glorp.live.stamina}
+            max={traitValue('staminaMax', glorp.traits.staminaMax)}
+            tone="stamina"
+          />
+        </div>
+      ) : null}
+
+      <div className={styles.stats}>
+        {TRAIT_ROWS.map(([key, display]) => (
+          <div key={key} className={styles.stat}>
+            <span className={styles.statIcon} aria-hidden="true">
+              {display.icon}
+            </span>
+            <span className={styles.statLabel}>{display.label}</span>
+            <TraitBar level={glorp.traits[key]} />
+          </div>
+        ))}
+
+        {repro ? (
+          <Stat
+            icon={<OvariesIcon />}
+            label="Repro"
+            value={repro.label}
+            valueClassName={styles[repro.tone]}
+          />
+        ) : null}
+
+        {glorp.live ? (
+          <Stat
+            icon={<Clock />}
+            label="Time alive"
+            value={formatDuration(glorp.timeAlive)}
+          />
+        ) : (
+          <>
             <Stat
-              icon={<HeartPulse />}
-              label="Pregnant"
-              value={`${glorp.live.pregnant.toFixed(1)}s`}
+              icon={<Hourglass />}
+              label="Lived"
+              value={formatDuration(glorp.timeAlive)}
             />
-          ) : null}
-          <Stat
-            icon={<Utensils />}
-            label="Repro status"
-            value={
-              glorp.live.cooldown > 0
-                ? `${glorp.live.cooldown.toFixed(1)}s`
-                : 'Ready'
-            }
-          />
-          <Stat
-            icon={<MapPin />}
-            label="Position"
-            value={`${Math.round(glorp.live.x)}, ${Math.round(glorp.live.y)}`}
-          />
-        </>
-      ) : (
-        <>
-          <Stat
-            icon={<CalendarClock />}
-            label="Born"
-            value={`${glorp.bornAt.toFixed(1)}s`}
-          />
-          <Stat
-            icon={<Skull />}
-            label="Died"
-            value={`${glorp.diedAt.toFixed(1)}s`}
-          />
-          <Stat
-            icon={<Skull />}
-            label="Cause"
-            value={DEATH_LABEL[glorp.deathCause]}
-          />
-          {glorp.killer ? (
             <Stat
-              icon={<Utensils />}
-              label="Killed by"
-              value={glorp.killer.name}
+              icon={<Skull />}
+              label="Cause"
+              value={DEATH_LABEL[glorp.deathCause]}
             />
-          ) : null}
-        </>
-      )}
+            {glorp.killer ? (
+              <Stat
+                icon={<Utensils />}
+                label="Killed by"
+                value={glorp.killer.name}
+              />
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 export default GlorpStats

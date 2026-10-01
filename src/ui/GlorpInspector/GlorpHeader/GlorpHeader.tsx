@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ArrowLeft, Lock, LockOpen, Pencil, X } from 'lucide-react'
+import { ArrowLeft, Camera, Pencil, X } from 'lucide-react'
 import type { GlorpView } from '@/sim/inspect'
+import GlorpAvatar from '../GlorpAvatar/GlorpAvatar'
 import GlorpTypeBadge from '../GlorpTypeBadge/GlorpTypeBadge'
 import styles from './GlorpHeader.module.css'
 
@@ -60,6 +61,14 @@ const GlorpHeader = ({
           )}
         </div>
         <div className={styles.nameRow}>
+          <GlorpAvatar
+            id={glorp.id}
+            type={glorp.type}
+            alive={glorp.alive}
+            fed={glorp.live?.fed}
+            pregnant={glorp.live ? glorp.live.pregnant > 0 : false}
+            size={20}
+          />
           {editing ? (
             <input
               className={styles.nameInput}
@@ -104,11 +113,7 @@ const GlorpHeader = ({
             aria-label={locked ? 'Unlock camera' : 'Lock camera'}
             aria-keyshortcuts="Space"
           >
-            {locked ? (
-              <Lock aria-hidden="true" />
-            ) : (
-              <LockOpen aria-hidden="true" />
-            )}
+            <Camera aria-hidden="true" />
           </button>
         ) : null}
         <button
