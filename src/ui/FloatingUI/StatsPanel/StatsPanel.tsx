@@ -62,6 +62,7 @@ const TRAIT_LABEL: Record<TraitKey, string> = {
   staminaMax: 'Most stamina',
   fertility: 'Most fertile',
   strength: 'Strongest',
+  agility: 'Most agile',
 }
 
 const SummaryItem = ({ label, value }: { label: string; value: number }) => (

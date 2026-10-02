@@ -27,6 +27,11 @@ export const TRAITS = {
   /** Level maps to reproduction cooldown in seconds: more is faster. */
   fertility: { atMin: 25, atMax: 8 },
   strength: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
+  /**
+   * Raw agility score, compared directly against an attacker's. Equal or lower
+   * means the prey is caught; higher gives a chance to dodge.
+   */
+  agility: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
 } as const satisfies Record<string, TraitSpec>
 
 export type TraitKey = keyof typeof TRAITS
@@ -35,12 +40,6 @@ export const TRAIT_KEYS = Object.keys(TRAITS) as readonly TraitKey[]
 
 /** One glorp's trait levels. */
 export type TraitLevels = Record<TraitKey, number>
-
-/**
- * Total levels every glorp holds across all traits: the all-`TRAIT_BASE`
- * build. Inheritance and mutation only ever move points between traits.
- */
-export const TRAIT_BUDGET = TRAIT_BASE * TRAIT_KEYS.length
 
 /** Mechanical value of every trait at each level, indexed by level. */
 const VALUES = Object.fromEntries(

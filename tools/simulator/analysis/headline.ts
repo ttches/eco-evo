@@ -31,6 +31,8 @@ const predationMetrics = (analysis: RunAnalysis): Headline => {
     'pred.top10Share': round(predation.top10Share, 4),
     'pred.zeroKillShare': round(predation.zeroKillShare, 4),
     'pred.timeToFirstKill': round(analysis.lineage.timeToFirstKill.mean, 2),
+    'pred.dodges': analysis.combat.dodges,
+    'pred.dodgesPerGlorpSecond': round(analysis.combat.dodgesPerGlorpSecond, 5),
   }
 }
 

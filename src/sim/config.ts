@@ -1,4 +1,12 @@
-import { TRAIT_BASE, traitValue } from '@/sim/traits'
+import { TRAIT_BASE, TRAIT_KEYS, traitValue } from "@/sim/traits";
+
+/**
+ * Total levels every glorp holds across all traits: the all-`TRAIT_BASE` build.
+ * Inheritance and mutation only ever move points between traits. Living in the
+ * config (rather than `traits`) lets the headless simulator override the total
+ * with `--set TRAIT_BUDGET=N` when experimenting with trait budgets.
+ */
+export const TRAIT_BUDGET = TRAIT_BASE * TRAIT_KEYS.length;
 
 /** Maximum number of glorps the simulation can hold at once. */
 export const MAX_GLORPS = 2048;
@@ -72,8 +80,8 @@ export const MATE_SEEKING = true;
  * the trait budget (any difference is rebalanced at random).
  */
 export const SPAWN_BASE = {
-  prey: { speed: 4, staminaMax: 4, fertility: 4, strength: 4 },
-  hunter: { speed: 4, staminaMax: 4, fertility: 4, strength: 4 },
+  prey: { speed: 4, staminaMax: 4, fertility: 4, strength: 4, agility: 4 },
+  hunter: { speed: 4, staminaMax: 4, fertility: 4, strength: 4, agility: 4 },
 } as const;
 
 /** Point transfers applied to an all-base build when a glorp is first spawned. */
@@ -117,7 +125,7 @@ export const STAMINA = {
    * proportionally faster and spends a larger share of time sprinting. Anchored
    * at the base build, so an all-base glorp behaves as it always did.
    */
-  referenceMax: traitValue('staminaMax', TRAIT_BASE),
+  referenceMax: traitValue("staminaMax", TRAIT_BASE),
   /**
    * A glorp that drains its stamina to empty latches into exhaustion and cannot
    * sprint again until stamina recovers to this fraction of `staminaMax`. This
@@ -198,6 +206,43 @@ export const STRENGTH_GATES_PREDATION = true;
  * must match or exceed the prey's level.
  */
 export const STRENGTH_EDGE = 3;
+
+/**
+ * When true, a prey whose `agility` exceeds its attacker's can dodge the catch.
+ * Off makes agility inert, which the headless simulator uses as an A/B control.
+ */
+export const DODGE_ENABLED = true;
+
+/** Dodge chance added per agility level the prey has over the hunter. */
+export const DODGE_CHANCE_PER_LEVEL = 0.15;
+
+/** Ceiling on dodge chance, however large the agility gap. */
+export const DODGE_CHANCE_MAX = 0.7;
+
+/**
+ * Seconds a dodging prey commits to its escape dart. While dodging it is
+ * untargetable: no hunter can pick it or eat it.
+ */
+export const DODGE_DURATION = 0.3;
+
+/**
+ * Fixed distance, in world units, a dodge carries the prey over its dart. The
+ * escape is independent of the `speed` trait, so speed gets no second payoff.
+ */
+export const DODGE_DISTANCE = 40;
+
+/**
+ * Escape-dart speed, derived from the fixed distance and duration so a dart
+ * covers `DODGE_DISTANCE` however fast the prey's `speed` trait is.
+ */
+export const DODGE_SPEED = DODGE_DISTANCE / DODGE_DURATION;
+
+/**
+ * Contact range, in world units, at which a catch resolves and a dodge can
+ * fire: one glorp body diameter. While a dodge lasts the prey is untargetable,
+ * so the hunter's normal prey search simply reprioritizes to the next victim.
+ */
+export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS;
 
 /**
  * Speed every glorp walks and wanders at, whatever its `speed` trait (this is

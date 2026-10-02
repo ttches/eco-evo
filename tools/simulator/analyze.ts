@@ -89,6 +89,11 @@ export type RunAnalysis = IndividualAnalysis & {
     exhaustionEvents: number
     sprintStartsPerGlorpSecond: number
   }
+  combat: {
+    /** Successful prey dodges over the whole run. */
+    dodges: number
+    dodgesPerGlorpSecond: number
+  }
   /** Flat numeric metrics, for aggregation across seeds and baseline diffs. */
   headline: Headline
 }
@@ -134,6 +139,14 @@ const staminaStats = (world: World, table: IndividualTable): RunAnalysis['stamin
   }
 }
 
+const combatStats = (world: World, table: IndividualTable): RunAnalysis['combat'] => {
+  const glorpSeconds = table.rows.reduce((sum, row) => sum + row.age, 0)
+  return {
+    dodges: world.dodges,
+    dodgesPerGlorpSecond: glorpSeconds === 0 ? 0 : world.dodges / glorpSeconds,
+  }
+}
+
 /** Analyze a finished (or early-stopped) world and its sampled time series. */
 export const analyzeWorld = (
   world: World,
@@ -171,6 +184,7 @@ export const analyzeWorld = (
     flows: analyzeFlows(table, endedAt),
     lineage: lineageStats(world, table),
     stamina: staminaStats(world, table),
+    combat: combatStats(world, table),
     headline: {},
   }
   analysis.headline = buildHeadline(analysis, endedAt)

@@ -4,10 +4,10 @@ import {
   FED_START,
   GLORP_RADIUS,
   MAX_GLORPS,
+  TRAIT_BUDGET,
 } from '@/sim/config'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
 import {
-  TRAIT_BUDGET,
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,

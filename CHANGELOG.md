@@ -6,6 +6,20 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 
 ## [Unreleased]
 
+### Gameplay
+
+- New heritable `agility` trait. A prey whose agility exceeds its attacker's
+  can dodge a catch, with the chance rising 25% per level of advantage (capped
+  at 75%). A dodge jukes the prey perpendicular to its heading and makes it
+  untargetable for a fast 0.3s dart, so the hunter's normal prey search
+  reprioritizes to the next victim on its own. Catches and dodges resolve at one
+  glorp body diameter. Trait budget rises to 20 points across five traits.
+- `TRAIT_BUDGET` moved to the config so the headless simulator can override the
+  total trait points with `--set TRAIT_BUDGET=N`.
+- A dodge is now a fixed distance (`DODGE_DISTANCE`, derived dart speed
+  `DODGE_SPEED`), independent of the prey's `speed` trait, so speed no longer
+  gets a second payoff. Pregnancy no longer shortens a dart.
+
 ## [0.1.0] - 2026-10-01
 
 ### Gameplay

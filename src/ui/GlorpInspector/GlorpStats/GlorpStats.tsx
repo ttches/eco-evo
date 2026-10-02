@@ -7,6 +7,7 @@ import {
   Shield,
   Skull,
   Utensils,
+  Wind,
   Zap,
 } from 'lucide-react'
 import { clamp } from '@/engine/math'
@@ -107,6 +108,7 @@ const TRAIT_DISPLAY = {
   staminaMax: { icon: <Activity />, label: 'Stamina max' },
   fertility: { icon: <HeartPulse />, label: 'Fertility' },
   strength: { icon: <Shield />, label: 'Strength' },
+  agility: { icon: <Wind />, label: 'Agility' },
 } satisfies Record<TraitKey, TraitDisplay>
 
 const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][]

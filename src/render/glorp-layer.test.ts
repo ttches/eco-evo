@@ -15,6 +15,7 @@ const makeWorld = (): RenderableWorld =>
     type: new Uint8Array(1),
     fed: new Float32Array(1),
     pregnant: new Float32Array(1),
+    dodgeTimer: new Float32Array(1),
     grass: {} as never,
   }) as RenderableWorld
 

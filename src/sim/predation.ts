@@ -3,11 +3,17 @@
  * steering layer plus the eating passes, so `lifecycle` stays a thin orchestrator
  * and `behavior` never needs to import the mutation modules.
  */
-import { hashUnit } from '@/engine/math'
+import { TAU, hashUnit } from '@/engine/math'
 import {
   CANNIBALISM,
   CANNIBAL_HUNGER,
   CANNIBAL_KILL_FED,
+  CATCH_PREY_RANGE,
+  DODGE_CHANCE_MAX,
+  DODGE_CHANCE_PER_LEVEL,
+  DODGE_DURATION,
+  DODGE_ENABLED,
+  DODGE_SPEED,
   FED_MAX,
   HUNTER_KILL_FED,
   MAX_GLORPS,
@@ -92,8 +98,91 @@ export const grazePrey = (world: World, dt: number): void => {
 }
 
 /**
- * Hunters remove and gain energy from nearby edible prey. Kills are collected
- * and removed afterwards so indices stored in the grid stay valid for the whole
+ * Chance the prey dodges a specific attacker: zero unless the prey's agility
+ * exceeds the hunter's, then `DODGE_CHANCE_PER_LEVEL` per level of advantage,
+ * capped at `DODGE_CHANCE_MAX`.
+ */
+export const dodgeChance = (
+  world: World,
+  hunter: number,
+  prey: number,
+): number => {
+  const edge = world.agility[prey] - world.agility[hunter]
+  if (edge <= 0) return 0
+  const chance = edge * DODGE_CHANCE_PER_LEVEL
+  return chance < DODGE_CHANCE_MAX ? chance : DODGE_CHANCE_MAX
+}
+
+/** Roll the dodge chance. Only consumes RNG when a dodge is possible. */
+const tryDodge = (world: World, hunter: number, prey: number): boolean => {
+  if (!DODGE_ENABLED) return false
+  const chance = dodgeChance(world, hunter, prey)
+  return chance > 0 && world.random.unit() < chance
+}
+
+/**
+ * Launch a prey's escape dart. The prey jukes perpendicular to its own heading
+ * (toward the side that opens distance from the attacker), so the escape reads
+ * as a sharp sidestep rather than a straight sprint. While the dart lasts the
+ * prey is untargetable, so the hunter's prey search reprioritizes on its own.
+ */
+const triggerDodge = (world: World, hunter: number, prey: number): void => {
+  const speedX = world.vx[prey]
+  const speedY = world.vy[prey]
+  const speedMagnitude = Math.hypot(speedX, speedY)
+  let directionX: number
+  let directionY: number
+
+  if (speedMagnitude > 1e-4) {
+    // Perpendicular to the direction of travel...
+    directionX = -speedY / speedMagnitude
+    directionY = speedX / speedMagnitude
+    // ...picking the side that moves away from the hunter.
+    const awayX = world.x[prey] - world.x[hunter]
+    const awayY = world.y[prey] - world.y[hunter]
+    if (directionX * awayX + directionY * awayY < 0) {
+      directionX = -directionX
+      directionY = -directionY
+    }
+  } else {
+    // Standing still: dart straight away from the hunter.
+    const deltaX = world.x[prey] - world.x[hunter]
+    const deltaY = world.y[prey] - world.y[hunter]
+    const magnitude = Math.hypot(deltaX, deltaY)
+    if (magnitude < 1e-4) {
+      const angle = world.wanderSeed[prey] * TAU
+      directionX = Math.cos(angle)
+      directionY = Math.sin(angle)
+    } else {
+      directionX = deltaX / magnitude
+      directionY = deltaY / magnitude
+    }
+  }
+
+  world.dodgeDirX[prey] = directionX
+  world.dodgeDirY[prey] = directionY
+  world.dodgeTimer[prey] = DODGE_DURATION
+
+  world.vx[prey] = directionX * DODGE_SPEED
+  world.vy[prey] = directionY * DODGE_SPEED
+
+  world.dodges += 1
+}
+
+/** Count down active dodge darts. */
+export const tickDodges = (world: World, dt: number): void => {
+  for (let index = 0; index < world.count; index += 1) {
+    if (world.dodgeTimer[index] <= 0) continue
+    const next = world.dodgeTimer[index] - dt
+    world.dodgeTimer[index] = next > 0 ? next : 0
+  }
+}
+
+/**
+ * Hunters remove and gain energy from nearby edible prey. A prey agile enough
+ * to beat the hunter's agility may dodge instead, escaping the catch; while its
+ * dart lasts it is untargetable and cannot be eaten. Kills are collected and
+ * removed afterwards so indices stored in the grid stay valid for the whole
  * hunt; descending order keeps swap-remove safe. Returns the number of kills so
  * callers know whether the grid went stale.
  */
@@ -102,6 +191,8 @@ export const huntPrey = (world: World, reach: number): number => {
   let kills = 0
   for (let index = world.count - 1; index >= 0; index -= 1) {
     if (world.type[index] !== GLORP_TYPE.prey) continue
+    // A dodging prey is untargetable for the whole dart.
+    if (world.dodgeTimer[index] > 0) continue
     const hunter = nearestOfType(
       world,
       index,
@@ -110,6 +201,10 @@ export const huntPrey = (world: World, reach: number): number => {
       (candidate) => canEat(world, candidate, index),
     )
     if (hunter < 0) continue
+    if (tryDodge(world, hunter, index)) {
+      triggerDodge(world, hunter, index)
+      continue
+    }
     const next = world.fed[hunter] + HUNTER_KILL_FED
     world.fed[hunter] = next < FED_MAX ? next : FED_MAX
     recordDeath(world, index, DEATH_CAUSE.eaten, hunter)
@@ -163,7 +258,8 @@ export const cannibalize = (
 /** Prey graze, hunters hunt, and starving hunters may cannibalize. */
 export const applyEating = (world: World, dt: number): void => {
   grazePrey(world, dt)
-  const reach = 2 * world.radius
-  const preyKills = huntPrey(world, reach)
-  if (CANNIBALISM) cannibalize(world, reach, preyKills > 0)
+  // Catches and dodges both resolve at one body diameter, so a dodge only fires
+  // when the hunter is right on top of the prey.
+  const preyKills = huntPrey(world, CATCH_PREY_RANGE)
+  if (CANNIBALISM) cannibalize(world, 2 * world.radius, preyKills > 0)
 }

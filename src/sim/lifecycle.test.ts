@@ -10,6 +10,7 @@ import {
   METABOLISM,
   OFFSPRING_FED,
   STAMINA,
+  TRAIT_BUDGET,
 } from '@/sim/config'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { applyEating } from '@/sim/predation'
@@ -23,7 +24,6 @@ import {
   tickCooldowns,
 } from '@/sim/reproduction'
 import {
-  TRAIT_BUDGET,
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,
@@ -123,8 +123,8 @@ describe('applyReproduction', () => {
 describe('applyPairReproduction', () => {
   /** Two distinct, in-budget builds so a child's blend is observable. */
   const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
-    const a = { speed: 6, staminaMax: 2, fertility: 3, strength: 5 }
-    const b = { speed: 2, staminaMax: 6, fertility: 5, strength: 3 }
+    const a = { speed: 6, staminaMax: 2, fertility: 3, strength: 5, agility: 4 }
+    const b = { speed: 2, staminaMax: 6, fertility: 5, strength: 3, agility: 4 }
     for (const key of TRAIT_KEYS) {
       world[key][0] = a[key]
       world[key][1] = b[key]

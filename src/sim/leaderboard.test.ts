@@ -125,6 +125,7 @@ describe('sortStats', () => {
       staminaMax: value,
       fertility: value,
       strength: value,
+      agility: value,
     },
     ...overrides,
   })
@@ -162,6 +163,7 @@ describe('filterStats', () => {
       staminaMax: 0,
       fertility: 0,
       strength: 0,
+      agility: 0,
     },
   })
 

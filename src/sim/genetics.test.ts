@@ -3,6 +3,7 @@ import { XorShift32 } from '@/engine/math'
 import {
   CLONE_MUTATION_CHANCE,
   MATED_MUTATION_CHANCE,
+  TRAIT_BUDGET,
 } from '@/sim/config'
 import {
   cloneLevels,
@@ -12,7 +13,6 @@ import {
 } from '@/sim/genetics'
 import {
   TRAIT_BASE,
-  TRAIT_BUDGET,
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,

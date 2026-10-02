@@ -11,7 +11,7 @@ import { createGrass, regrowGrass } from '@/sim/grass'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
 import { integrateMotion, updateStamina } from '@/sim/motion'
-import { applyEating } from '@/sim/predation'
+import { applyEating, tickDodges } from '@/sim/predation'
 import {
   applyGestation,
   applyPairReproduction,
@@ -43,6 +43,8 @@ export type World = RenderableWorld &
     sprintStarts: number
     /** Cumulative times a glorp entered exhaustion. */
     exhaustionEvents: number
+    /** Cumulative successful prey dodges. */
+    dodges: number
   }
 
 const DEFAULT_COUNT = START_PREY + START_HUNTERS
@@ -65,6 +67,7 @@ export const createWorld = (
     time: 0,
     sprintStarts: 0,
     exhaustionEvents: 0,
+    dodges: 0,
     grass: createGrass(effectiveSeed),
     radius: GLORP_RADIUS,
   }
@@ -78,6 +81,7 @@ export const createWorld = (
 
 /** Advance the whole simulation one fixed step. */
 export const step = (world: World, deltaSeconds: number): void => {
+  tickDodges(world, deltaSeconds)
   updateBehavior(world, deltaSeconds)
   integrateMotion(world, deltaSeconds)
   applyEating(world, deltaSeconds)

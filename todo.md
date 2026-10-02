@@ -1,13 +1,16 @@
 positive Analytics metric longer lives for the most successful glorps living a similarly long amount of time (but not invincible)
 goal of rock paper scissor mechanics where attributes have weaknesses. the best attributes for predators depend on the current attributes of prey. They are always adapting to the other's pressure.
 
+see if endurance should also affect energy. rename energy everywhere to hunger
+
 research how stats work and better math algos that will give us more variance in traits and less average. consider reproduction, evolutionary directive
 
 should heart layer be a whole layer? should it be more generic
 
-add render cycle test to make sure we don't impact performance between commits
+dodge mechanics refined, predetor doesn't stop for .2sec.
+prey becomes untargetable, moves position, hunter continues to run in the direction it was running in, prey reaches doge destination, predator rescans for targets
 
-evolution directive attribute highlighted on glorp click ui
+add render cycle test to make sure we don't impact performance between commits
 
 mutation granted every 10 generations
 hunters have a chance to inherit eaten mutation
@@ -28,3 +31,6 @@ opposing attributes - can't have more than 150% total attribute points for some 
 have "clouds" you don't see the cloud but you see shadow similarly to how nagomi does, and you see rain maybe, and it makes all plant tiles grow
 
 make click ui look less like ai and match sprite theme
+
+Leap for predators based on strength + agility
+try to compete with speed + endurance

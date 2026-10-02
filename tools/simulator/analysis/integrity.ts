@@ -5,7 +5,8 @@
  * produce confident nonsense.
  */
 import { DEATH_CAUSE, NO_GLORP } from '@/sim/lineage'
-import { TRAIT_BUDGET, TRAIT_KEYS, TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
+import { TRAIT_BUDGET } from '@/sim/config'
+import { TRAIT_KEYS, TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
 

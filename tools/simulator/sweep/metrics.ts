@@ -62,6 +62,8 @@ export const METRICS: MetricDef[] = [
   { group: 'Predation', label: 'top-10% hunter kill share', key: 'pred.top10Share', percent: true },
   { group: 'Predation', label: 'hunters with zero kills', key: 'pred.zeroKillShare', percent: true },
   { group: 'Predation', label: 'time to first kill (s)', key: 'pred.timeToFirstKill', digits: 1 },
+  { group: 'Predation', label: 'dodges', key: 'pred.dodges', digits: 0 },
+  { group: 'Predation', label: 'dodges per glorp-second', key: 'pred.dodgesPerGlorpSecond', digits: 5 },
   { group: 'Lineage', label: 'max generation', key: 'lineage.maxGeneration', digits: 1 },
   { group: 'Lineage', label: 'generation time (s)', key: 'lineage.generationTime', digits: 1 },
   ...perType((type) => `Builds: ${type}`, [

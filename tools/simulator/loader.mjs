@@ -59,9 +59,11 @@ assertValidOverrides(rawOverrides)
 
 /**
  * Config constants can be defined in terms of each other (e.g.
- * `MATE_FED_MIN = HUNGER`). Overriding the source must drag the alias along,
- * otherwise an experiment silently mixes an overridden and a stale value. We
- * only understand bare aliases; expression-based dependencies get a warning.
+ * `MATE_FED_MIN = HUNGER` or `DODGE_SPEED = DODGE_DISTANCE / DODGE_DURATION`).
+ * Overriding the source must drag the dependent along, otherwise an experiment
+ * silently mixes an overridden and a stale value. Bare aliases are copied;
+ * simple arithmetic over numeric constants is re-evaluated; anything we can't
+ * resolve (imports, function calls, property access) gets a warning.
  */
 const propagateDerivedConstants = (overrides) => {
   let source = ''
@@ -72,6 +74,8 @@ const propagateDerivedConstants = (overrides) => {
   }
 
   const aliases = new Map()
+  const numeric = new Map()
+  const expressions = new Map()
   const expressionDeps = new Map()
   const declaration = /export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g
   let match
@@ -83,6 +87,11 @@ const propagateDerivedConstants = (overrides) => {
       aliases.set(name, bare[1])
       continue
     }
+    if (/^-?\d+(?:\.\d+)?$/.test(expression)) {
+      numeric.set(name, Number(expression))
+      continue
+    }
+    expressions.set(name, expression)
     for (const word of expression.matchAll(/[A-Za-z_$][\w$]*/g)) {
       if (word[0] === name) continue
       if (!expressionDeps.has(word[0])) expressionDeps.set(word[0], new Set())
@@ -91,20 +100,50 @@ const propagateDerivedConstants = (overrides) => {
   }
 
   const resolved = { ...overrides }
-  const warnings = []
-  for (const key of Object.keys(overrides)) {
-    let changed = true
-    while (changed) {
-      changed = false
-      for (const [alias, target] of aliases) {
-        if (resolved[target] !== undefined && resolved[alias] === undefined) {
-          resolved[alias] = resolved[target]
-          changed = true
-        }
+
+  // Arithmetic-only expressions over identifiers that are numeric literals or
+  // already-resolved overrides can be recomputed safely. Everything else (e.g.
+  // `traitValue("staminaMax", TRAIT_BASE)`) is left to warn below.
+  const evaluate = (expression) => {
+    if (!/^[\s\dA-Za-z_$+\-*/().eE]+$/.test(expression)) return undefined
+    const names = [...expression.matchAll(/[A-Za-z_$][\w$]*/g)].map((m) => m[0])
+    const values = names.map((name) =>
+      resolved[name] !== undefined ? resolved[name] : numeric.get(name),
+    )
+    if (values.some((value) => typeof value !== 'number')) return undefined
+    try {
+      const value = new Function(...names, `return (${expression});`)(...values)
+      return Number.isFinite(value) ? value : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const [alias, target] of aliases) {
+      if (resolved[target] !== undefined && resolved[alias] === undefined) {
+        resolved[alias] = resolved[target]
+        changed = true
       }
     }
+    for (const [name, expression] of expressions) {
+      if (resolved[name] !== undefined) continue
+      const value = evaluate(expression)
+      if (value !== undefined) {
+        resolved[name] = value
+        changed = true
+      }
+    }
+  }
+
+  const warnings = []
+  for (const key of Object.keys(overrides)) {
     for (const dependent of expressionDeps.get(key) ?? []) {
-      if (resolved[dependent] === undefined) warnings.push(`${dependent} (derived from ${key})`)
+      if (resolved[dependent] === undefined) {
+        warnings.push(`${dependent} (derived from ${key})`)
+      }
     }
   }
   return { overrides: resolved, warnings }

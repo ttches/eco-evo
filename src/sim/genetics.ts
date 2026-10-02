@@ -4,9 +4,9 @@ import {
   MATED_MUTATION_CHANCE,
   SPAWN_BASE,
   SPAWN_SHUFFLES,
+  TRAIT_BUDGET,
 } from '@/sim/config'
 import {
-  TRAIT_BUDGET,
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,
