@@ -1,5 +1,4 @@
 positive Analytics metric longer lives for the most successful glorps living a similarly long amount of time (but not invincible)
-goal of rock paper scissor mechanics where attributes have weaknesses. the best attributes for predators depend on the current attributes of prey. They are always adapting to the other's pressure.
 
 see if endurance should also affect energy. rename energy everywhere to hunger
 

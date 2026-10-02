@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode } from "react";
 import {
   Activity,
   Clock,
@@ -9,25 +9,25 @@ import {
   Utensils,
   Wind,
   Zap,
-} from 'lucide-react'
-import { clamp } from '@/engine/math'
-import { FED_MAX } from '@/sim/config'
-import type { GlorpLiveState, GlorpView } from '@/sim/inspect'
-import { DEATH_CAUSE, type DeathCause } from '@/sim/lineage'
-import { TRAIT_MAX, traitValue, type TraitKey } from '@/sim/traits'
-import { formatDuration } from '@/ui/timeFormat'
-import styles from './GlorpStats.module.css'
+} from "lucide-react";
+import { clamp } from "@/engine/math";
+import { FED_MAX } from "@/sim/config";
+import type { GlorpLiveState, GlorpView } from "@/sim/inspect";
+import { DEATH_CAUSE, type DeathCause } from "@/sim/lineage";
+import { TRAIT_MAX, traitValue, type TraitKey } from "@/sim/traits";
+import { formatDuration } from "@/ui/timeFormat";
+import styles from "./GlorpStats.module.css";
 
 type GlorpStatsProps = {
-  glorp: GlorpView
-}
+  glorp: GlorpView;
+};
 
 type StatProps = {
-  icon: ReactNode
-  label: string
-  value: string
-  valueClassName?: string
-}
+  icon: ReactNode;
+  label: string;
+  value: string;
+  valueClassName?: string;
+};
 
 const Stat = ({ icon, label, value, valueClassName }: StatProps) => (
   <div className={styles.stat}>
@@ -35,21 +35,21 @@ const Stat = ({ icon, label, value, valueClassName }: StatProps) => (
       {icon}
     </span>
     <span className={styles.statLabel}>{label}</span>
-    <span className={`${styles.statValue} ${valueClassName ?? ''}`}>
+    <span className={`${styles.statValue} ${valueClassName ?? ""}`}>
       {value}
     </span>
   </div>
-)
+);
 
 type MeterProps = {
-  label: string
-  value: number
-  max: number
-  tone: 'energy' | 'stamina'
-}
+  label: string;
+  value: number;
+  max: number;
+  tone: "energy" | "stamina";
+};
 
 const Meter = ({ label, value, max, tone }: MeterProps) => {
-  const ratio = max > 0 ? clamp(value / max, 0, 1) : 0
+  const ratio = max > 0 ? clamp(value / max, 0, 1) : 0;
   return (
     <div className={styles.meter}>
       <div className={styles.meterHeader}>
@@ -63,8 +63,8 @@ const Meter = ({ label, value, max, tone }: MeterProps) => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 /** Two-lobed ovaries glyph for the reproduction status row. */
 const OvariesIcon = () => (
@@ -81,7 +81,7 @@ const OvariesIcon = () => (
     <ellipse cx="6.4" cy="15" rx="2.7" ry="3.6" />
     <ellipse cx="17.6" cy="15" rx="2.7" ry="3.6" />
   </svg>
-)
+);
 
 /** A grooved track with a single fill run that stops on a notch. */
 const TraitBar = ({ level }: { level: number }) => (
@@ -95,41 +95,41 @@ const TraitBar = ({ level }: { level: number }) => (
       style={{ width: `${(level / TRAIT_MAX) * 100}%` }}
     />
   </div>
-)
+);
 
 type TraitDisplay = {
-  icon: ReactNode
-  label: string
-}
+  icon: ReactNode;
+  label: string;
+};
 
 /** How each trait is shown, in display order. Every trait must have an entry. */
 const TRAIT_DISPLAY = {
-  speed: { icon: <Zap />, label: 'Speed' },
-  staminaMax: { icon: <Activity />, label: 'Stamina max' },
-  fertility: { icon: <HeartPulse />, label: 'Fertility' },
-  strength: { icon: <Shield />, label: 'Strength' },
-  agility: { icon: <Wind />, label: 'Agility' },
-} satisfies Record<TraitKey, TraitDisplay>
+  speed: { icon: <Zap />, label: "Speed" },
+  staminaMax: { icon: <Activity />, label: "Stamina max" },
+  fertility: { icon: <HeartPulse />, label: "Fertility" },
+  strength: { icon: <Shield />, label: "Strength" },
+  agility: { icon: <Wind />, label: "Agility" },
+} satisfies Record<TraitKey, TraitDisplay>;
 
-const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][]
+const TRAIT_ROWS = Object.entries(TRAIT_DISPLAY) as [TraitKey, TraitDisplay][];
 
 const DEATH_LABEL: Record<DeathCause, string> = {
-  [DEATH_CAUSE.alive]: 'Alive',
-  [DEATH_CAUSE.starved]: 'Starved',
-  [DEATH_CAUSE.eaten]: 'Eaten',
-}
+  [DEATH_CAUSE.alive]: "Alive",
+  [DEATH_CAUSE.starved]: "Starved",
+  [DEATH_CAUSE.eaten]: "Eaten",
+};
 
 type ReproState = {
-  label: string
-  tone: 'ready' | 'recovering' | 'pregnant'
-}
+  label: string;
+  tone: "ready" | "recovering" | "pregnant";
+};
 
 /** One status for the whole reproductive cycle, rather than timers. */
 const reproState = (live: GlorpLiveState): ReproState => {
-  if (live.pregnant > 0) return { label: 'Pregnant', tone: 'pregnant' }
-  if (live.cooldown > 0) return { label: 'Recovering', tone: 'recovering' }
-  return { label: 'Ready', tone: 'ready' }
-}
+  if (live.pregnant > 0) return { label: "Pregnant", tone: "pregnant" };
+  if (live.cooldown > 0) return { label: "Recovering", tone: "recovering" };
+  return { label: "Ready", tone: "ready" };
+};
 
 /**
  * Body of the inspector: energy/stamina meters plus the trait bars. Living
@@ -137,14 +137,14 @@ const reproState = (live: GlorpLiveState): ReproState => {
  * cause of death and killer.
  */
 const GlorpStats = ({ glorp }: GlorpStatsProps) => {
-  const repro = glorp.live ? reproState(glorp.live) : null
+  const repro = glorp.live ? reproState(glorp.live) : null;
 
   return (
     <div className={styles.root}>
       {glorp.live ? (
         <div className={styles.meters}>
           <Meter
-            label="Energy"
+            label="Life force"
             value={glorp.live.fed}
             max={FED_MAX}
             tone="energy"
@@ -152,7 +152,7 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => {
           <Meter
             label="Stamina"
             value={glorp.live.stamina}
-            max={traitValue('staminaMax', glorp.traits.staminaMax)}
+            max={traitValue("staminaMax", glorp.traits.staminaMax)}
             tone="stamina"
           />
         </div>
@@ -207,7 +207,7 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default GlorpStats
+export default GlorpStats;
