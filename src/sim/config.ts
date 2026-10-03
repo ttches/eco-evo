@@ -24,8 +24,14 @@ export const START_HUNTERS = 10;
 /** Initial energy every glorp spawns with, as a percentage of satiation. */
 export const FED_START = 50;
 
-/** Energy an offspring starts life with. */
+/** Energy an offspring starts life with at minimum parent fertility. */
 export const OFFSPRING_FED = 50;
+
+/** Energy a clone starts life with at maximum parent fertility. */
+export const CLONE_OFFSPRING_FED_MAX = 75;
+
+/** Energy a pregnancy-born child starts life with at maximum mother fertility. */
+export const MATED_OFFSPRING_FED_MAX = 100;
 
 export const FED_MAX = 100;
 
@@ -69,8 +75,11 @@ export const MATE_ENERGY_COST = 0;
  */
 export const GESTATION_SECONDS = 30;
 
-/** Top-speed multiplier applied while pregnant. */
-export const PREGNANT_SPEED_FACTOR = 0.8;
+/** Top-speed multiplier applied while pregnant at minimum fertility. */
+export const PREGNANT_SPEED_FACTOR_MIN = 0.8;
+
+/** Top-speed multiplier applied while pregnant at maximum fertility. */
+export const PREGNANT_SPEED_FACTOR_MAX = 1;
 
 /** Whether a pregnant glorp may sprint. */
 export const PREGNANT_CAN_SPRINT = true;

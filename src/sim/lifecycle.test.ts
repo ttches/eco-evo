@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { computeSteering, updateBehavior } from '@/sim/behavior'
 import {
+  CLONE_OFFSPRING_FED_MAX,
   ENDURANCE,
   GESTATION_SECONDS,
   GLORP_RADIUS,
   HUNTER_KILL_FED,
   MATE_FED_MIN,
   MATE_RANGE,
+  MATED_OFFSPRING_FED_MAX,
   MAX_GLORPS,
   METABOLISM,
   OFFSPRING_FED,
@@ -29,6 +31,7 @@ import {
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,
+  scaleTrait,
   traitValue,
 } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
@@ -115,7 +118,14 @@ describe('applyReproduction', () => {
     expect(world.cooldown[0]).toBeCloseTo(
       traitValue('fertility', world.fertility[0]),
     )
-    expect(world.fed[2]).toBe(50)
+    expect(world.fed[2]).toBeCloseTo(
+      scaleTrait(
+        'fertility',
+        world.fertility[0],
+        OFFSPRING_FED,
+        CLONE_OFFSPRING_FED_MAX,
+      ),
+    )
     expect(world.type[2]).toBe(type)
     expect(world.stamina[2]).toBeCloseTo(
       traitValue('endurance', world.endurance[2]),
@@ -204,7 +214,14 @@ describe('applyPairReproduction', () => {
     expect(world.count).toBe(3)
     expect(world.pregnant[mother]).toBe(0)
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
-    expect(world.fed[2]).toBe(OFFSPRING_FED)
+    expect(world.fed[2]).toBeCloseTo(
+      scaleTrait(
+        'fertility',
+        world.fertility[mother],
+        OFFSPRING_FED,
+        MATED_OFFSPRING_FED_MAX,
+      ),
+    )
     expect(world.stamina[2]).toBeCloseTo(
       traitValue('endurance', world.endurance[2]),
     )
@@ -323,6 +340,52 @@ describe('applyPairReproduction', () => {
     applyGestation(world, GESTATION_SECONDS)
 
     expect(world.count).toBe(MAX_GLORPS)
+  })
+})
+
+describe('fertility-scaled offspring energy', () => {
+  /** Two adjacent, well-fed hunters sharing one fertility level. */
+  const setupPairAtFertility = (level: number): ReturnType<typeof createWorld> => {
+    const world = createWorld(2, 17)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.hunter
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 100 + MATE_RANGE / 2
+    world.y[1] = 100
+    world.fed[0] = 100
+    world.fed[1] = 100
+    world.cooldown[0] = 0
+    world.cooldown[1] = 0
+    world.fertility[0] = level
+    world.fertility[1] = level
+    return world
+  }
+
+  it('scales a clone from OFFSPRING_FED to CLONE_OFFSPRING_FED_MAX', () => {
+    const min = createWorld(1, 9)
+    min.fertility[0] = TRAIT_MIN
+    min.fed[0] = 100
+    applyReproduction(min)
+    expect(min.fed[1]).toBe(OFFSPRING_FED)
+
+    const max = createWorld(1, 9)
+    max.fertility[0] = TRAIT_MAX
+    max.fed[0] = 100
+    applyReproduction(max)
+    expect(max.fed[1]).toBeCloseTo(CLONE_OFFSPRING_FED_MAX)
+  })
+
+  it('scales a pregnancy child from OFFSPRING_FED to MATED_OFFSPRING_FED_MAX', () => {
+    const min = setupPairAtFertility(TRAIT_MIN)
+    applyPairReproduction(min)
+    applyGestation(min, GESTATION_SECONDS)
+    expect(min.fed[2]).toBe(OFFSPRING_FED)
+
+    const max = setupPairAtFertility(TRAIT_MAX)
+    applyPairReproduction(max)
+    applyGestation(max, GESTATION_SECONDS)
+    expect(max.fed[2]).toBeCloseTo(MATED_OFFSPRING_FED_MAX)
   })
 })
 

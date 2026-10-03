@@ -7,6 +7,7 @@ vi.mock('@/sim/config', async (importOriginal) => {
 
 import { MATE_RANGE, OFFSPRING_FED } from '@/sim/config'
 import { applyPairReproduction } from '@/sim/reproduction'
+import { TRAIT_MIN } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
@@ -18,6 +19,7 @@ describe('immediate mating', () => {
       world.y[index] = 100
       world.fed[index] = 100
       world.cooldown[index] = 0
+      world.fertility[index] = TRAIT_MIN
     }
     world.x[0] = 100
     world.x[1] = 100 + MATE_RANGE / 2

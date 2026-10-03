@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   GESTATION_SECONDS,
   MOVEMENT,
-  PREGNANT_SPEED_FACTOR,
+  PREGNANT_SPEED_FACTOR_MIN,
 } from "@/sim/config";
 import { computeSteering } from "@/sim/behavior";
 import { rebuildSpatialGrid } from "@/sim/spatial";
-import { TRAIT_MIN, traitValue } from "@/sim/traits";
+import { TRAIT_MAX, TRAIT_MIN, traitValue } from "@/sim/traits";
 import { GLORP_TYPE } from "@/sim/types";
 import { createWorld } from "@/sim/world";
 
@@ -163,10 +163,11 @@ describe("hunter steering", () => {
 });
 
 describe("pregnancy", () => {
-  it("slows a pregnant glorp by the configured factor", () => {
+  it("slows a pregnant glorp at minimum fertility", () => {
     const world = createWorld(1, 5);
     world.type[0] = GLORP_TYPE.hunter;
     world.fed[0] = 100;
+    world.fertility[0] = TRAIT_MIN;
     rebuildSpatialGrid(world);
     const normal = computeSteering(world, 0, DT);
 
@@ -174,7 +175,23 @@ describe("pregnancy", () => {
     const pregnant = computeSteering(world, 0, DT);
 
     expect(Math.hypot(pregnant.x, pregnant.y)).toBeCloseTo(
-      Math.hypot(normal.x, normal.y) * PREGNANT_SPEED_FACTOR,
+      Math.hypot(normal.x, normal.y) * PREGNANT_SPEED_FACTOR_MIN,
+    );
+  });
+
+  it("does not slow a pregnant glorp at maximum fertility", () => {
+    const world = createWorld(1, 5);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.fed[0] = 100;
+    world.fertility[0] = TRAIT_MAX;
+    rebuildSpatialGrid(world);
+    const normal = computeSteering(world, 0, DT);
+
+    world.pregnant[0] = GESTATION_SECONDS;
+    const pregnant = computeSteering(world, 0, DT);
+
+    expect(Math.hypot(pregnant.x, pregnant.y)).toBeCloseTo(
+      Math.hypot(normal.x, normal.y),
     );
   });
 });

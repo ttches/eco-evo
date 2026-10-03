@@ -16,6 +16,7 @@ import {
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,
+  scaleTrait,
   traitValue,
   type TraitLevels,
 } from '@/sim/traits'
@@ -63,6 +64,22 @@ describe('traitValue', () => {
     expect(traitValue('fertility', 1)).toBe(25)
     expect(traitValue('agility', TRAIT_MIN)).toBe(0)
     expect(traitValue('agility', 1)).toBe(1)
+  })
+})
+
+describe('scaleTrait', () => {
+  it('maps the worst level to atWorst and the best to atBest', () => {
+    for (const key of TRAIT_KEYS) {
+      expect(scaleTrait(key, TRAIT_MIN, 10, 20)).toBeCloseTo(10)
+      expect(scaleTrait(key, TRAIT_MAX, 10, 20)).toBeCloseTo(20)
+    }
+  })
+
+  it('interpolates linearly across levels, including inverted traits', () => {
+    expect(scaleTrait('fertility', 1, 0, 100)).toBeCloseTo(100 / 7)
+    expect(scaleTrait('fertility', TRAIT_BASE, 0, 100)).toBeCloseTo(
+      (100 * TRAIT_BASE) / TRAIT_MAX,
+    )
   })
 })
 

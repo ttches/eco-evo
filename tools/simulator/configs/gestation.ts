@@ -12,6 +12,6 @@ export * from '@/sim/config.base'
 export const HUNTER_ASEXUAL = false
 export const GESTATION_SECONDS = 120
 export const MATE_ENERGY_COST = 40
-export const PREGNANT_SPEED_FACTOR = 0.5
+export const PREGNANT_SPEED_FACTOR_MIN = 0.5
 export const PREGNANT_CAN_SPRINT = false
 export const CANNIBALISM = false

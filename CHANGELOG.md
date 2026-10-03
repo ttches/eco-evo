@@ -25,6 +25,12 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 - `staminaMax` is renamed to `endurance`. It still sets stamina capacity and
   recovery, and now also slows hunger drain: each point trims the base
   metabolism, down to 30% slower at level 7 (`ENDURANCE.drainFactorAtMax`).
+- Fertility now scales two birth outcomes. A clone's starting energy rises from
+  `OFFSPRING_FED` at level 0 to `CLONE_OFFSPRING_FED_MAX` at level 7, and a
+  pregnancy child's from `OFFSPRING_FED` to `MATED_OFFSPRING_FED_MAX`. The
+  pregnancy speed penalty also eases with the mother's fertility, from
+  `PREGNANT_SPEED_FACTOR_MIN` to no reduction (`PREGNANT_SPEED_FACTOR_MAX`);
+  the old `PREGNANT_SPEED_FACTOR` is renamed to `PREGNANT_SPEED_FACTOR_MIN`.
 
 ## [0.1.0] - 2026-10-01
 

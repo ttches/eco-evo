@@ -1,12 +1,14 @@
 import { WORLD } from '@/engine/config'
 import { TAU, XorShift32, clamp, hashUnit } from '@/engine/math'
 import {
+  CLONE_OFFSPRING_FED_MAX,
   FED_MAX,
   GESTATION_SECONDS,
   HUNTER_ASEXUAL,
   MATE_CONTACT_SECONDS,
   MATE_ENERGY_COST,
   MATE_RANGE,
+  MATED_OFFSPRING_FED_MAX,
   MOVEMENT,
   OFFSPRING_FED,
 } from '@/sim/config'
@@ -16,13 +18,24 @@ import { isEligibleMate } from '@/sim/mate'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { allocGlorp } from '@/sim/store'
-import { traitValue } from '@/sim/traits'
+import { scaleTrait, traitValue } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
 
+/**
+ * Starting energy for a birth, scaled up from `OFFSPRING_FED` by the parent's
+ * (mother's, for pregnancy) fertility, capped at `FED_MAX`.
+ */
+const offspringFed = (world: World, parent: number, maxFed: number): number =>
+  clamp(
+    scaleTrait('fertility', world.fertility[parent], OFFSPRING_FED, maxFed),
+    0,
+    FED_MAX,
+  )
+
 /** Newborn state shared by every reproduction path, once traits are set. */
-const initOffspring = (world: World, child: number): void => {
-  world.fed[child] = OFFSPRING_FED
+const initOffspring = (world: World, child: number, fed: number): void => {
+  world.fed[child] = fed
   world.stamina[child] = traitValue('endurance', world.endurance[child])
   world.cooldown[child] = traitValue('fertility', world.fertility[child])
   // Its own wander seed, so parent and child don't move in lockstep.
@@ -77,7 +90,11 @@ export const applyReproduction = (world: World): void => {
 
     world.type[child] = world.type[index]
     cloneTraits(world, index, child)
-    initOffspring(world, child)
+    initOffspring(
+      world,
+      child,
+      offspringFed(world, index, CLONE_OFFSPRING_FED_MAX),
+    )
     placeOffspring(world, index, child)
     recordBirth(world, child, index)
 
@@ -116,7 +133,11 @@ const birthMatedChild = (
 
   world.type[child] = GLORP_TYPE.hunter
   crossTraitsFrom(world, child, motherTraits, fatherTraits, random)
-  initOffspring(world, child)
+  initOffspring(
+    world,
+    child,
+    offspringFed(world, motherIndex, MATED_OFFSPRING_FED_MAX),
+  )
   placeOffspring(world, motherIndex, child)
   recordBirthFromIds(world, child, motherId, fatherId)
 }

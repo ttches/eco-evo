@@ -8,7 +8,7 @@ import {
   GESTATION_SECONDS,
   GLORP_RADIUS,
   HUNTER_KILL_FED,
-  PREGNANT_SPEED_FACTOR,
+  PREGNANT_SPEED_FACTOR_MIN,
 } from '@/sim/config'
 import { computeSteering } from '@/sim/behavior'
 import { applyEating, dodgeChance, tickDodges } from '@/sim/predation'
@@ -238,7 +238,7 @@ describe('dodge dart steering', () => {
     expect(steering.sprint).toBe(true)
     expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(DODGE_SPEED)
     expect(Math.hypot(steering.x, steering.y)).not.toBeCloseTo(
-      DODGE_SPEED * PREGNANT_SPEED_FACTOR,
+      DODGE_SPEED * PREGNANT_SPEED_FACTOR_MIN,
     )
   })
 })

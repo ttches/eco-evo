@@ -1,7 +1,7 @@
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import { removeGlorp } from '@/sim/store'
 import { ENDURANCE, METABOLISM } from '@/sim/config'
-import { TRAIT_MAX, TRAIT_MIN, traitValue } from '@/sim/traits'
+import { TRAIT_MAX, TRAIT_MIN, scaleTrait } from '@/sim/traits'
 import type { World } from '@/sim/world'
 
 /**
@@ -11,11 +11,8 @@ import type { World } from '@/sim/world'
  */
 const DRAIN_FACTOR_BY_LEVEL = (() => {
   const table = new Float64Array(TRAIT_MAX + 1)
-  const min = traitValue('endurance', TRAIT_MIN)
-  const span = traitValue('endurance', TRAIT_MAX) - min
   for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
-    const t = (traitValue('endurance', level) - min) / span
-    table[level] = 1 + (ENDURANCE.drainFactorAtMax - 1) * t
+    table[level] = scaleTrait('endurance', level, 1, ENDURANCE.drainFactorAtMax)
   }
   return table
 })()

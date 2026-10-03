@@ -1,3 +1,5 @@
+import { lerp } from '@/engine/math';
+
 /** Lowest and highest level a trait can hold. */
 export const TRAIT_MIN = 0;
 export const TRAIT_MAX = 7;
@@ -63,3 +65,20 @@ const VALUES = Object.fromEntries(
 /** Mechanical value of a trait at an integer level. */
 export const traitValue = (key: TraitKey, level: number): number =>
   VALUES[key][level];
+
+/**
+ * Interpolate `atWorst`..`atBest` across a trait's levels, from its worst value
+ * (level 0) to its best (level 7). The fraction comes from the spec's
+ * `atMin`/`atMax` rather than the level bounds, so it stays correct for a trait
+ * whose spec maps level 0 to the larger value (fertility's cooldown).
+ */
+export const scaleTrait = (
+  key: TraitKey,
+  level: number,
+  atWorst: number,
+  atBest: number,
+): number => {
+  const { atMin, atMax } = TRAITS[key];
+  const t = (traitValue(key, level) - atMin) / (atMax - atMin);
+  return lerp(atWorst, atBest, t);
+};

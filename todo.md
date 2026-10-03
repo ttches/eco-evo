@@ -1,8 +1,5 @@
 allow 0 pts into trait
 
-higher fertility = more vaible preggos + plants spawn at full health
-
-see if endurance should also affect energy. rename energy everywhere to hunger
 prey should not freeze when it can only run toward other pray. SHould go to least bad option
 
 dhasboard: prey / predators pills in leaderboard replace with glorp svg like the glorpInspector

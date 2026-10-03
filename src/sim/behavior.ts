@@ -6,14 +6,15 @@ import {
   MATE_SEEKING,
   MOVEMENT,
   PREGNANT_CAN_SPRINT,
-  PREGNANT_SPEED_FACTOR,
+  PREGNANT_SPEED_FACTOR_MAX,
+  PREGNANT_SPEED_FACTOR_MIN,
   PREY_FLEE,
   STEER_RATE,
   WALK_SPEED,
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
-import { TRAITS, TRAIT_MAX, TRAIT_MIN, traitValue } from '@/sim/traits'
+import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
@@ -44,14 +45,32 @@ const WALK = WALK_SPEED * MOVEMENT.walkFactor
  * `jogFactorMax` (most, level 7), so the base build keeps its old 0.65 rate.
  */
 const JOG_FACTOR_BY_LEVEL = (() => {
-  const { atMin, atMax } = TRAITS.endurance
-  const span = atMax - atMin
   const table = new Float64Array(TRAIT_MAX + 1)
   for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
-    const t = (traitValue('endurance', level) - atMin) / span
-    table[level] =
-      MOVEMENT.jogFactorMin +
-      (MOVEMENT.jogFactorMax - MOVEMENT.jogFactorMin) * t
+    table[level] = scaleTrait(
+      'endurance',
+      level,
+      MOVEMENT.jogFactorMin,
+      MOVEMENT.jogFactorMax,
+    )
+  }
+  return table
+})()
+
+/**
+ * Pregnancy speed factor per `fertility` level: `PREGNANT_SPEED_FACTOR_MIN` at
+ * level 0, rising linearly to no reduction (`PREGNANT_SPEED_FACTOR_MAX`) at
+ * level 7. Precomputed like the jog table.
+ */
+const PREGNANT_SPEED_BY_LEVEL = (() => {
+  const table = new Float64Array(TRAIT_MAX + 1)
+  for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
+    table[level] = scaleTrait(
+      'fertility',
+      level,
+      PREGNANT_SPEED_FACTOR_MIN,
+      PREGNANT_SPEED_FACTOR_MAX,
+    )
   }
   return table
 })()
@@ -191,9 +210,10 @@ const applyPregnancy = (
   steering: Steering,
 ): Steering => {
   if (world.pregnant[index] <= 0) return steering
+  const factor = PREGNANT_SPEED_BY_LEVEL[world.fertility[index]]
   return {
-    x: steering.x * PREGNANT_SPEED_FACTOR,
-    y: steering.y * PREGNANT_SPEED_FACTOR,
+    x: steering.x * factor,
+    y: steering.y * factor,
     sprint: PREGNANT_CAN_SPRINT ? steering.sprint : false,
   }
 }
