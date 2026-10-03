@@ -30,7 +30,7 @@ export const OFFSPRING_FED = 50;
 export const FED_MAX = 100;
 
 /** Energy every glorp burns per second at level-0 endurance. */
-export const METABOLISM = 2.85;
+export const METABOLISM = 2.75;
 
 export const ENDURANCE = {
   /**
@@ -38,7 +38,7 @@ export const ENDURANCE = {
    * glorp at `TRAIT_MAX` burns hunger 30% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
-  drainFactorAtMax: 0.85,
+  drainFactorAtMax: 0.95,
 } as const;
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */

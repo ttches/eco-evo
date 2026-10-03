@@ -6,8 +6,7 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { FIXED_STEP } from '@/engine/config'
-import { spawnRandom } from '@/sim/spawn'
-import { GLORP_TYPE } from '@/sim/types'
+import { seedPopulation } from '@/sim/spawn'
 import { createWorld, step } from '@/sim/world'
 import { countAlive, sampleWorld, type SampleRow } from './analysis/sampling.ts'
 import { analyzeWorld, defaultFloors } from './analyze.ts'
@@ -48,12 +47,7 @@ const stopHit = (
 /** Build the starting population explicitly, prey then hunters. */
 const seedWorld = (settings: RunSettings) => {
   const world = createWorld(0, settings.seed)
-  for (let index = 0; index < settings.startPrey; index += 1) {
-    spawnRandom(world, GLORP_TYPE.prey)
-  }
-  for (let index = 0; index < settings.startHunters; index += 1) {
-    spawnRandom(world, GLORP_TYPE.hunter)
-  }
+  seedPopulation(world, settings.startPrey, settings.startHunters)
   return world
 }
 

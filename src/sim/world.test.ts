@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { WORLD } from '@/engine/config'
-import { MAX_GLORPS, DEFAULT_SEED } from '@/sim/config'
+import {
+  DEFAULT_SEED,
+  FED_MAX,
+  FED_START,
+  MAX_GLORPS,
+  START_HUNTERS,
+  START_PREY,
+} from '@/sim/config'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 
@@ -28,6 +35,19 @@ describe('createWorld', () => {
 
   it('records the seed it was built with', () => {
     expect(createWorld(1, 42).seed).toBe(42)
+  })
+
+  it('starts hunters at full energy and prey at the default', () => {
+    const world = createWorld(START_PREY + START_HUNTERS, 42)
+
+    for (let index = 0; index < world.count; index += 1) {
+      if (world.type[index] === GLORP_TYPE.hunter) {
+        expect(world.fed[index]).toBe(FED_MAX)
+        expect(world.cooldown[index]).toBeGreaterThan(0)
+      } else {
+        expect(world.fed[index]).toBe(FED_START)
+      }
+    }
   })
 
   it('normalizes a zero seed to the default, matching the RNG', () => {

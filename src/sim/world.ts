@@ -19,9 +19,8 @@ import {
   tickCooldowns,
 } from '@/sim/reproduction'
 import { createSpatialGrid, type SpatialGrid } from '@/sim/spatial'
-import { spawnRandom } from '@/sim/spawn'
+import { seedPopulation } from '@/sim/spawn'
 import { createColumns, type GlorpColumns } from '@/sim/store'
-import { GLORP_TYPE } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
 export type World = RenderableWorld &
@@ -73,9 +72,8 @@ export const createWorld = (
   }
 
   const active = Math.max(0, Math.min(count, MAX_GLORPS))
-  for (let index = 0; index < active; index += 1) {
-    spawnRandom(world, index < START_PREY ? GLORP_TYPE.prey : GLORP_TYPE.hunter)
-  }
+  const prey = Math.min(START_PREY, active)
+  seedPopulation(world, prey, active - prey)
   return world
 }
 
