@@ -3,7 +3,6 @@ import { Baby, GitBranch, Users } from 'lucide-react'
 import type { GlorpRef, GlorpView } from '@/sim/inspect'
 import { formatDuration } from '@/ui/timeFormat'
 import GlorpAvatar from '../GlorpAvatar/GlorpAvatar'
-import GlorpTypeBadge from '../GlorpTypeBadge/GlorpTypeBadge'
 import styles from './GlorpLineage.module.css'
 
 type GlorpLineageProps = {
@@ -33,7 +32,6 @@ const FamilyRow = ({ glorp, onNavigate }: FamilyRowProps) => (
     />
     <span className={styles.rowBody}>
       <span className={styles.rowTop}>
-        <GlorpTypeBadge type={glorp.type} size="small" />
         <span className={styles.rowName}>{glorp.name}</span>
         {glorp.named ? <span className={styles.rowId}>#{glorp.id}</span> : null}
       </span>
@@ -73,12 +71,13 @@ const GlorpLineage = ({ glorp, onNavigate }: GlorpLineageProps) => {
             open === 'parents' ? styles.familyActive : ''
           }`}
           disabled={glorp.parents.length === 0}
+          aria-label={`Parents (${glorp.parents.length})`}
+          title={`Parents (${glorp.parents.length})`}
           aria-expanded={open === 'parents'}
           aria-controls={open === 'parents' ? drawerId : undefined}
           onClick={() => toggle('parents')}
         >
           <Users aria-hidden="true" />
-          <span className={styles.familyLabel}>Parents</span>
           <span className={styles.familyCount}>{glorp.parents.length}</span>
         </button>
         <button
@@ -87,12 +86,13 @@ const GlorpLineage = ({ glorp, onNavigate }: GlorpLineageProps) => {
             open === 'children' ? styles.familyActive : ''
           }`}
           disabled={glorp.children.length === 0}
+          aria-label={`Children (${glorp.children.length})`}
+          title={`Children (${glorp.children.length})`}
           aria-expanded={open === 'children'}
           aria-controls={open === 'children' ? drawerId : undefined}
           onClick={() => toggle('children')}
         >
           <Baby aria-hidden="true" />
-          <span className={styles.familyLabel}>Children</span>
           <span className={styles.familyCount}>{glorp.children.length}</span>
         </button>
       </div>

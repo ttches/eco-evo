@@ -38,7 +38,7 @@ export const ENDURANCE = {
    * glorp at `TRAIT_MAX` burns hunger 30% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
-  drainFactorAtMax: 0.8,
+  drainFactorAtMax: 0.85,
 } as const;
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
@@ -213,7 +213,7 @@ export const CANNIBAL_KILL_FED = 15;
  */
 export const DODGE_ENABLED = true;
 /** Dodge chance added per agility level the prey has over the hunter. */
-export const DODGE_CHANCE_PER_LEVEL = 0.1;
+export const DODGE_CHANCE_PER_LEVEL = 0.15;
 
 /** Ceiling on dodge chance, however large the agility gap. */
 export const DODGE_CHANCE_MAX = 0.9;

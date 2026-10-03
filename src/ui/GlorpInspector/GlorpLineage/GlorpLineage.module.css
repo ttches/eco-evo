@@ -71,11 +71,6 @@
   flex-shrink: 0;
 }
 
-.familyLabel {
-  font-size: 0.7rem;
-  font-weight: 560;
-}
-
 .familyCount {
   margin-left: auto;
   color: var(--foreground);

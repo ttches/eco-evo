@@ -1,13 +1,11 @@
 .panel {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  bottom: 0.85rem;
+  position: relative;
   z-index: 5;
   display: flex;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   gap: 0.7rem;
-  width: min(21rem, calc(100% - 1.7rem));
   padding: 1rem;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -137,8 +135,17 @@
   text-transform: uppercase;
 }
 
+.extremeNameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .extremeName {
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
   color: var(--foreground);
   font-size: 0.72rem;
   font-weight: 560;
@@ -210,7 +217,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 1.4rem auto 1fr auto;
+  grid-template-columns: 1.4rem 1.1rem 1fr auto;
   align-items: center;
   gap: 0.45rem;
   width: 100%;
@@ -265,14 +272,20 @@
   }
 }
 
-/* Narrow screens: a sheet rising from the bottom edge. */
+/* Narrow screens: a shorter sheet below the map, scrolled as a whole. */
 @media (max-width: 700px) {
   .panel {
-    top: auto;
-    right: max(0.5rem, env(safe-area-inset-right));
-    bottom: max(0.5rem, env(safe-area-inset-bottom));
-    left: max(0.5rem, env(safe-area-inset-left));
-    width: auto;
-    height: min(70dvh, 40rem);
+    flex: 0 0 auto;
+    height: 40dvh;
+    overflow-y: auto;
+  }
+
+  .panel > * {
+    flex-shrink: 0;
+  }
+
+  .list {
+    flex: none;
+    overflow: visible;
   }
 }

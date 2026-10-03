@@ -20,7 +20,7 @@ import { GLORP_TYPE } from '@/sim/types'
 import { createWorld } from '@/sim/world'
 
 describe('buildLeaderboard', () => {
-  it('tallies direct offspring and whole-tree descendants', () => {
+  it('tallies direct offspring', () => {
     const world = createWorld(1, 9)
     world.fed[0] = 100
     world.cooldown[0] = 0
@@ -33,9 +33,9 @@ describe('buildLeaderboard', () => {
 
     const stats = buildLeaderboard(world)
     expect(stats).toHaveLength(3)
-    expect(stats[0]).toMatchObject({ offspring: 1, descendants: 2 })
-    expect(stats[1]).toMatchObject({ offspring: 1, descendants: 1 })
-    expect(stats[2]).toMatchObject({ offspring: 0, descendants: 0 })
+    expect(stats[0]).toMatchObject({ offspring: 1 })
+    expect(stats[1]).toMatchObject({ offspring: 1 })
+    expect(stats[2]).toMatchObject({ offspring: 0 })
   })
 
   it('credits kills and lifespan from the lineage log', () => {
@@ -72,9 +72,9 @@ describe('buildLeaderboard', () => {
     applyGestation(world, GESTATION_SECONDS)
 
     const stats = buildLeaderboard(world)
-    expect(stats[0]).toMatchObject({ offspring: 1, descendants: 1 })
-    expect(stats[1]).toMatchObject({ offspring: 1, descendants: 1 })
-    expect(stats[2]).toMatchObject({ offspring: 0, descendants: 0 })
+    expect(stats[0]).toMatchObject({ offspring: 1 })
+    expect(stats[1]).toMatchObject({ offspring: 1 })
+    expect(stats[2]).toMatchObject({ offspring: 0 })
   })
 
   it('keeps kills after the killer itself dies', () => {
@@ -115,7 +115,6 @@ describe('sortStats', () => {
     timeAlive: value,
     kills: value,
     offspring: value,
-    descendants: value,
     traits: {
       speed: value,
       endurance: value,
@@ -133,7 +132,7 @@ describe('sortStats', () => {
   it('sorts by any numeric stat', () => {
     const entries = [stat(0, 3), stat(1, 9), stat(2, 9)]
     expect(sortStats(entries, 'timeAlive').map((e) => e.id)).toEqual([1, 2, 0])
-    expect(sortStats(entries, 'descendants').map((e) => e.id)).toEqual([1, 2, 0])
+    expect(sortStats(entries, 'offspring').map((e) => e.id)).toEqual([1, 2, 0])
   })
 
   it('sorts every trait highest first', () => {
@@ -152,7 +151,6 @@ describe('filterStats', () => {
     timeAlive: 0,
     kills: 0,
     offspring: 0,
-    descendants: 0,
     traits: {
       speed: 0,
       endurance: 0,

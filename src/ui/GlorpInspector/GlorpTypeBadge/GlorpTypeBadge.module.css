@@ -1,19 +1,10 @@
 .badge {
-  border-radius: 999px;
-  font-weight: 640;
-  text-transform: uppercase;
-}
-
-.default {
   padding: 0.12rem 0.45rem;
+  border-radius: 999px;
   font-size: 0.6rem;
+  font-weight: 640;
   letter-spacing: 0.08em;
-}
-
-.small {
-  padding: 0.06rem 0.32rem;
-  font-size: 0.54rem;
-  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .prey {

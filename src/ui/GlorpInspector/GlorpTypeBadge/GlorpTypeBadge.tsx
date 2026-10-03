@@ -3,17 +3,14 @@ import styles from './GlorpTypeBadge.module.css'
 
 type GlorpTypeBadgeProps = {
   type: GlorpType
-  size?: 'default' | 'small'
 }
 
 /** Colored Prey / Predator pill, shared by the header and lineage rows. */
-const GlorpTypeBadge = ({ type, size = 'default' }: GlorpTypeBadgeProps) => {
+const GlorpTypeBadge = ({ type }: GlorpTypeBadgeProps) => {
   const isHunter = type === GLORP_TYPE.hunter
   return (
     <span
-      className={`${styles.badge} ${styles[size]} ${
-        isHunter ? styles.hunter : styles.prey
-      }`}
+      className={`${styles.badge} ${isHunter ? styles.hunter : styles.prey}`}
     >
       {isHunter ? 'Predator' : 'Prey'}
     </span>

@@ -19,6 +19,8 @@ import styles from "./GlorpStats.module.css";
 
 type GlorpStatsProps = {
   glorp: GlorpView;
+  /** Hide the repro/age/death rows, leaving meters and trait bars. */
+  compact?: boolean;
 };
 
 type StatProps = {
@@ -134,7 +136,7 @@ const reproState = (live: GlorpLiveState): ReproState => {
  * glorps show their reproductive status and age; dead ones show their lifespan,
  * cause of death and killer.
  */
-const GlorpStats = ({ glorp }: GlorpStatsProps) => {
+const GlorpStats = ({ glorp, compact = false }: GlorpStatsProps) => {
   const repro = glorp.live ? reproState(glorp.live) : null;
 
   return (
@@ -167,40 +169,44 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => {
           </div>
         ))}
 
-        {repro ? (
-          <Stat
-            icon={<OvariesIcon />}
-            label="Repro"
-            value={repro.label}
-            valueClassName={styles[repro.tone]}
-          />
-        ) : null}
-
-        {glorp.live ? (
-          <Stat
-            icon={<Clock />}
-            label="Time alive"
-            value={formatDuration(glorp.timeAlive)}
-          />
-        ) : (
+        {compact ? null : (
           <>
-            <Stat
-              icon={<Hourglass />}
-              label="Lived"
-              value={formatDuration(glorp.timeAlive)}
-            />
-            <Stat
-              icon={<Skull />}
-              label="Cause"
-              value={DEATH_LABEL[glorp.deathCause]}
-            />
-            {glorp.killer ? (
+            {repro ? (
               <Stat
-                icon={<Utensils />}
-                label="Killed by"
-                value={glorp.killer.name}
+                icon={<OvariesIcon />}
+                label="Repro"
+                value={repro.label}
+                valueClassName={styles[repro.tone]}
               />
             ) : null}
+
+            {glorp.live ? (
+              <Stat
+                icon={<Clock />}
+                label="Time alive"
+                value={formatDuration(glorp.timeAlive)}
+              />
+            ) : (
+              <>
+                <Stat
+                  icon={<Hourglass />}
+                  label="Lived"
+                  value={formatDuration(glorp.timeAlive)}
+                />
+                <Stat
+                  icon={<Skull />}
+                  label="Cause"
+                  value={DEATH_LABEL[glorp.deathCause]}
+                />
+                {glorp.killer ? (
+                  <Stat
+                    icon={<Utensils />}
+                    label="Killed by"
+                    value={glorp.killer.name}
+                  />
+                ) : null}
+              </>
+            )}
           </>
         )}
       </div>

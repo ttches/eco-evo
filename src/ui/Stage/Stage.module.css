@@ -1,17 +1,31 @@
 .stage {
+  display: flex;
   width: 100vw;
   height: 100dvh;
   overflow: hidden;
   background: var(--background);
 }
 
-/* The view fills the screen; the camera, not the layout, adapts to its shape. */
+/* The view fills the remaining space; the camera adapts to its shape. */
 .display {
   position: relative;
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background: var(--world);
+}
+
+/* Reserved column for a side panel; the map shrinks rather than being covered. */
+.side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: calc(21rem + 1.7rem);
+  padding: 0.85rem;
+  background: var(--background);
+  border-left: 1px solid var(--border);
 }
 
 .canvas {
@@ -38,4 +52,18 @@
 .overlay > * {
   pointer-events: auto;
   touch-action: manipulation;
+}
+
+/* Narrow screens: stack the side panel below the map so the sheet pushes it up. */
+@media (max-width: 700px) {
+  .stage {
+    flex-direction: column;
+  }
+
+  .side {
+    width: auto;
+    padding: 0.5rem;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
 }

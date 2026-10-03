@@ -4,12 +4,7 @@ import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
 /** The stats a leaderboard can rank by, all derived from the lineage log. */
-const STAT_KEYS = [
-  'offspring',
-  'descendants',
-  'kills',
-  'timeAlive',
-] as const
+const STAT_KEYS = ['offspring', 'kills', 'timeAlive'] as const
 
 export type StatKey = (typeof STAT_KEYS)[number]
 
@@ -28,8 +23,6 @@ export type GlorpStat = {
   readonly kills: number
   /** Direct children. */
   readonly offspring: number
-  /** Every descendant in the family tree, direct or not. */
-  readonly descendants: number
   /** Heritable trait values, as rolled or inherited at birth. */
   readonly traits: Readonly<TraitLevels>
 }
@@ -65,6 +58,8 @@ export type TraitExtreme = {
   readonly key: TraitKey
   readonly id: number
   readonly name: string
+  readonly type: GlorpType
+  readonly alive: boolean
   readonly value: number
 }
 
@@ -75,21 +70,18 @@ export type TraitExtreme = {
 let tallyCapacity = 0
 let killsTally = new Int32Array(0)
 let offspringTally = new Int32Array(0)
-let descendantsTally = new Int32Array(0)
 
 const ensureTallies = (size: number): void => {
   if (size <= tallyCapacity) return
   tallyCapacity = Math.max(size, tallyCapacity * 2, 256)
   killsTally = new Int32Array(tallyCapacity)
   offspringTally = new Int32Array(tallyCapacity)
-  descendantsTally = new Int32Array(tallyCapacity)
 }
 
 /**
  * Aggregate every glorp ever born into a leaderboard in one O(size) pass over
  * the lineage log. Kills and offspring are tallied from the `killer` and parent
- * columns; descendants use a reverse pass because a child always has a higher
- * id than its parents, so a glorp's subtree is complete before it is visited.
+ * columns.
  */
 export const buildLeaderboard = (world: World): GlorpStat[] => {
   const log = world.lineage
@@ -97,25 +89,17 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
   ensureTallies(size)
   const kills = killsTally
   const offspring = offspringTally
-  const descendants = descendantsTally
   kills.fill(0, 0, size)
   offspring.fill(0, 0, size)
-  descendants.fill(0, 0, size)
 
-  for (let id = size - 1; id >= 0; id -= 1) {
+  for (let id = 0; id < size; id += 1) {
     const killer = log.killer[id]
     if (killer !== NO_GLORP) kills[killer] += 1
 
     const parentA = log.parentA[id]
-    if (parentA !== NO_GLORP) {
-      offspring[parentA] += 1
-      descendants[parentA] += 1 + descendants[id]
-    }
+    if (parentA !== NO_GLORP) offspring[parentA] += 1
     const parentB = log.parentB[id]
-    if (parentB !== NO_GLORP) {
-      offspring[parentB] += 1
-      descendants[parentB] += 1 + descendants[id]
-    }
+    if (parentB !== NO_GLORP) offspring[parentB] += 1
   }
 
   const stats: GlorpStat[] = new Array(size)
@@ -132,7 +116,6 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
       timeAlive: endedAt - log.bornAt[id],
       kills: kills[id],
       offspring: offspring[id],
-      descendants: descendants[id],
       traits,
     }
   }
@@ -200,6 +183,13 @@ export const traitExtremesFromStats = (
       const bestValue = best.traits[key]
       if (value > bestValue) best = stat
     }
-    return { key, id: best.id, name: best.name, value: best.traits[key] }
+    return {
+      key,
+      id: best.id,
+      name: best.name,
+      type: best.type,
+      alive: best.alive,
+      value: best.traits[key],
+    }
   })
 }

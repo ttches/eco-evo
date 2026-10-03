@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   createCamera,
-  fitCamera,
   focusCamera,
   resizeCamera,
   viewportFor,
-  zoomAt,
   type Camera,
 } from '@/engine/camera'
 import { CAMERA, FIXED_STEP } from '@/engine/config'
@@ -27,8 +25,6 @@ import { resolveInitialSeed } from '@/sim/seed'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 import Brand from '@/ui/FloatingUI/Brand/Brand'
-import ControlDock from '@/ui/FloatingUI/ControlDock/ControlDock'
-import SettingsPanel from '@/ui/FloatingUI/SettingsPanel/SettingsPanel'
 import StatsPanel from '@/ui/FloatingUI/StatsPanel/StatsPanel'
 import TopActions from '@/ui/FloatingUI/TopActions/TopActions'
 import GlorpInspector from '@/ui/GlorpInspector/GlorpInspector'
@@ -58,9 +54,7 @@ const App = () => {
   const [world] = useState(() =>
     createWorld(undefined, resolveInitialSeed(window.location.search)),
   )
-  const [zoom, setZoom] = useState<number>(() => createCamera().zoom)
   const [showInterface, setShowInterface] = useState(true)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [selected, setSelected] = useState<GlorpView | null>(null)
   const [canGoBack, setCanGoBack] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
@@ -69,7 +63,6 @@ const App = () => {
 
   const handleCameraChange = useCallback(() => {
     needsDrawRef.current = true
-    setZoom(cameraRef.current.zoom)
   }, [])
 
   /** Center on the selected glorp, if it is still alive in the world. */
@@ -218,6 +211,12 @@ const App = () => {
   /** Stable accessor so the brand clock can poll sim time without App churn. */
   const getSimTime = useCallback(() => world.time, [world])
 
+  /** Read a full inspector view by stable id, for the stats hover preview. */
+  const getGlorpView = useCallback(
+    (id: number) => readGlorpView(world, id),
+    [world],
+  )
+
   const refreshStats = useCallback(() => {
     setStats(buildLeaderboard(world))
   }, [world])
@@ -225,22 +224,13 @@ const App = () => {
   const toggleStats = useCallback(() => {
     const next = !statsOpenRef.current
     statsOpenRef.current = next
-    if (next) {
-      setSettingsOpen(false)
-      refreshStats()
-    }
+    if (next) refreshStats()
     setStatsOpen(next)
   }, [refreshStats])
 
   const closeStats = useCallback(() => {
     statsOpenRef.current = false
     setStatsOpen(false)
-  }, [])
-
-  const openSettings = useCallback(() => {
-    statsOpenRef.current = false
-    setStatsOpen(false)
-    setSettingsOpen(true)
   }, [])
 
   useEffect(() => {
@@ -326,22 +316,6 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [spawnPrey, spawnPredator])
 
-  const fitView = (): void => {
-    cameraRef.current = fitCamera(cameraRef.current.viewport)
-    handleCameraChange()
-  }
-
-  const zoomBy = (factor: number): void => {
-    const { viewport } = cameraRef.current
-    cameraRef.current = zoomAt(
-      cameraRef.current,
-      factor,
-      viewport.width / 2,
-      viewport.height / 2,
-    )
-    handleCameraChange()
-  }
-
   const overlay = (
     <>
       <GlorpInspector
@@ -360,33 +334,30 @@ const App = () => {
           <Brand getTime={getSimTime} seed={world.seed} />
           <TopActions
             onOpenStats={toggleStats}
-            onOpenSettings={openSettings}
-          />
-          <ControlDock
-            zoom={zoom}
-            onZoomIn={() => zoomBy(1.25)}
-            onZoomOut={() => zoomBy(0.8)}
-            onFitView={fitView}
             onHideInterface={() => setShowInterface(false)}
-            onSpawnPrey={spawnPrey}
-            onSpawnPredator={spawnPredator}
-          />
-          <SettingsPanel
-            open={settingsOpen}
-            onClose={() => setSettingsOpen(false)}
-          />
-          <StatsPanel
-            open={statsOpen}
-            onClose={closeStats}
-            stats={stats}
-            onNavigate={navigateTo}
           />
         </>
       )}
     </>
   )
 
-  return <Stage canvasRef={canvasRef} overlay={overlay} />
+  return (
+    <Stage
+      canvasRef={canvasRef}
+      overlay={overlay}
+      sidePanel={
+        showInterface && statsOpen ? (
+          <StatsPanel
+            open={statsOpen}
+            onClose={closeStats}
+            stats={stats}
+            onNavigate={navigateTo}
+            getGlorpView={getGlorpView}
+          />
+        ) : null
+      }
+    />
+  )
 }
 
 export default App

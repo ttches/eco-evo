@@ -1,13 +1,13 @@
-import { BarChart3, Settings2 } from 'lucide-react'
+import { BarChart3, EyeOff } from 'lucide-react'
 import styles from './TopActions.module.css'
 
 type TopActionsProps = {
   onOpenStats: () => void
-  onOpenSettings: () => void
+  onHideInterface: () => void
 }
 
 /** Floating action group in the top-right corner. */
-const TopActions = ({ onOpenStats, onOpenSettings }: TopActionsProps) => (
+const TopActions = ({ onOpenStats, onHideInterface }: TopActionsProps) => (
   <div className={styles.topActions}>
     <button
       type="button"
@@ -21,11 +21,12 @@ const TopActions = ({ onOpenStats, onOpenSettings }: TopActionsProps) => (
     <button
       type="button"
       className={styles.actionTrigger}
-      onClick={onOpenSettings}
-      aria-label="Open settings"
+      onClick={onHideInterface}
+      aria-label="Hide interface"
+      aria-keyshortcuts="H"
     >
-      <Settings2 aria-hidden="true" />
-      <span>Settings</span>
+      <EyeOff aria-hidden="true" />
+      <span>Hide UI</span>
     </button>
   </div>
 )
