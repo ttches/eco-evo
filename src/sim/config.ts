@@ -212,12 +212,11 @@ export const STRENGTH_EDGE = 3;
  * Off makes agility inert, which the headless simulator uses as an A/B control.
  */
 export const DODGE_ENABLED = true;
-
 /** Dodge chance added per agility level the prey has over the hunter. */
 export const DODGE_CHANCE_PER_LEVEL = 0.15;
 
 /** Ceiling on dodge chance, however large the agility gap. */
-export const DODGE_CHANCE_MAX = 0.7;
+export const DODGE_CHANCE_MAX = 0.9;
 
 /**
  * Seconds a dodging prey commits to its escape dart. While dodging it is

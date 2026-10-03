@@ -1,9 +1,9 @@
 /** Lowest and highest level a trait can hold. */
-export const TRAIT_MIN = 1
-export const TRAIT_MAX = 7
+export const TRAIT_MIN = 1;
+export const TRAIT_MAX = 7;
 
 /** Level a glorp with no specialization holds in every trait. */
-export const TRAIT_BASE = 4
+export const TRAIT_BASE = 3;
 
 /**
  * Mechanical value a trait takes at its lowest and highest level. Levels in
@@ -11,9 +11,9 @@ export const TRAIT_BASE = 4
  * (metabolism, cooldown) map level 1 to the larger number.
  */
 type TraitSpec = {
-  readonly atMin: number
-  readonly atMax: number
-}
+  readonly atMin: number;
+  readonly atMax: number;
+};
 
 /**
  * Every heritable trait, stored per glorp as an integer level in
@@ -32,28 +32,29 @@ export const TRAITS = {
    * means the prey is caught; higher gives a chance to dodge.
    */
   agility: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
-} as const satisfies Record<string, TraitSpec>
+} as const satisfies Record<string, TraitSpec>;
 
-export type TraitKey = keyof typeof TRAITS
+export type TraitKey = keyof typeof TRAITS;
 
-export const TRAIT_KEYS = Object.keys(TRAITS) as readonly TraitKey[]
+export const TRAIT_KEYS = Object.keys(TRAITS) as readonly TraitKey[];
 
 /** One glorp's trait levels. */
-export type TraitLevels = Record<TraitKey, number>
+export type TraitLevels = Record<TraitKey, number>;
 
 /** Mechanical value of every trait at each level, indexed by level. */
 const VALUES = Object.fromEntries(
   TRAIT_KEYS.map((key) => {
-    const { atMin, atMax } = TRAITS[key]
-    const table = new Float64Array(TRAIT_MAX + 1)
+    const { atMin, atMax } = TRAITS[key];
+    const table = new Float64Array(TRAIT_MAX + 1);
     for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
       table[level] =
-        atMin + ((atMax - atMin) * (level - TRAIT_MIN)) / (TRAIT_MAX - TRAIT_MIN)
+        atMin +
+        ((atMax - atMin) * (level - TRAIT_MIN)) / (TRAIT_MAX - TRAIT_MIN);
     }
-    return [key, table]
+    return [key, table];
   }),
-) as Record<TraitKey, Float64Array>
+) as Record<TraitKey, Float64Array>;
 
 /** Mechanical value of a trait at an integer level. */
 export const traitValue = (key: TraitKey, level: number): number =>
-  VALUES[key][level]
+  VALUES[key][level];
