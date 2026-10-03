@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Baby, GitBranch, Users } from 'lucide-react'
+import { FED_MAX } from '@/sim/config'
 import type { GlorpRef, GlorpView } from '@/sim/inspect'
 import { formatDuration } from '@/ui/timeFormat'
 import GlorpAvatar from '../GlorpAvatar/GlorpAvatar'
@@ -28,6 +29,7 @@ const FamilyRow = ({ glorp, onNavigate }: FamilyRowProps) => (
       id={glorp.id}
       type={glorp.type}
       alive={glorp.alive}
+      fed={glorp.alive ? FED_MAX : 0}
       size={18}
     />
     <span className={styles.rowBody}>
