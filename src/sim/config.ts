@@ -237,7 +237,7 @@ export const DODGE_DURATION = 0.3;
  * Fixed distance, in world units, a dodge carries the prey over its dart. The
  * escape is independent of the `speed` trait, so speed gets no second payoff.
  */
-export const DODGE_DISTANCE = 40;
+export const DODGE_DISTANCE = 44;
 
 /**
  * Escape-dart speed, derived from the fixed distance and duration so a dart
