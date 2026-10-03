@@ -19,6 +19,9 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 - A dodge is now a fixed distance (`DODGE_DISTANCE`, derived dart speed
   `DODGE_SPEED`), independent of the prey's `speed` trait, so speed no longer
   gets a second payoff. Pregnancy no longer shortens a dart.
+- Traits can now be dropped to 0 points. Level 0 is the linear extrapolation of
+  the old level 1..7 line, so existing levels are unchanged; level 0 is always
+  the worst rung (e.g. agility 0, fertility's longest cooldown).
 
 ## [0.1.0] - 2026-10-01
 

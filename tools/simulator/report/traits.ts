@@ -53,7 +53,7 @@ const driftTable = (selection: SelectionReport, diversity: DiversityReport): str
   )
 }
 
-/** One metric row across levels, e.g. mean offspring at L1..L7. */
+/** One metric row across levels, e.g. mean offspring at L0..L7. */
 const levelCells = (trait: TraitSelection, pick: (row: LevelRow) => string): string[] =>
   trait.byLevel.map(pick)
 
@@ -94,7 +94,7 @@ const selectionSection = (selection: SelectionReport, diversity: DiversityReport
     `mean lifespan ${num(selection.means.lifespan, 0)}s, offspring ${num(selection.means.offspring)}${killsMean}`,
     '',
     'Trait drift and selection. "effect" = budget-aware selection gradient in outcome-sd per trait-sd',
-    '(+0.25 strong, +0.10 real, |x|<0.10 no signal). @floor/@cap = share of the final cohort at level 1 / 7.',
+    '(+0.25 strong, +0.10 real, |x|<0.10 no signal). @floor/@cap = share of the final cohort at level 0 / 7.',
     '',
     driftTable(selection, diversity),
     '',

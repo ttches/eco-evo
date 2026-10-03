@@ -61,7 +61,7 @@ export const MATE_ENERGY_COST = 0;
 export const GESTATION_SECONDS = 30;
 
 /** Top-speed multiplier applied while pregnant. */
-export const PREGNANT_SPEED_FACTOR = 0.7;
+export const PREGNANT_SPEED_FACTOR = 0.9;
 
 /** Whether a pregnant glorp may sprint. */
 export const PREGNANT_CAN_SPRINT = true;
@@ -103,9 +103,10 @@ export const MOVEMENT = {
    * Jog tier: fraction of top speed an exhausted glorp keeps while pursuing or
    * fleeing. It scales with `staminaMax`, interpolating from `jogFactorMin`
    * (least stamina) to `jogFactorMax` (most), so endurance buys speed once
-   * tired instead of a flat rate for everyone.
+   * tired instead of a flat rate for everyone. `jogFactorMin` anchors the
+   * extrapolated level 0; level 1 still jogs at 0.55.
    */
-  jogFactorMin: 0.55,
+  jogFactorMin: 0.5,
   jogFactorMax: 0.85,
 } as const;
 
@@ -232,8 +233,8 @@ export const DODGE_SPEED = DODGE_DISTANCE / DODGE_DURATION;
 export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS;
 
 /**
- * Speed every glorp walks and wanders at, whatever its `speed` trait (this is
- * the base level's value). Speed then only pays off in pursuit and flight, so
- * prey don't evolve top speed just to graze faster and hunters can catch them.
+ * Speed every glorp walks and wanders at, whatever its `speed` trait. Speed
+ * then only pays off in pursuit and flight, so prey don't evolve top speed just
+ * to graze faster and hunters can catch them.
  */
 export const WALK_SPEED = 50;

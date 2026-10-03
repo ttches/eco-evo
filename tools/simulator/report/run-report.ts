@@ -11,7 +11,7 @@ import { epochSection, populationSection } from './population.ts'
 import { individualSections } from './traits.ts'
 
 const TRAIT_BUDGET_NOTE = (keys: string[]): string =>
-  `Build order: ${keys.join('-')}  (levels 1-7, budget-constrained)`
+  `Build order: ${keys.join('-')}  (levels 0-7, budget-constrained)`
 
 const headerLines = (summary: RunSummary): string[] => {
   const { run, analysis } = summary

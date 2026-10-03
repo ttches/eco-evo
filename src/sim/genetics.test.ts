@@ -49,10 +49,20 @@ describe('traitValue', () => {
     )
   })
 
-  it('hits the range endpoints and the midpoint', () => {
-    expect(traitValue('speed', TRAIT_MIN)).toBe(30)
+  it('hits the range endpoints and the base build', () => {
+    expect(traitValue('speed', TRAIT_MIN)).toBeCloseTo(70 / 3)
+    expect(traitValue('speed', 1)).toBeCloseTo(30)
     expect(traitValue('speed', TRAIT_MAX)).toBe(70)
-    expect(traitValue('speed', TRAIT_BASE)).toBe(50)
+    expect(traitValue('speed', TRAIT_BASE)).toBeCloseTo(130 / 3)
+  })
+
+  it('extrapolates level 0 while preserving the level-1 values', () => {
+    expect(traitValue('staminaMax', TRAIT_MIN)).toBe(1)
+    expect(traitValue('staminaMax', 1)).toBe(2)
+    expect(traitValue('fertility', TRAIT_MIN)).toBeCloseTo(167 / 6)
+    expect(traitValue('fertility', 1)).toBe(25)
+    expect(traitValue('agility', TRAIT_MIN)).toBe(0)
+    expect(traitValue('agility', 1)).toBe(1)
   })
 })
 

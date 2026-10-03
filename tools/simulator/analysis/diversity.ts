@@ -44,7 +44,7 @@ export type DiversityReport = {
     traitMeanShift: Record<string, number>
     verdict: DiversityVerdict
   }
-  /** Share of the final cohort at each level 1..7, per trait. */
+  /** Share of the final cohort at each level 0..7, per trait. */
   levelShares: Record<string, number[]>
   /** Share of the final cohort sitting at the floor or cap of each trait. */
   extremeShare: Record<string, { low: number; high: number }>

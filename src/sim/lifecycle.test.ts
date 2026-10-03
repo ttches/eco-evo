@@ -24,6 +24,7 @@ import {
   tickCooldowns,
 } from '@/sim/reproduction'
 import {
+  TRAIT_BASE,
   TRAIT_KEYS,
   TRAIT_MAX,
   TRAIT_MIN,
@@ -121,10 +122,10 @@ describe('applyReproduction', () => {
 })
 
 describe('applyPairReproduction', () => {
-  /** Two distinct builds so a child's blend is observable. */
+  /** Two distinct, on-budget builds so a child's blend is observable. */
   const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
-    const a = { speed: 6, staminaMax: 2, fertility: 3, agility: 4 }
-    const b = { speed: 2, staminaMax: 6, fertility: 5, agility: 4 }
+    const a = { speed: 6, staminaMax: 1, fertility: 3, agility: 2 }
+    const b = { speed: 2, staminaMax: 3, fertility: 5, agility: 2 }
     for (const key of TRAIT_KEYS) {
       world[key][0] = a[key]
       world[key][1] = b[key]
@@ -346,7 +347,7 @@ describe('stamina', () => {
     const world = createWorld(2, 13)
     world.fed[0] = 100
     world.stamina[0] = 0
-    world.staminaMax[0] = 4 // mechanical value 5 === STAMINA.referenceMax
+    world.staminaMax[0] = TRAIT_BASE // its value equals STAMINA.referenceMax
 
     updateBehavior(world, 1 / 60)
     updateStamina(world, 1 / 60)

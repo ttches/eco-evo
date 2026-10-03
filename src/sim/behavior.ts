@@ -40,8 +40,8 @@ const WALK = WALK_SPEED * MOVEMENT.walkFactor
 
 /**
  * Jog fraction per `staminaMax` level, precomputed so the pursuit hot path is a
- * lookup. It interpolates from `jogFactorMin` (least stamina) to `jogFactorMax`
- * (most), anchored so the base build jogs at the old flat rate.
+ * lookup. It interpolates from `jogFactorMin` (least stamina, level 0) to
+ * `jogFactorMax` (most, level 7), so the base build keeps its old 0.65 rate.
  */
 const JOG_FACTOR_BY_LEVEL = (() => {
   const { atMin, atMax } = TRAITS.staminaMax

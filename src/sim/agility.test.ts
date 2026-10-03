@@ -66,7 +66,7 @@ describe('dodgeChance', () => {
   })
 
   it('caps at the configured maximum', () => {
-    expect(dodgeChance(setupHunt(1, 7), 0, 1)).toBe(DODGE_CHANCE_MAX)
+    expect(dodgeChance(setupHunt(0, 7), 0, 1)).toBe(DODGE_CHANCE_MAX)
   })
 })
 
