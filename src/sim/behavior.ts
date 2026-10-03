@@ -13,7 +13,6 @@ import {
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
-import { canEatLevel } from '@/sim/predation'
 import { TRAITS, TRAIT_MAX, TRAIT_MIN, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
@@ -87,16 +86,13 @@ const canSprint = (world: World, index: number): boolean =>
  */
 const chasePrey: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
-  const hunterLevel = world.strength[index]
   const prey = nearestOfType(
     world,
     index,
     GLORP_TYPE.prey,
     HUNTER_SIGHT,
     // A dodging prey is untargetable, so the search skips it entirely.
-    (candidate) =>
-      world.dodgeTimer[candidate] <= 0 &&
-      canEatLevel(world, hunterLevel, candidate),
+    (candidate) => world.dodgeTimer[candidate] <= 0,
   )
   if (prey < 0) return null
   const sprint = canSprint(world, index)

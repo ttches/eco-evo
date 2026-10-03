@@ -89,8 +89,6 @@ describe("hunter steering", () => {
     world.y[1] = 100;
     world.fed[0] = 50;
     world.stamina[0] = 5;
-    world.strength[0] = 6;
-    world.strength[1] = 3;
 
     rebuildSpatialGrid(world);
     const steering = computeSteering(world, 0, DT);
@@ -129,8 +127,6 @@ describe("hunter steering", () => {
     world.stamina[0] = 0;
     world.exhausted[0] = 1;
     world.staminaMax[0] = 7;
-    world.strength[0] = 6;
-    world.strength[1] = 3;
 
     rebuildSpatialGrid(world);
     const steering = computeSteering(world, 0, DT);
@@ -154,8 +150,6 @@ describe("hunter steering", () => {
     world.stamina[0] = 0;
     world.exhausted[0] = 1;
     world.staminaMax[0] = 1;
-    world.strength[0] = 6;
-    world.strength[1] = 3;
 
     rebuildSpatialGrid(world);
     const steering = computeSteering(world, 0, DT);

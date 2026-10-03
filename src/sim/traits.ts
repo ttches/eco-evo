@@ -26,10 +26,10 @@ export const TRAITS = {
   staminaMax: { atMin: 2, atMax: 8 },
   /** Level maps to reproduction cooldown in seconds: more is faster. */
   fertility: { atMin: 25, atMax: 8 },
-  strength: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
   /**
-   * Raw agility score, compared directly against an attacker's. Equal or lower
-   * means the prey is caught; higher gives a chance to dodge.
+   * Raw agility score. Compared directly against an attacker's: equal or lower
+   * means the prey is caught, higher gives a chance to dodge. It also decides
+   * hunter-vs-hunter cannibalism contests, where higher wins.
    */
   agility: { atMin: TRAIT_MIN, atMax: TRAIT_MAX },
 } as const satisfies Record<string, TraitSpec>;

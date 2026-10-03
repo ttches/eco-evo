@@ -61,7 +61,6 @@ const TRAIT_LABEL: Record<TraitKey, string> = {
   speed: 'Fastest',
   staminaMax: 'Most stamina',
   fertility: 'Most fertile',
-  strength: 'Strongest',
   agility: 'Most agile',
 }
 

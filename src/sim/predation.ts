@@ -1,7 +1,6 @@
 /**
- * Predation and cannibalism. Holds the pure strength helpers shared with the
- * steering layer plus the eating passes, so `lifecycle` stays a thin orchestrator
- * and `behavior` never needs to import the mutation modules.
+ * Predation and cannibalism. Holds the eating passes, so `lifecycle` stays a
+ * thin orchestrator and `behavior` never needs to import the mutation modules.
  */
 import { TAU, hashUnit } from '@/engine/math'
 import {
@@ -19,8 +18,6 @@ import {
   MAX_GLORPS,
   PREY_CONSUME_PER_SECOND,
   PREY_ENERGY_PER_SECOND,
-  STRENGTH_EDGE,
-  STRENGTH_GATES_PREDATION,
 } from '@/sim/config'
 import { consumeGrass } from '@/sim/grass'
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
@@ -40,30 +37,14 @@ const eaten = new Int32Array(MAX_GLORPS)
 const cannibalEaten = new Uint8Array(MAX_GLORPS)
 
 /**
- * Whether a hunter of strength level `hunterLevel` can eat `prey`. Takes the
- * attacker's level so hot scans don't re-read it for every candidate.
- */
-export const canEatLevel = (
-  world: World,
-  hunterLevel: number,
-  prey: number,
-): boolean =>
-  !STRENGTH_GATES_PREDATION ||
-  hunterLevel + STRENGTH_EDGE >= world.strength[prey]
-
-/** Whether `hunter` is strong enough to eat `prey`. */
-export const canEat = (world: World, hunter: number, prey: number): boolean =>
-  canEatLevel(world, world.strength[hunter], prey)
-
-/**
- * Whether attacker `a` wins a cannibalism contest against `b`: higher strength
- * level, then higher energy, then older (smaller `bornAt`), then a deterministic
- * coin flip derived from the pair's ids so both scan directions agree.
+ * Whether attacker `a` wins a cannibalism contest against `b`: higher agility,
+ * then higher energy, then older (smaller `bornAt`), then a deterministic coin
+ * flip derived from the pair's ids so both scan directions agree.
  */
 export const cannibalWins = (world: World, a: number, b: number): boolean => {
-  const levelA = world.strength[a]
-  const levelB = world.strength[b]
-  if (levelA !== levelB) return levelA > levelB
+  const agilityA = world.agility[a]
+  const agilityB = world.agility[b]
+  if (agilityA !== agilityB) return agilityA > agilityB
 
   if (world.fed[a] !== world.fed[b]) return world.fed[a] > world.fed[b]
 
@@ -179,11 +160,11 @@ export const tickDodges = (world: World, dt: number): void => {
 }
 
 /**
- * Hunters remove and gain energy from nearby edible prey. A prey agile enough
- * to beat the hunter's agility may dodge instead, escaping the catch; while its
- * dart lasts it is untargetable and cannot be eaten. Kills are collected and
- * removed afterwards so indices stored in the grid stay valid for the whole
- * hunt; descending order keeps swap-remove safe. Returns the number of kills so
+ * Hunters remove and gain energy from nearby prey. A prey agile enough to beat
+ * the hunter's agility may dodge instead, escaping the catch; while its dart
+ * lasts it is untargetable and cannot be eaten. Kills are collected and removed
+ * afterwards so indices stored in the grid stay valid for the whole hunt;
+ * descending order keeps swap-remove safe. Returns the number of kills so
  * callers know whether the grid went stale.
  */
 export const huntPrey = (world: World, reach: number): number => {
@@ -193,13 +174,7 @@ export const huntPrey = (world: World, reach: number): number => {
     if (world.type[index] !== GLORP_TYPE.prey) continue
     // A dodging prey is untargetable for the whole dart.
     if (world.dodgeTimer[index] > 0) continue
-    const hunter = nearestOfType(
-      world,
-      index,
-      GLORP_TYPE.hunter,
-      reach,
-      (candidate) => canEat(world, candidate, index),
-    )
+    const hunter = nearestOfType(world, index, GLORP_TYPE.hunter, reach)
     if (hunter < 0) continue
     if (tryDodge(world, hunter, index)) {
       triggerDodge(world, hunter, index)
@@ -216,7 +191,7 @@ export const huntPrey = (world: World, reach: number): number => {
 }
 
 /**
- * Starving hunters may turn on each other, resolved by the strength contest.
+ * Starving hunters may turn on each other, resolved by the agility contest.
  * Only rebuilds the grid when a previous pass removed glorps.
  */
 export const cannibalize = (

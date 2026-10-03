@@ -21,8 +21,6 @@ describe('DODGE_ENABLED=false', () => {
     world.y[1] = 100
     world.fed[0] = 50
     world.fed[1] = 50
-    world.strength[0] = 6
-    world.strength[1] = 3
     world.agility[0] = 1
     world.agility[1] = 7
     vi.spyOn(world.random, 'unit').mockReturnValue(0)

@@ -23,8 +23,6 @@ const DT = 1 / 60
 const setupHunt = (
   hunterAgility: number,
   preyAgility: number,
-  hunterStrength = 5,
-  preyStrength = 5,
 ) => {
   const world = createWorld(2, 21)
   world.type[0] = GLORP_TYPE.hunter
@@ -35,8 +33,6 @@ const setupHunt = (
   world.y[1] = 100
   world.fed[0] = 50
   world.fed[1] = 50
-  world.strength[0] = hunterStrength
-  world.strength[1] = preyStrength
   world.agility[0] = hunterAgility
   world.agility[1] = preyAgility
   return world
@@ -179,9 +175,6 @@ describe('target reprioritization', () => {
     world.x[2] = 150
     world.y[2] = 100
     world.fed[0] = 50
-    world.strength[0] = 6
-    world.strength[1] = 3
-    world.strength[2] = 3
     world.agility[1] = 4
     world.agility[2] = 4
     world.dodgeTimer[1] = DODGE_DURATION

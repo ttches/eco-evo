@@ -121,10 +121,10 @@ describe('applyReproduction', () => {
 })
 
 describe('applyPairReproduction', () => {
-  /** Two distinct, in-budget builds so a child's blend is observable. */
+  /** Two distinct builds so a child's blend is observable. */
   const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
-    const a = { speed: 6, staminaMax: 2, fertility: 3, strength: 5, agility: 4 }
-    const b = { speed: 2, staminaMax: 6, fertility: 5, strength: 3, agility: 4 }
+    const a = { speed: 6, staminaMax: 2, fertility: 3, agility: 4 }
+    const b = { speed: 2, staminaMax: 6, fertility: 5, agility: 4 }
     for (const key of TRAIT_KEYS) {
       world[key][0] = a[key]
       world[key][1] = b[key]
@@ -298,8 +298,6 @@ describe('applyEating', () => {
     world.x[1] = 100 + 2 * GLORP_RADIUS - 1
     world.y[1] = 100
     world.fed[0] = hunterFed
-    world.strength[0] = 6
-    world.strength[1] = 3
     return world
   }
 
@@ -392,8 +390,6 @@ describe('stamina', () => {
 
   it('does not flicker between sprint and walk at low stamina', () => {
     const world = setupChase()
-    world.strength[0] = 6
-    world.strength[1] = 3
     world.stamina[0] = 1
     world.stamina[1] = 1
     const before = world.sprintStarts

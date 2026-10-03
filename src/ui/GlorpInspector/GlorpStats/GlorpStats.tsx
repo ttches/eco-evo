@@ -4,7 +4,6 @@ import {
   Clock,
   HeartPulse,
   Hourglass,
-  Shield,
   Skull,
   Utensils,
   Wind,
@@ -107,7 +106,6 @@ const TRAIT_DISPLAY = {
   speed: { icon: <Zap />, label: "Speed" },
   staminaMax: { icon: <Activity />, label: "Stamina max" },
   fertility: { icon: <HeartPulse />, label: "Fertility" },
-  strength: { icon: <Shield />, label: "Strength" },
   agility: { icon: <Wind />, label: "Agility" },
 } satisfies Record<TraitKey, TraitDisplay>;
 

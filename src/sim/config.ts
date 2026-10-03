@@ -76,12 +76,12 @@ export const MATE_CONTACT_SECONDS = 0;
 export const MATE_SEEKING = true;
 
 /**
- * Levels a glorp of each type starts from before `SPAWN_SHUFFLES`. Must sum to
- * the trait budget (any difference is rebalanced at random).
+ * Levels a glorp of each type starts from before `SPAWN_SHUFFLES`. The total is
+ * rebalanced to `TRAIT_BUDGET`, so it need not sum to it.
  */
 export const SPAWN_BASE = {
-  prey: { speed: 4, staminaMax: 4, fertility: 4, strength: 4, agility: 4 },
-  hunter: { speed: 4, staminaMax: 4, fertility: 4, strength: 4, agility: 4 },
+  prey: { speed: 4, staminaMax: 4, fertility: 4, agility: 4 },
+  hunter: { speed: 4, staminaMax: 4, fertility: 4, agility: 4 },
 } as const;
 
 /** Point transfers applied to an all-base build when a glorp is first spawned. */
@@ -194,18 +194,6 @@ export const CANNIBAL_HUNGER = 20;
 
 /** Energy gained from eating another hunter. */
 export const CANNIBAL_KILL_FED = 15;
-
-/**
- * When true, predation is gated by strength: a hunter can eat a glorp only if
- * its `strength` level is within `STRENGTH_EDGE` of the target's.
- */
-export const STRENGTH_GATES_PREDATION = true;
-
-/**
- * How many strength levels above its own a hunter can still eat. Zero means it
- * must match or exceed the prey's level.
- */
-export const STRENGTH_EDGE = 3;
 
 /**
  * When true, a prey whose `agility` exceeds its attacker's can dodge the catch.

@@ -47,8 +47,6 @@ describe('buildLeaderboard', () => {
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
     world.time = 5
-    world.strength[0] = 6
-    world.strength[1] = 3
 
     applyEating(world, 0.1)
 
@@ -87,8 +85,6 @@ describe('buildLeaderboard', () => {
     world.y[0] = 100
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
-    world.strength[0] = 6
-    world.strength[1] = 3
 
     applyEating(world, 0.1)
     world.fed[0] = 0
@@ -124,7 +120,6 @@ describe('sortStats', () => {
       speed: value,
       staminaMax: value,
       fertility: value,
-      strength: value,
       agility: value,
     },
     ...overrides,
@@ -144,7 +139,7 @@ describe('sortStats', () => {
   it('sorts every trait highest first', () => {
     const entries = [stat(0, 3), stat(1, 9), stat(2, 9)]
     expect(sortStats(entries, 'speed').map((e) => e.id)).toEqual([1, 2, 0])
-    expect(sortStats(entries, 'strength').map((e) => e.id)).toEqual([1, 2, 0])
+    expect(sortStats(entries, 'agility').map((e) => e.id)).toEqual([1, 2, 0])
   })
 })
 
@@ -162,7 +157,6 @@ describe('filterStats', () => {
       speed: 0,
       staminaMax: 0,
       fertility: 0,
-      strength: 0,
       agility: 0,
     },
   })
@@ -215,13 +209,13 @@ describe('traitExtremesFromStats', () => {
     const world = createWorld(2, 7)
     world.lineage.traits.speed[0] = 3
     world.lineage.traits.speed[1] = 7
-    world.lineage.traits.strength[0] = 2
-    world.lineage.traits.strength[1] = 5
+    world.lineage.traits.agility[0] = 2
+    world.lineage.traits.agility[1] = 5
 
     const extremes = traitExtremesFromStats(buildLeaderboard(world))
     const byKey = Object.fromEntries(extremes.map((e) => [e.key, e]))
     expect(byKey.speed.id).toBe(1)
-    expect(byKey.strength.id).toBe(1)
+    expect(byKey.agility.id).toBe(1)
   })
 
   it('breaks trait ties toward the lower id', () => {

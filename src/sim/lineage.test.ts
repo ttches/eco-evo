@@ -95,8 +95,6 @@ describe('lineage deaths', () => {
     world.y[0] = 100
     world.x[1] = 100 + GLORP_RADIUS
     world.y[1] = 100
-    world.strength[0] = 6
-    world.strength[1] = 3
     const hunterId = world.id[0]
     const preyId = world.id[1]
 
