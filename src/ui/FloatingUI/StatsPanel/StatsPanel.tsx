@@ -27,7 +27,6 @@ import { useEscapeKey } from '@/ui/useEscapeKey'
 import styles from './StatsPanel.module.css'
 
 type StatsPanelProps = {
-  open: boolean
   onClose: () => void
   stats: readonly GlorpStat[]
   onNavigate: (id: number) => void
@@ -142,7 +141,6 @@ type PreviewState = {
  * link to the inspector, so dead record-holders stay clickable.
  */
 const StatsPanel = ({
-  open,
   onClose,
   stats,
   onNavigate,
@@ -152,7 +150,7 @@ const StatsPanel = ({
   const [diet, setDiet] = useState<DietFilter>('all')
   const [status, setStatus] = useState<StatusFilter>('both')
   const [preview, setPreview] = useState<PreviewState | null>(null)
-  useEscapeKey(open, onClose)
+  useEscapeKey(true, onClose)
 
   const showPreview = useCallback(
     (id: number, anchor: PreviewAnchor) => {
@@ -162,9 +160,6 @@ const StatsPanel = ({
     [getGlorpView],
   )
   const hidePreview = useCallback(() => setPreview(null), [])
-
-  // Drop a stale preview as soon as the panel closes, so reopening starts clean.
-  if (!open && preview) setPreview(null)
 
   const pool = useMemo(
     () => filterStats(stats, diet, status),
@@ -181,8 +176,6 @@ const StatsPanel = ({
     [active],
   )
   const rows = sorted.slice(0, MAX_ROWS)
-
-  if (!open) return null
 
   return (
     <>

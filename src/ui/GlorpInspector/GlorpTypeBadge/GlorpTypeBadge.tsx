@@ -5,7 +5,7 @@ type GlorpTypeBadgeProps = {
   type: GlorpType
 }
 
-/** Colored Prey / Predator pill, shared by the header and lineage rows. */
+/** Colored Prey / Predator pill, shared by the header and the hover preview. */
 const GlorpTypeBadge = ({ type }: GlorpTypeBadgeProps) => {
   const isHunter = type === GLORP_TYPE.hunter
   return (

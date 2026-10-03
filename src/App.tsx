@@ -348,7 +348,6 @@ const App = () => {
       sidePanel={
         showInterface && statsOpen ? (
           <StatsPanel
-            open={statsOpen}
             onClose={closeStats}
             stats={stats}
             onNavigate={navigateTo}

@@ -30,7 +30,7 @@ export const OFFSPRING_FED = 50;
 export const FED_MAX = 100;
 
 /** Energy every glorp burns per second at level-0 endurance. */
-export const METABOLISM = 2.75;
+export const METABOLISM = 2.85;
 
 export const ENDURANCE = {
   /**
@@ -70,7 +70,7 @@ export const MATE_ENERGY_COST = 0;
 export const GESTATION_SECONDS = 30;
 
 /** Top-speed multiplier applied while pregnant. */
-export const PREGNANT_SPEED_FACTOR = 0.9;
+export const PREGNANT_SPEED_FACTOR = 0.8;
 
 /** Whether a pregnant glorp may sprint. */
 export const PREGNANT_CAN_SPRINT = true;
