@@ -41,7 +41,7 @@ describe('createWorld', () => {
     expect(Array.from(first.y)).toEqual(Array.from(second.y))
     expect(Array.from(first.type)).toEqual(Array.from(second.type))
     expect(Array.from(first.speed)).toEqual(Array.from(second.speed))
-    expect(Array.from(first.staminaMax)).toEqual(Array.from(second.staminaMax))
+    expect(Array.from(first.endurance)).toEqual(Array.from(second.endurance))
     expect(Array.from(first.fertility)).toEqual(
       Array.from(second.fertility),
     )

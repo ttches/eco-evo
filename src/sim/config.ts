@@ -29,8 +29,17 @@ export const OFFSPRING_FED = 50;
 
 export const FED_MAX = 100;
 
-/** Energy every glorp burns per second, whatever its traits. */
+/** Energy every glorp burns per second at level-0 endurance. */
 export const METABOLISM = 2.75;
+
+export const ENDURANCE = {
+  /**
+   * Life-force (hunger) drain multiplier at maximum endurance. `0.7` means a
+   * glorp at `TRAIT_MAX` burns hunger 30% slower than at level 0. Interpolated
+   * linearly across levels, so each point trims drain a little.
+   */
+  drainFactorAtMax: 0.7,
+} as const;
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
 export const HUNGER = 70;
@@ -80,8 +89,8 @@ export const MATE_SEEKING = true;
  * rebalanced to `TRAIT_BUDGET`, so it need not sum to it.
  */
 export const SPAWN_BASE = {
-  prey: { speed: 4, staminaMax: 4, fertility: 4, agility: 4 },
-  hunter: { speed: 4, staminaMax: 4, fertility: 4, agility: 4 },
+  prey: { speed: 4, endurance: 4, fertility: 4, agility: 4 },
+  hunter: { speed: 4, endurance: 4, fertility: 4, agility: 4 },
 } as const;
 
 /** Point transfers applied to an all-base build when a glorp is first spawned. */
@@ -101,8 +110,8 @@ export const MOVEMENT = {
   walkFactor: 0.45,
   /**
    * Jog tier: fraction of top speed an exhausted glorp keeps while pursuing or
-   * fleeing. It scales with `staminaMax`, interpolating from `jogFactorMin`
-   * (least stamina) to `jogFactorMax` (most), so endurance buys speed once
+   * fleeing. It scales with `endurance`, interpolating from `jogFactorMin`
+   * (least endurance) to `jogFactorMax` (most), so endurance buys speed once
    * tired instead of a flat rate for everyone. `jogFactorMin` anchors the
    * extrapolated level 0; level 1 still jogs at 0.55.
    */
@@ -121,15 +130,15 @@ export const STAMINA = {
   /** Recovery rate at `referenceMax`; scales with a glorp's own capacity. */
   recoverPerSecond: 0.6,
   /**
-   * `staminaMax` value at which recovery runs at `recoverPerSecond`. Recovery
+   * `endurance` value at which recovery runs at `recoverPerSecond`. Recovery
    * scales linearly with capacity relative to this, so a bigger reserve refills
    * proportionally faster and spends a larger share of time sprinting. Anchored
    * at the base build, so an all-base glorp behaves as it always did.
    */
-  referenceMax: traitValue("staminaMax", TRAIT_BASE),
+  referenceMax: traitValue("endurance", TRAIT_BASE),
   /**
    * A glorp that drains its stamina to empty latches into exhaustion and cannot
-   * sprint again until stamina recovers to this fraction of `staminaMax`. This
+   * sprint again until stamina recovers to this fraction of its endurance. This
    * hysteresis is what stops the per-frame sprint/walk flicker that pinned
    * stamina at zero.
    */
@@ -166,8 +175,10 @@ export const GRASS_TILE = 32;
 /**
  * Grass regrows at this fraction per second, capped at 1. Total regrowth is
  * `tiles * GRASS_REGROW` (~33 grass/s across the 120x68 grid), which sets the
- * carrying capacity: prey need ~`METABOLISM / PREY_ENERGY_PER_SECOND` grass per second, so this
- * sustains roughly 400 prey before food becomes limiting.
+ * carrying capacity: at level-0 endurance prey need ~`METABOLISM *
+ * PREY_CONSUME_PER_SECOND / PREY_ENERGY_PER_SECOND` grass per second, so this
+ * sustains roughly 400 prey before food becomes limiting. Endurance lowers that
+ * need, raising the ceiling.
  */
 export const GRASS_REGROW = 0.004;
 
@@ -202,7 +213,7 @@ export const CANNIBAL_KILL_FED = 15;
  */
 export const DODGE_ENABLED = true;
 /** Dodge chance added per agility level the prey has over the hunter. */
-export const DODGE_CHANCE_PER_LEVEL = 0.15;
+export const DODGE_CHANCE_PER_LEVEL = 0.1;
 
 /** Ceiling on dodge chance, however large the agility gap. */
 export const DODGE_CHANCE_MAX = 0.9;

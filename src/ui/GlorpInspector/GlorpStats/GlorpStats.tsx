@@ -104,7 +104,7 @@ type TraitDisplay = {
 /** How each trait is shown, in display order. Every trait must have an entry. */
 const TRAIT_DISPLAY = {
   speed: { icon: <Zap />, label: "Speed" },
-  staminaMax: { icon: <Activity />, label: "Stamina max" },
+  endurance: { icon: <Activity />, label: "Endurance" },
   fertility: { icon: <HeartPulse />, label: "Fertility" },
   agility: { icon: <Wind />, label: "Agility" },
 } satisfies Record<TraitKey, TraitDisplay>;
@@ -150,7 +150,7 @@ const GlorpStats = ({ glorp }: GlorpStatsProps) => {
           <Meter
             label="Stamina"
             value={glorp.live.stamina}
-            max={traitValue("staminaMax", glorp.traits.staminaMax)}
+            max={traitValue("endurance", glorp.traits.endurance)}
             tone="stamina"
           />
         </div>

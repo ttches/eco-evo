@@ -103,7 +103,7 @@ const propagateDerivedConstants = (overrides) => {
 
   // Arithmetic-only expressions over identifiers that are numeric literals or
   // already-resolved overrides can be recomputed safely. Everything else (e.g.
-  // `traitValue("staminaMax", TRAIT_BASE)`) is left to warn below.
+  // `traitValue("endurance", TRAIT_BASE)`) is left to warn below.
   const evaluate = (expression) => {
     if (!/^[\s\dA-Za-z_$+\-*/().eE]+$/.test(expression)) return undefined
     const names = [...expression.matchAll(/[A-Za-z_$][\w$]*/g)].map((m) => m[0])

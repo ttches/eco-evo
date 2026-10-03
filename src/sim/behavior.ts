@@ -39,16 +39,16 @@ export type Drive = (
 const WALK = WALK_SPEED * MOVEMENT.walkFactor
 
 /**
- * Jog fraction per `staminaMax` level, precomputed so the pursuit hot path is a
- * lookup. It interpolates from `jogFactorMin` (least stamina, level 0) to
+ * Jog fraction per `endurance` level, precomputed so the pursuit hot path is a
+ * lookup. It interpolates from `jogFactorMin` (least endurance, level 0) to
  * `jogFactorMax` (most, level 7), so the base build keeps its old 0.65 rate.
  */
 const JOG_FACTOR_BY_LEVEL = (() => {
-  const { atMin, atMax } = TRAITS.staminaMax
+  const { atMin, atMax } = TRAITS.endurance
   const span = atMax - atMin
   const table = new Float64Array(TRAIT_MAX + 1)
   for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
-    const t = (traitValue('staminaMax', level) - atMin) / span
+    const t = (traitValue('endurance', level) - atMin) / span
     table[level] =
       MOVEMENT.jogFactorMin +
       (MOVEMENT.jogFactorMax - MOVEMENT.jogFactorMin) * t
@@ -58,7 +58,7 @@ const JOG_FACTOR_BY_LEVEL = (() => {
 
 const jogSpeed = (world: World, index: number): number =>
   traitValue('speed', world.speed[index]) *
-  JOG_FACTOR_BY_LEVEL[world.staminaMax[index]]
+  JOG_FACTOR_BY_LEVEL[world.endurance[index]]
 
 /**
  * Speed for a glorp actively pursuing or fleeing: sprint when fresh, otherwise

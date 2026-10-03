@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { computeSteering, updateBehavior } from '@/sim/behavior'
 import {
+  ENDURANCE,
   GESTATION_SECONDS,
   GLORP_RADIUS,
   HUNTER_KILL_FED,
@@ -38,11 +39,47 @@ const levelTotal = (world: ReturnType<typeof createWorld>, index: number) =>
   TRAIT_KEYS.reduce((sum, key) => sum + world[key][index], 0)
 
 describe('applyMetabolism', () => {
-  it('drains fed by the fixed metabolism', () => {
+  it('drains fed at the base rate at level-0 endurance', () => {
     const world = createWorld(4, 5)
+    world.endurance[0] = TRAIT_MIN
     const before = world.fed[0]
     applyMetabolism(world, 1)
     expect(world.fed[0]).toBeCloseTo(before - METABOLISM)
+  })
+
+  it('interpolates the drain factor between the endpoints', () => {
+    const world = createWorld(3, 5)
+    world.endurance[0] = TRAIT_MIN
+    world.endurance[1] = TRAIT_BASE
+    world.endurance[2] = TRAIT_MAX
+    const before = [world.fed[0], world.fed[1], world.fed[2]]
+
+    applyMetabolism(world, 1)
+
+    expect(world.fed[0]).toBeCloseTo(before[0] - METABOLISM)
+    expect(world.fed[2]).toBeCloseTo(
+      before[2] - METABOLISM * ENDURANCE.drainFactorAtMax,
+    )
+    // Level 3 is 3/7 of the way along, so its factor is 1 - 0.3 * 3/7.
+    const baseFactor =
+      1 + (ENDURANCE.drainFactorAtMax - 1) * (TRAIT_BASE / TRAIT_MAX)
+    expect(world.fed[1]).toBeCloseTo(before[1] - METABOLISM * baseFactor)
+  })
+
+  it('drains monotonically less at every endurance level', () => {
+    const world = createWorld(8, 5)
+    for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
+      world.endurance[level] = level
+    }
+    const before = Array.from({ length: 8 }, (_, index) => world.fed[index])
+
+    applyMetabolism(world, 1)
+
+    for (let level = TRAIT_MIN; level < TRAIT_MAX; level += 1) {
+      const drained = before[level] - world.fed[level]
+      const drainedNext = before[level + 1] - world.fed[level + 1]
+      expect(drainedNext).toBeLessThan(drained)
+    }
   })
 })
 
@@ -81,7 +118,7 @@ describe('applyReproduction', () => {
     expect(world.fed[2]).toBe(50)
     expect(world.type[2]).toBe(type)
     expect(world.stamina[2]).toBeCloseTo(
-      traitValue('staminaMax', world.staminaMax[2]),
+      traitValue('endurance', world.endurance[2]),
     )
     expect(world.cooldown[2]).toBeCloseTo(
       traitValue('fertility', world.fertility[2]),
@@ -124,8 +161,8 @@ describe('applyReproduction', () => {
 describe('applyPairReproduction', () => {
   /** Two distinct, on-budget builds so a child's blend is observable. */
   const setParentLevels = (world: ReturnType<typeof createWorld>): void => {
-    const a = { speed: 6, staminaMax: 1, fertility: 3, agility: 2 }
-    const b = { speed: 2, staminaMax: 3, fertility: 5, agility: 2 }
+    const a = { speed: 6, endurance: 1, fertility: 3, agility: 2 }
+    const b = { speed: 2, endurance: 3, fertility: 5, agility: 2 }
     for (const key of TRAIT_KEYS) {
       world[key][0] = a[key]
       world[key][1] = b[key]
@@ -169,7 +206,7 @@ describe('applyPairReproduction', () => {
     expect(world.type[2]).toBe(GLORP_TYPE.hunter)
     expect(world.fed[2]).toBe(OFFSPRING_FED)
     expect(world.stamina[2]).toBeCloseTo(
-      traitValue('staminaMax', world.staminaMax[2]),
+      traitValue('endurance', world.endurance[2]),
     )
     expect(world.cooldown[2]).toBeCloseTo(
       traitValue('fertility', world.fertility[2]),
@@ -347,7 +384,7 @@ describe('stamina', () => {
     const world = createWorld(2, 13)
     world.fed[0] = 100
     world.stamina[0] = 0
-    world.staminaMax[0] = TRAIT_BASE // its value equals STAMINA.referenceMax
+    world.endurance[0] = TRAIT_BASE // its value equals STAMINA.referenceMax
 
     updateBehavior(world, 1 / 60)
     updateStamina(world, 1 / 60)
@@ -361,20 +398,20 @@ describe('stamina', () => {
     world.fed[1] = 100
     world.stamina[0] = 0
     world.stamina[1] = 0
-    world.staminaMax[0] = 1 // mechanical value 2
-    world.staminaMax[1] = 7 // mechanical value 8
+    world.endurance[0] = 1 // mechanical value 2
+    world.endurance[1] = 7 // mechanical value 8
 
     updateBehavior(world, 1 / 60)
     updateStamina(world, 1 / 60)
 
     expect(world.stamina[0]).toBeCloseTo(
       (STAMINA.recoverPerSecond *
-        (traitValue('staminaMax', world.staminaMax[0]) / STAMINA.referenceMax)) /
+        (traitValue('endurance', world.endurance[0]) / STAMINA.referenceMax)) /
         60,
     )
     expect(world.stamina[1]).toBeCloseTo(
       (STAMINA.recoverPerSecond *
-        (traitValue('staminaMax', world.staminaMax[1]) / STAMINA.referenceMax)) /
+        (traitValue('endurance', world.endurance[1]) / STAMINA.referenceMax)) /
         60,
     )
   })
@@ -419,13 +456,13 @@ describe('stamina', () => {
   it('stays exhausted until stamina recovers to the ready fraction', () => {
     const world = setupChase()
     world.exhausted[0] = 1
-    const staminaMax = traitValue('staminaMax', world.staminaMax[0])
-    world.stamina[0] = staminaMax * STAMINA.sprintReadyFraction - 0.01
+    const capacity = traitValue('endurance', world.endurance[0])
+    world.stamina[0] = capacity * STAMINA.sprintReadyFraction - 0.01
     rebuildSpatialGrid(world)
 
     expect(computeSteering(world, 0, 1 / 60).sprint).toBe(false)
 
-    world.stamina[0] = staminaMax * STAMINA.sprintReadyFraction
+    world.stamina[0] = capacity * STAMINA.sprintReadyFraction
     updateStamina(world, 0)
     expect(world.exhausted[0]).toBe(0)
     expect(computeSteering(world, 0, 1 / 60).sprint).toBe(true)

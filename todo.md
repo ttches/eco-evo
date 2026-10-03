@@ -1,4 +1,3 @@
-endurance decreases life force drain by 25% at 7pts
 allow 0 pts into trait
 
 higher fertility = more vaible preggos + plants spawn at full health

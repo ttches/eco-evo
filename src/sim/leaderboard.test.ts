@@ -118,7 +118,7 @@ describe('sortStats', () => {
     descendants: value,
     traits: {
       speed: value,
-      staminaMax: value,
+      endurance: value,
       fertility: value,
       agility: value,
     },
@@ -155,7 +155,7 @@ describe('filterStats', () => {
     descendants: 0,
     traits: {
       speed: 0,
-      staminaMax: 0,
+      endurance: 0,
       fertility: 0,
       agility: 0,
     },

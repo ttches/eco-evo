@@ -57,8 +57,8 @@ describe('traitValue', () => {
   })
 
   it('extrapolates level 0 while preserving the level-1 values', () => {
-    expect(traitValue('staminaMax', TRAIT_MIN)).toBe(1)
-    expect(traitValue('staminaMax', 1)).toBe(2)
+    expect(traitValue('endurance', TRAIT_MIN)).toBe(1)
+    expect(traitValue('endurance', 1)).toBe(2)
     expect(traitValue('fertility', TRAIT_MIN)).toBeCloseTo(167 / 6)
     expect(traitValue('fertility', 1)).toBe(25)
     expect(traitValue('agility', TRAIT_MIN)).toBe(0)

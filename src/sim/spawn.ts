@@ -27,7 +27,7 @@ export const spawnGlorp = (
   world.fed[index] = FED_START
   world.wanderSeed[index] = world.random.unit()
   rollTraits(world, index)
-  world.stamina[index] = traitValue('staminaMax', world.staminaMax[index])
+  world.stamina[index] = traitValue('endurance', world.endurance[index])
   recordBirth(world, index)
   return index
 }

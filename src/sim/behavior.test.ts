@@ -64,7 +64,7 @@ describe("prey steering", () => {
       world.fed[0] = 50;
       world.stamina[0] = 0;
       world.exhausted[0] = 1;
-      world.staminaMax[0] = staminaLevel;
+      world.endurance[0] = staminaLevel;
 
       rebuildSpatialGrid(world);
       const steering = computeSteering(world, 0, DT);
@@ -127,7 +127,7 @@ describe("hunter steering", () => {
     world.fed[0] = 50;
     world.stamina[0] = 0;
     world.exhausted[0] = 1;
-    world.staminaMax[0] = 7;
+    world.endurance[0] = 7;
 
     rebuildSpatialGrid(world);
     const steering = computeSteering(world, 0, DT);
@@ -150,7 +150,7 @@ describe("hunter steering", () => {
     world.fed[0] = 50;
     world.stamina[0] = 0;
     world.exhausted[0] = 1;
-    world.staminaMax[0] = TRAIT_MIN;
+    world.endurance[0] = TRAIT_MIN;
 
     rebuildSpatialGrid(world);
     const steering = computeSteering(world, 0, DT);

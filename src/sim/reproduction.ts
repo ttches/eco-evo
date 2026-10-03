@@ -23,7 +23,7 @@ import type { World } from '@/sim/world'
 /** Newborn state shared by every reproduction path, once traits are set. */
 const initOffspring = (world: World, child: number): void => {
   world.fed[child] = OFFSPRING_FED
-  world.stamina[child] = traitValue('staminaMax', world.staminaMax[child])
+  world.stamina[child] = traitValue('endurance', world.endurance[child])
   world.cooldown[child] = traitValue('fertility', world.fertility[child])
   // Its own wander seed, so parent and child don't move in lockstep.
   world.wanderSeed[child] = hashUnit(child ^ 0x9e3779b9)

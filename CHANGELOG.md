@@ -22,6 +22,9 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 - Traits can now be dropped to 0 points. Level 0 is the linear extrapolation of
   the old level 1..7 line, so existing levels are unchanged; level 0 is always
   the worst rung (e.g. agility 0, fertility's longest cooldown).
+- `staminaMax` is renamed to `endurance`. It still sets stamina capacity and
+  recovery, and now also slows hunger drain: each point trims the base
+  metabolism, down to 30% slower at level 7 (`ENDURANCE.drainFactorAtMax`).
 
 ## [0.1.0] - 2026-10-01
 

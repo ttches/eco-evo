@@ -36,7 +36,7 @@ describe('spawnGlorp', () => {
     }
     expect(total).toBe(TRAIT_BUDGET)
     expect(world.stamina[index]).toBe(
-      traitValue('staminaMax', world.staminaMax[index]),
+      traitValue('endurance', world.endurance[index]),
     )
   })
 

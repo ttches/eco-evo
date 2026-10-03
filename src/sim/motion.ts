@@ -8,7 +8,7 @@ const RECOVER_PER_CAPACITY = STAMINA.recoverPerSecond / STAMINA.referenceMax
 
 /**
  * Sprinting drains stamina; everything else recharges it, scaled by the
- * glorp's own capacity (`staminaMax / referenceMax`) so bigger reserves refill
+ * glorp's own capacity (`endurance / referenceMax`) so bigger reserves refill
  * faster. Draining to empty latches a glorp into exhaustion until stamina
  * recovers to `sprintReadyFraction`, which replaces the old `stamina > 0`
  * per-frame sprint/walk flicker with distinct bursts and rest gaps.
@@ -25,7 +25,7 @@ export const updateStamina = (world: World, dt: number): void => {
         world.exhaustionEvents += 1
       }
     } else {
-      const max = traitValue('staminaMax', world.staminaMax[index])
+      const max = traitValue('endurance', world.endurance[index])
       const next = world.stamina[index] + max * RECOVER_PER_CAPACITY * dt
       world.stamina[index] = next < max ? next : max
       if (

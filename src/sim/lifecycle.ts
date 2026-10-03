@@ -1,12 +1,30 @@
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import { removeGlorp } from '@/sim/store'
-import { METABOLISM } from '@/sim/config'
+import { ENDURANCE, METABOLISM } from '@/sim/config'
+import { TRAIT_MAX, TRAIT_MIN, traitValue } from '@/sim/traits'
 import type { World } from '@/sim/world'
+
+/**
+ * Hunger-drain multiplier per `endurance` level, precomputed so the per-step
+ * drain stays a lookup. Level 0 drains at the base `METABOLISM` rate; each
+ * point trims it linearly until `ENDURANCE.drainFactorAtMax` at level 7.
+ */
+const DRAIN_FACTOR_BY_LEVEL = (() => {
+  const table = new Float64Array(TRAIT_MAX + 1)
+  const min = traitValue('endurance', TRAIT_MIN)
+  const span = traitValue('endurance', TRAIT_MAX) - min
+  for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
+    const t = (traitValue('endurance', level) - min) / span
+    table[level] = 1 + (ENDURANCE.drainFactorAtMax - 1) * t
+  }
+  return table
+})()
 
 /** Burning energy over time; starving glorps fall to zero and die. */
 export const applyMetabolism = (world: World, dt: number): void => {
   for (let index = 0; index < world.count; index += 1) {
-    world.fed[index] -= METABOLISM * dt
+    world.fed[index] -=
+      METABOLISM * DRAIN_FACTOR_BY_LEVEL[world.endurance[index]] * dt
   }
 }
 

@@ -4,7 +4,7 @@
  *
  * Traits share a fixed point budget, so they are negatively correlated by
  * construction and a plain per-trait correlation is misleading (a point in
- * speed is a point *not* in stamina). `slope` is therefore a budget-aware
+ * speed is a point *not* in endurance). `slope` is therefore a budget-aware
  * gradient: the effect of moving one point into this trait, taken from the
  * average of the others. `effect` standardizes it (slope * trait sd / outcome
  * sd) so different traits and outcomes are comparable.

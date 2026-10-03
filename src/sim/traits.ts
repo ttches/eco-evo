@@ -27,7 +27,8 @@ type TraitSpec = {
  */
 export const TRAITS = {
   speed: { atMin: 70 / 3, atMax: 70 },
-  staminaMax: { atMin: 1, atMax: 8 },
+  /** Stamina capacity and recovery, and how slowly hunger drains. */
+  endurance: { atMin: 1, atMax: 8 },
   /** Level maps to reproduction cooldown in seconds: more is faster. */
   fertility: { atMin: 167 / 6, atMax: 8 },
   /**
