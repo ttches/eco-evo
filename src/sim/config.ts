@@ -222,7 +222,7 @@ export const CANNIBAL_KILL_FED = 15;
  */
 export const DODGE_ENABLED = true;
 /** Dodge chance added per agility level the prey has over the hunter. */
-export const DODGE_CHANCE_PER_LEVEL = 0.15;
+export const DODGE_CHANCE_PER_LEVEL = 0.25;
 
 /** Ceiling on dodge chance, however large the agility gap. */
 export const DODGE_CHANCE_MAX = 0.9;
