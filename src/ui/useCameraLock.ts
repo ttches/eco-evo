@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { followCamera, type Camera } from '@/engine/camera'
 import { findGlorpById } from '@/sim/inspect'
 import type { World } from '@/sim/world'
-import { isEditableTarget, isSpaceActivatingTarget } from '@/ui/keyboard'
+import { isEditableTarget } from '@/ui/keyboard'
 
 type UseCameraLockOptions = {
   cameraRef: RefObject<Camera>
@@ -23,7 +23,8 @@ type CameraLock = {
 /**
  * Keeps the camera centered on the selected glorp while locked. The lock
  * releases on a second toggle, a drag-pan or pinch, clearing the selection, or
- * the glorp's death. Space toggles it while the inspector is open.
+ * the glorp's death. Space toggles it while a live glorp is selected, even
+ * when a control has focus.
  */
 export const useCameraLock = ({
   cameraRef,
@@ -72,24 +73,20 @@ export const useCameraLock = ({
     return next.x !== current.x || next.y !== current.y
   }, [cameraRef, world, selectedIndex, setLocked])
 
-  // Space toggles the lock, but only with an inspector open and not while a
-  // control has focus (where Space should activate that control instead).
+  // Space toggles the lock, like H toggles the interface: it is a global
+  // shortcut that wins even when a control (a stats row, a button) has focus.
+  // preventDefault stops that control's native Space activation from firing.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.code !== 'Space' || event.repeat) return
-      if (
-        selectedIdRef.current === null ||
-        isEditableTarget(event.target) ||
-        isSpaceActivatingTarget(event.target)
-      ) {
-        return
-      }
+      if (isEditableTarget(event.target)) return
+      if (selectedIndex() < 0) return
       event.preventDefault()
       toggleLock()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIdRef, toggleLock])
+  }, [selectedIndex, toggleLock])
 
   return { locked, toggleLock, unlock, follow }
 }
