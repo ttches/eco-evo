@@ -20,8 +20,7 @@ import {
   PREY_ENERGY_PER_SECOND,
 } from '@/sim/config'
 import { consumeGrass } from '@/sim/grass'
-import { DEATH_CAUSE, recordDeath, recordMutationGain } from '@/sim/lineage'
-import { rollEatenMutation } from '@/sim/mutations'
+import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { removeGlorp } from '@/sim/store'
@@ -180,17 +179,6 @@ export const huntPrey = (world: World, reach: number): number => {
     if (tryDodge(world, hunter, index)) {
       triggerDodge(world, hunter, index)
       continue
-    }
-    // An unmutated hunter may take on its meal's mutation before it is removed.
-    const gained = rollEatenMutation(
-      world.random,
-      world.mutations[hunter],
-      world.mutations[index],
-      GLORP_TYPE.hunter,
-    )
-    if (gained !== world.mutations[hunter]) {
-      world.mutations[hunter] = gained
-      recordMutationGain(world, hunter, gained)
     }
     const next = world.fed[hunter] + HUNTER_KILL_FED
     world.fed[hunter] = next < FED_MAX ? next : FED_MAX

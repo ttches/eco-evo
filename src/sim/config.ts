@@ -136,22 +136,20 @@ export const CLONE_TRAIT_DRIFT_CHANCE = 0.25
 export const MATED_TRAIT_DRIFT_CHANCE = 0.5
 
 /**
- * Chance a newborn rolls a brand-new mutation when it inherited none. A glorp
- * never holds more than `MAX_MUTATIONS`.
+ * Chance a clone or spawned glorp rolls a brand-new mutation when it did not
+ * inherit one. Mated pregnancies use `MUTATION_PREGNANCY_BIRTH_CHANCE` instead.
+ * A glorp never holds more than `MAX_MUTATIONS`.
  */
 export const MUTATION_BIRTH_CHANCE = 0.01
+
+/** Chance a mated pregnancy rolls a brand-new mutation when it inherited none. */
+export const MUTATION_PREGNANCY_BIRTH_CHANCE = 0.05
 
 /** Chance each parent's carried mutation is inherited by a child, in parent order. */
 export const MUTATION_INHERIT_CHANCE = 0.25
 
 /** Most mutations a single glorp can hold; further rolls are discarded. */
 export const MAX_MUTATIONS = 1
-
-/**
- * Chance an unmutated hunter that eats a prey takes on that prey's mutation (or,
- * when the prey's mutation is exclusive to prey, a random mutation of its own).
- */
-export const HUNTER_MUTATION_TRANSFER_CHANCE = 0.02
 
 /**
  * Cold blooded mutation effect levers. Kept here (not in the registry) so the

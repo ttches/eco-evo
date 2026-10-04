@@ -1,7 +1,6 @@
 import type { XorShift32 } from '@/engine/math'
 import {
   COLD_BLOODED,
-  HUNTER_MUTATION_TRANSFER_CHANCE,
   MAX_MUTATIONS,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
@@ -17,7 +16,7 @@ import { GLORP_TYPE, type GlorpType } from '@/sim/types'
  * it to be inheritable and rollable; only its effect sites need to read it.
  *
  * `exclusive` locks a mutation to one glorp type (`null` means both). A type
- * can never roll, inherit, or gain an exclusive mutation of the other type.
+ * can never roll or inherit an exclusive mutation of the other type.
  */
 export const MUTATIONS = {
   coldBlooded: {
@@ -81,14 +80,6 @@ export const mutationAllowedForType = (
 ): boolean =>
   MUTATIONS[key].exclusive === null || MUTATIONS[key].exclusive === type
 
-/** First mutation key a mask carries, in registry order, or null if none. */
-const firstMutationKey = (mask: number): MutationKey | null => {
-  for (const key of MUTATION_KEYS) {
-    if ((mask & MUTATIONS[key].bit) !== 0) return key
-  }
-  return null
-}
-
 /** Add a random not-yet-held mutation of an allowed type, if any remain. */
 const addRandomMutation = (
   random: XorShift32,
@@ -131,18 +122,18 @@ export const inheritMutations = (
 
 /**
  * Roll a newborn's mutations from its parents' masks, then, when nothing was
- * inherited, apply the `MUTATION_BIRTH_CHANCE` roll for a brand-new mutation.
+ * inherited, apply the `birthChance` roll for a brand-new mutation. Mated
+ * pregnancies pass `MUTATION_PREGNANCY_BIRTH_CHANCE`; clones use the default.
  */
 export const rollBirthMutations = (
   random: XorShift32,
   parentMasks: readonly number[],
   type: GlorpType,
+  birthChance = MUTATION_BIRTH_CHANCE,
 ): number => {
   const mask = inheritMutations(random, parentMasks, type)
   if (mask !== 0) return mask
-  return random.unit() < MUTATION_BIRTH_CHANCE
-    ? addRandomMutation(random, 0, type)
-    : 0
+  return random.unit() < birthChance ? addRandomMutation(random, 0, type) : 0
 }
 
 /** Roll a parentless glorp's mutations: only the spontaneous birth roll. */
@@ -151,27 +142,6 @@ export const rollSpawnMutations = (
   type: GlorpType,
 ): number =>
   random.unit() < MUTATION_BIRTH_CHANCE ? addRandomMutation(random, 0, type) : 0
-
-/**
- * Roll a hunter's chance to take on a meal's mutation. A hunter with a mutation
- * already never rolls; nor does one eating an unmutated prey. On a success the
- * prey's mutation is copied when the hunter can hold it, otherwise (the prey's
- * mutation is exclusive to prey) the hunter rolls a random allowed mutation.
- */
-export const rollEatenMutation = (
-  random: XorShift32,
-  hunterMask: number,
-  preyMask: number,
-  hunterType: GlorpType,
-): number => {
-  if (hunterMask !== 0 || preyMask === 0) return hunterMask
-  if (random.unit() >= HUNTER_MUTATION_TRANSFER_CHANCE) return hunterMask
-  const preyKey = firstMutationKey(preyMask)
-  if (preyKey !== null && mutationAllowedForType(preyKey, hunterType)) {
-    return MUTATIONS[preyKey].bit
-  }
-  return addRandomMutation(random, 0, hunterType)
-}
 
 /** Multiplier a mask applies to hunger drain. */
 export const mutationDrainMultiplier = (mask: number): number =>

@@ -10,6 +10,7 @@ import {
   MATE_RANGE,
   MATED_OFFSPRING_FED_MAX,
   MOVEMENT,
+  MUTATION_PREGNANCY_BIRTH_CHANCE,
   OFFSPRING_FED,
 } from '@/sim/config'
 import { cloneTraits, crossTraitsFrom, readLevels } from '@/sim/genetics'
@@ -146,6 +147,7 @@ const birthMatedChild = (
     random,
     [world.mutations[motherIndex], fatherMutations],
     GLORP_TYPE.hunter,
+    MUTATION_PREGNANCY_BIRTH_CHANCE,
   )
   initOffspring(
     world,

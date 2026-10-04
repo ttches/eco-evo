@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
-  HUNTER_MUTATION_TRANSFER_CHANCE,
+  GESTATION_SECONDS,
+  MATE_RANGE,
   MAX_MUTATIONS,
   METABOLISM,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
+  MUTATION_PREGNANCY_BIRTH_CHANCE,
 } from '@/sim/config'
 import { applyMetabolism } from '@/sim/lifecycle'
 import { readLineage } from '@/sim/lineage'
@@ -21,11 +23,13 @@ import {
   mutationSpeedFactor,
   mutationWalkFactor,
   rollBirthMutations,
-  rollEatenMutation,
   rollSpawnMutations,
 } from '@/sim/mutations'
-import { huntPrey } from '@/sim/predation'
-import { applyReproduction } from '@/sim/reproduction'
+import {
+  applyGestation,
+  applyPairReproduction,
+  applyReproduction,
+} from '@/sim/reproduction'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { TRAIT_MIN } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
@@ -137,50 +141,59 @@ describe('rollBirthMutations', () => {
     expect(mutated / samples).toBeGreaterThan(MUTATION_BIRTH_CHANCE - 0.005)
     expect(mutated / samples).toBeLessThan(MUTATION_BIRTH_CHANCE + 0.005)
   })
+
+  it('rolls the given pregnancy chance when no mutation is inherited', () => {
+    const random = new XorShift32(321)
+    const samples = 100000
+    let mutated = 0
+    for (let i = 0; i < samples; i += 1) {
+      const mask = rollBirthMutations(
+        random,
+        [0, 0],
+        GLORP_TYPE.prey,
+        MUTATION_PREGNANCY_BIRTH_CHANCE,
+      )
+      if (mask !== 0) mutated += 1
+    }
+    const rate = mutated / samples
+    expect(rate).toBeGreaterThan(MUTATION_PREGNANCY_BIRTH_CHANCE - 0.005)
+    expect(rate).toBeLessThan(MUTATION_PREGNANCY_BIRTH_CHANCE + 0.005)
+  })
 })
 
-describe('rollEatenMutation', () => {
-  it('does nothing when the hunter already holds a mutation', () => {
-    const random = new XorShift32(1)
-    for (let i = 0; i < 1000; i += 1) {
-      expect(rollEatenMutation(random, COLD, COLD, GLORP_TYPE.hunter)).toBe(
-        COLD,
-      )
-    }
-  })
+describe('pregnancy mutation in the simulation', () => {
+  it('applies MUTATION_PREGNANCY_BIRTH_CHANCE to a mated birth', () => {
+    const samples = 2000
+    let conceived = 0
+    let mutated = 0
+    for (let seed = 1; seed <= samples; seed += 1) {
+      const world = createWorld(2, seed)
+      world.type[0] = GLORP_TYPE.hunter
+      world.type[1] = GLORP_TYPE.hunter
+      world.x[0] = 100
+      world.y[0] = 100
+      world.x[1] = 100 + MATE_RANGE / 4
+      world.y[1] = 100
+      world.fed[0] = 100
+      world.fed[1] = 100
+      world.cooldown[0] = 0
+      world.cooldown[1] = 0
+      // Unmutated parents force the inherited mask to 0, isolating the
+      // spontaneous pregnancy roll.
+      world.mutations.fill(0)
 
-  it('does nothing when the prey has no mutation', () => {
-    const random = new XorShift32(2)
-    for (let i = 0; i < 1000; i += 1) {
-      expect(rollEatenMutation(random, 0, 0, GLORP_TYPE.hunter)).toBe(0)
-    }
-  })
+      applyPairReproduction(world)
+      applyGestation(world, GESTATION_SECONDS)
 
-  it('transfers a prey mutation near HUNTER_MUTATION_TRANSFER_CHANCE', () => {
-    const random = new XorShift32(3)
-    const samples = 100000
-    let gained = 0
-    for (let i = 0; i < samples; i += 1) {
-      if (rollEatenMutation(random, 0, COLD, GLORP_TYPE.hunter) !== 0)
-        gained += 1
+      if (world.count !== 3) continue
+      conceived += 1
+      if (world.mutations[2] !== 0) mutated += 1
     }
-    expect(gained / samples).toBeGreaterThan(
-      HUNTER_MUTATION_TRANSFER_CHANCE - 0.005,
-    )
-    expect(gained / samples).toBeLessThan(
-      HUNTER_MUTATION_TRANSFER_CHANCE + 0.005,
-    )
-  })
 
-  it('falls back to an allowed mutation when the meal mutation is exclusive', () => {
-    // Forward-looking: no prey-exclusive mutation exists yet, so pair a
-    // prey-type eater with a hunter-exclusive meal to exercise the reroll.
-    const random = new XorShift32(4)
-    for (let i = 0; i < 5000; i += 1) {
-      const gained = rollEatenMutation(random, 0, STOAT, GLORP_TYPE.prey)
-      expect(gained & STOAT).toBe(0)
-      expect(gained & ~COLD).toBe(0)
-    }
+    expect(conceived).toBe(samples)
+    const rate = mutated / conceived
+    expect(rate).toBeGreaterThan(MUTATION_PREGNANCY_BIRTH_CHANCE - 0.02)
+    expect(rate).toBeLessThan(MUTATION_PREGNANCY_BIRTH_CHANCE + 0.02)
   })
 })
 
@@ -261,35 +274,6 @@ describe('cold blooded in the simulation', () => {
     const child = readLineage(world.lineage, world.id[1])
     expect(child?.mutations).toBe(world.mutations[1])
     expect(world.mutations[1] & ~MUTATION_MASK_ALL).toBe(0)
-  })
-})
-
-describe('mutation transfer in the simulation', () => {
-  it('logs a mutation a hunter gains by eating mutated prey', () => {
-    let transferred = false
-    for (let seed = 1; seed <= 400 && !transferred; seed += 1) {
-      const world = createWorld(2, seed)
-      world.mutations.fill(0)
-      world.type[0] = GLORP_TYPE.hunter
-      world.type[1] = GLORP_TYPE.prey
-      world.x[0] = 100
-      world.y[0] = 100
-      world.x[1] = 110
-      world.y[1] = 100
-      world.fed[0] = 50
-      world.fed[1] = 50
-      world.agility[0] = 4
-      world.agility[1] = 4
-      world.mutations[1] = COLD
-
-      huntPrey(world, 2 * world.radius)
-
-      if (world.mutations[0] === COLD) {
-        transferred = true
-        expect(world.lineage.mutations[world.id[0]]).toBe(COLD)
-      }
-    }
-    expect(transferred).toBe(true)
   })
 })
 
