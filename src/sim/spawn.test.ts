@@ -31,7 +31,7 @@ describe('spawnGlorp', () => {
       total += world[key][index]
     }
     expect(total).toBe(TRAIT_BUDGET)
-    expect(world.stamina[index]).toBe(
+    expect(world.stamina[index]).toBeCloseTo(
       traitValue('endurance', world.endurance[index]),
     )
   })

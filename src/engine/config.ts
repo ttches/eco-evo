@@ -1,3 +1,12 @@
+/**
+ * Engine-level tuning: viewport, world size, fixed timestep, and camera. Grouped
+ * by concern; every value is a flat named export.
+ */
+
+// ---------------------------------------------------------------------------
+// Viewport & world
+// ---------------------------------------------------------------------------
+
 export const VIEWPORT = {
   /**
    * Render pixels along the canvas's shorter side; the longer side follows
@@ -14,11 +23,19 @@ export const WORLD = {
   height: 2160,
 } as const
 
+// ---------------------------------------------------------------------------
+// Simulation
+// ---------------------------------------------------------------------------
+
 export const SIMULATION = {
   updatesPerSecond: 60,
 } as const
 
 export const FIXED_STEP = 1 / SIMULATION.updatesPerSecond
+
+// ---------------------------------------------------------------------------
+// Camera
+// ---------------------------------------------------------------------------
 
 /** Minimum and starting zoom depend on the screen; see `fitZoom` / `startZoom`. */
 export const CAMERA = {

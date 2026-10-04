@@ -1,6 +1,15 @@
 import { TRAIT_BASE, TRAIT_KEYS, traitValue } from '@/sim/traits'
 
 /**
+ * Central tuning levers for the simulation. Grouped by concern; every value is a
+ * flat named export so the headless simulator can sweep it with `--set NAME=...`.
+ */
+
+// ---------------------------------------------------------------------------
+// World & population
+// ---------------------------------------------------------------------------
+
+/**
  * Total levels every glorp holds across all traits: the all-`TRAIT_BASE` build.
  * Inheritance and trait drift only ever move points between traits. Living in
  * the config (rather than `traits`) lets the headless simulator override the
@@ -20,6 +29,10 @@ export const DEFAULT_SEED = 0x00c0ffee
 export const START_PREY = 120
 
 export const START_HUNTERS = 10
+
+// ---------------------------------------------------------------------------
+// Energy & metabolism
+// ---------------------------------------------------------------------------
 
 /** Initial energy every glorp spawns with, as a percentage of satiation. */
 export const FED_START = 50
@@ -49,6 +62,10 @@ export const ENDURANCE = {
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
 export const HUNGER = 70
+
+// ---------------------------------------------------------------------------
+// Reproduction
+// ---------------------------------------------------------------------------
 
 /**
  * Two hunters within this distance (world units) can pair-reproduce. Four body
@@ -92,6 +109,10 @@ export const MATE_CONTACT_SECONDS = 0
 
 /** Well-fed, off-cooldown hunters actively steer toward eligible mates. */
 export const MATE_SEEKING = true
+
+// ---------------------------------------------------------------------------
+// Traits, spawning & mutations
+// ---------------------------------------------------------------------------
 
 /**
  * Levels a glorp of each type starts from before `SPAWN_SHUFFLES`. The total is
@@ -152,6 +173,10 @@ export const STOAT = {
   speedMultiplier: 2,
 } as const
 
+// ---------------------------------------------------------------------------
+// Movement & stamina
+// ---------------------------------------------------------------------------
+
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */
   walkFactor: 0.45,
@@ -193,6 +218,29 @@ export const STAMINA = {
 } as const
 
 /**
+ * Speed every glorp walks and wanders at, whatever its `speed` trait. Speed
+ * then only pays off in pursuit and flight, so prey don't evolve top speed just
+ * to graze faster and hunters can catch them.
+ */
+export const WALK_SPEED = 50
+
+/**
+ * Hunters sprint this much faster than their `speed` trait, so they can close
+ * on fleeing prey. Without an edge predators never catch anything and starve.
+ */
+export const HUNTER_SPRINT_MULTIPLIER = 1.4
+
+/**
+ * How far ahead, in world units, a steering glorp checks the arena bounds when
+ * choosing a heading. Wide enough to begin turning before reaching a wall.
+ */
+export const STEER_LOOKAHEAD = 48
+
+// ---------------------------------------------------------------------------
+// Senses & spatial index
+// ---------------------------------------------------------------------------
+
+/**
  * Side of a spatial-grid cell, in world units. Near the common query ranges
  * (prey flee, mating) so most lookups only touch a few cells.
  */
@@ -204,17 +252,9 @@ export const HUNTER_SIGHT = 220
 /** Prey flight range. */
 export const PREY_FLEE = 120
 
-/**
- * How far ahead, in world units, a steering glorp checks the arena bounds when
- * choosing a heading. Wide enough to begin turning before reaching a wall.
- */
-export const STEER_LOOKAHEAD = 48
-
-/**
- * Hunters sprint this much faster than their `speed` trait, so they can close
- * on fleeing prey. Without an edge predators never catch anything and starve.
- */
-export const HUNTER_SPRINT_MULTIPLIER = 1.4
+// ---------------------------------------------------------------------------
+// Grass & food
+// ---------------------------------------------------------------------------
 
 /** Grass is laid out on a grid of this many world units per tile. */
 export const GRASS_TILE = 32
@@ -245,6 +285,10 @@ export const PREY_ENERGY_PER_SECOND = 18
 /** Energy gained from a successful hunt. */
 export const HUNTER_KILL_FED = 30
 
+// ---------------------------------------------------------------------------
+// Predation & combat
+// ---------------------------------------------------------------------------
+
 /** Starving hunters may prey on other hunters when this is true. */
 export const CANNIBALISM = true
 
@@ -259,6 +303,7 @@ export const CANNIBAL_KILL_FED = 15
  * Off makes agility inert, which the headless simulator uses as an A/B control.
  */
 export const DODGE_ENABLED = true
+
 /** Dodge chance added per agility level the prey has over the hunter. */
 export const DODGE_CHANCE_PER_LEVEL = 0.25
 
@@ -289,10 +334,3 @@ export const DODGE_SPEED = DODGE_DISTANCE / DODGE_DURATION
  * so the hunter's normal prey search simply reprioritizes to the next victim.
  */
 export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS
-
-/**
- * Speed every glorp walks and wanders at, whatever its `speed` trait. Speed
- * then only pays off in pursuit and flight, so prey don't evolve top speed just
- * to graze faster and hunters can catch them.
- */
-export const WALK_SPEED = 50
