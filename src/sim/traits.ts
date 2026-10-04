@@ -1,4 +1,4 @@
-import { lerp } from '@/engine/math';
+import { lerp } from "@/engine/math";
 
 /** Lowest and highest level a trait can hold. */
 export const TRAIT_MIN = 0;
@@ -32,7 +32,7 @@ export const TRAITS = {
   /** Stamina capacity and recovery, and how slowly hunger drains. */
   endurance: { atMin: 1, atMax: 8 },
   /** Level maps to reproduction cooldown in seconds: more is faster. */
-  fertility: { atMin: 167 / 6, atMax: 8 },
+  fertility: { atMin: 32, atMax: 12 },
   /**
    * Raw agility score. Compared directly against an attacker's: equal or lower
    * means the prey is caught, higher gives a chance to dodge. It also decides
