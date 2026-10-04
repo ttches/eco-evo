@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { GlorpView } from '@/sim/inspect'
 import GlorpAvatar from '../GlorpAvatar/GlorpAvatar'
+import GlorpMutations from '../GlorpMutations/GlorpMutations'
 import GlorpTypeBadge from '../GlorpTypeBadge/GlorpTypeBadge'
 import GlorpStats from '../GlorpStats/GlorpStats'
 import styles from './GlorpPreview.module.css'
@@ -44,6 +45,7 @@ const GlorpPreview = ({ glorp, anchor }: GlorpPreviewProps) => (
         alive={glorp.alive}
         fed={glorp.live?.fed}
         pregnant={glorp.live ? glorp.live.pregnant > 0 : false}
+        mutated={glorp.mutations !== 0}
         size={20}
       />
       <div className={styles.identity}>
@@ -57,6 +59,7 @@ const GlorpPreview = ({ glorp, anchor }: GlorpPreviewProps) => (
       </div>
     </header>
     <GlorpStats glorp={glorp} compact />
+    <GlorpMutations glorp={glorp} />
   </aside>
 )
 

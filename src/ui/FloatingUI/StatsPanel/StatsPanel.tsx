@@ -119,6 +119,7 @@ const StatRow = memo(
           type={entry.type}
           alive={entry.alive}
           fed={entry.alive ? FED_MAX : 0}
+          mutated={entry.mutations !== 0}
           size={18}
         />
         <span className={styles.name}>{entry.name}</span>
@@ -261,6 +262,7 @@ const StatsPanel = ({
                   type={extreme.type}
                   alive={extreme.alive}
                   fed={extreme.alive ? FED_MAX : 0}
+                  mutated={extreme.mutations !== 0}
                   size={16}
                 />
               </span>

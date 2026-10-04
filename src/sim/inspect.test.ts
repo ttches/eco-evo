@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { GESTATION_SECONDS, GLORP_RADIUS, MATE_RANGE } from '@/sim/config'
 import { readGlorpView } from '@/sim/inspect'
 import { applyDeath } from '@/sim/lifecycle'
+import { MUTATIONS } from '@/sim/mutations'
 import { applyEating } from '@/sim/predation'
 import { DEATH_CAUSE, setName } from '@/sim/lineage'
 import {
@@ -29,6 +30,15 @@ describe('readGlorpView', () => {
     expect(view?.live?.x).toBe(world.x[0])
     expect(view?.live?.fed).toBe(world.fed[0])
     expect(view?.traits.speed).toBe(world.speed[0])
+    expect(view?.mutations).toBe(0)
+  })
+
+  it('reports mutations from the lineage mask', () => {
+    const world = createWorld(1, 5)
+    const id = world.id[0]
+    world.lineage.mutations[id] = MUTATIONS.coldBlooded.bit
+
+    expect(readGlorpView(world, id)?.mutations).toBe(MUTATIONS.coldBlooded.bit)
   })
 
   it('reports time alive for a living glorp', () => {

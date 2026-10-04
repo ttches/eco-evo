@@ -67,6 +67,7 @@ const GlorpHeader = ({
             alive={glorp.alive}
             fed={glorp.live?.fed}
             pregnant={glorp.live ? glorp.live.pregnant > 0 : false}
+            mutated={glorp.mutations !== 0}
             size={20}
           />
           {editing ? (

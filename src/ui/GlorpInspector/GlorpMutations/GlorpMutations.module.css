@@ -1,0 +1,60 @@
+.mutations {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.mutationsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted-foreground);
+}
+
+.mutationsHeader svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.mutationsTitle {
+  font-size: 0.68rem;
+  font-weight: 640;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 3%);
+  color: var(--muted-foreground);
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.08);
+}
+
+.chip svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}

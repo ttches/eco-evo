@@ -30,9 +30,9 @@ type TraitSpec = {
 export const TRAITS = {
   speed: { atMin: 70 / 3, atMax: 70 },
   /** Stamina capacity and recovery, and how slowly hunger drains. */
-  endurance: { atMin: 1, atMax: 8 },
+  endurance: { atMin: 3, atMax: 8 },
   /** Level maps to reproduction cooldown in seconds: more is faster. */
-  fertility: { atMin: 32, atMax: 12 },
+  fertility: { atMin: 40, atMax: 8 },
   /**
    * Raw agility score. Compared directly against an attacker's: equal or lower
    * means the prey is caught, higher gives a chance to dodge. It also decides

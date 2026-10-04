@@ -1,6 +1,7 @@
 import type { GlorpView } from '@/sim/inspect'
 import GlorpHeader from './GlorpHeader/GlorpHeader'
 import GlorpLineage from './GlorpLineage/GlorpLineage'
+import GlorpMutations from './GlorpMutations/GlorpMutations'
 import GlorpStats from './GlorpStats/GlorpStats'
 import styles from './GlorpInspector.module.css'
 
@@ -40,6 +41,7 @@ const GlorpInspector = ({
         onRename={onRename}
       />
       <GlorpStats glorp={glorp} />
+      <GlorpMutations glorp={glorp} />
       <GlorpLineage glorp={glorp} onNavigate={onNavigate} />
     </aside>
   )

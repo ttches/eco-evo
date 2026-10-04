@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { TAU, hashUnit } from '@/engine/math'
 import { glorpColor } from '@/render/appearance'
 import {
@@ -6,6 +6,7 @@ import {
   GLORP_OUTLINE_SHADE,
 } from '@/render/glorp-detail'
 import type { GlorpType } from '@/sim/types'
+import { DEFAULT_HOLO, type HoloVariant } from './holo'
 import styles from './GlorpAvatar.module.css'
 
 type GlorpAvatarProps = {
@@ -14,6 +15,9 @@ type GlorpAvatarProps = {
   alive: boolean
   fed?: number
   pregnant?: boolean
+  mutated?: boolean
+  /** Holographic sheen variant; only shown when `mutated`. */
+  holo?: HoloVariant
   size?: number
 }
 
@@ -56,13 +60,19 @@ const softSrgb = (value: number): number =>
 const rgb = (r: number, g: number, b: number): string =>
   `rgb(${Math.round(softSrgb(r) * 255)} ${Math.round(softSrgb(g) * 255)} ${Math.round(softSrgb(b) * 255)})`
 
-/** A tiny glorp sprite, drawn with the same color and outline as the world. */
+/**
+ * A tiny glorp sprite, drawn with the same color and outline as the world. A
+ * mutated glorp gets a holographic sheen clipped to its silhouette; the sheen
+ * is a scaled 100x100 layer so its `path()` clip shares the SVG's coordinates.
+ */
 const GlorpAvatar = ({
   id,
   type,
   alive,
   fed = 0,
   pregnant = false,
+  mutated = false,
+  holo = DEFAULT_HOLO,
   size = 18,
 }: GlorpAvatarProps) => {
   const path = useMemo(() => buildPath(id), [id])
@@ -74,22 +84,39 @@ const GlorpAvatar = ({
     b * GLORP_OUTLINE_SHADE,
   )
 
+  const holoStyle = useMemo(() => {
+    const clip = `path('${path}')`
+    return {
+      clipPath: clip,
+      WebkitClipPath: clip,
+      // The layer is authored at 100x100; scale it down to the avatar size.
+      '--holo-scale': String(size / 100),
+    } as CSSProperties
+  }, [path, size])
+
   return (
-    <svg
-      className={`${styles.avatar} ${alive ? '' : styles.dead}`}
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
+    <span
+      className={`${styles.frame} ${alive ? '' : styles.dead}`}
+      data-holo={holo}
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <path
-        d={path}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={6}
-        strokeLinejoin="round"
-      />
-    </svg>
+      <svg
+        className={styles.avatar}
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+      >
+        <path
+          d={path}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={6}
+          strokeLinejoin="round"
+        />
+      </svg>
+      {mutated ? <span className={styles.holo} style={holoStyle} /> : null}
+    </span>
   )
 }
 

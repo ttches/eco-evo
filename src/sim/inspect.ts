@@ -21,6 +21,8 @@ export type GlorpRef = {
   readonly generation: number
   /** Seconds lived so far, or total lifespan once dead. */
   readonly timeAlive: number
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  readonly mutations: number
 }
 
 /** The live simulation state of a glorp, absent once it has died. */
@@ -54,6 +56,8 @@ export type GlorpView = {
   readonly parents: readonly GlorpRef[]
   readonly children: readonly GlorpRef[]
   readonly traits: Readonly<TraitLevels>
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  readonly mutations: number
   readonly live: GlorpLiveState | null
 }
 
@@ -113,6 +117,7 @@ const readRef = (world: World, id: number): GlorpRef | null => {
     alive,
     generation: record.generation,
     timeAlive: endedAt - record.bornAt,
+    mutations: record.mutations,
   }
 }
 
@@ -158,6 +163,7 @@ export const readGlorpView = (world: World, id: number): GlorpView | null => {
       .map((child) => readRef(world, child))
       .filter((ref): ref is GlorpRef => ref !== null),
     traits: record.traits,
+    mutations: record.mutations,
     live,
   }
 }

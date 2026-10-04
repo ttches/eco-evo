@@ -30,6 +30,7 @@ const FamilyRow = ({ glorp, onNavigate }: FamilyRowProps) => (
       type={glorp.type}
       alive={glorp.alive}
       fed={glorp.alive ? FED_MAX : 0}
+      mutated={glorp.mutations !== 0}
       size={18}
     />
     <span className={styles.rowBody}>

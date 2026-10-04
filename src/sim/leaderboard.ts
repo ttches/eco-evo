@@ -25,6 +25,8 @@ export type GlorpStat = {
   readonly offspring: number
   /** Heritable trait values, as rolled or inherited at birth. */
   readonly traits: Readonly<TraitLevels>
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  readonly mutations: number
 }
 
 /** Diet restriction for the leaderboard, or `all`. */
@@ -61,6 +63,8 @@ export type TraitExtreme = {
   readonly type: GlorpType
   readonly alive: boolean
   readonly value: number
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  readonly mutations: number
 }
 
 /**
@@ -117,6 +121,7 @@ export const buildLeaderboard = (world: World): GlorpStat[] => {
       kills: kills[id],
       offspring: offspring[id],
       traits,
+      mutations: log.mutations[id],
     }
   }
   return stats
@@ -190,6 +195,7 @@ export const traitExtremesFromStats = (
       type: best.type,
       alive: best.alive,
       value: best.traits[key],
+      mutations: best.mutations,
     }
   })
 }

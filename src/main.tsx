@@ -1,10 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import HoloLab from './ui/HoloLab/HoloLab.tsx'
 import './styles.css'
+
+// `?holo` opens the mutation sheen preview gallery instead of the simulation.
+const showHoloLab = new URLSearchParams(window.location.search).has('holo')
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {showHoloLab ? <HoloLab /> : <App />}
   </StrictMode>,
 )

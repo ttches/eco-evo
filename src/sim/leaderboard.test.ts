@@ -121,6 +121,7 @@ describe('sortStats', () => {
       fertility: value,
       agility: value,
     },
+    mutations: 0,
     ...overrides,
   })
 
@@ -157,6 +158,7 @@ describe('filterStats', () => {
       fertility: 0,
       agility: 0,
     },
+    mutations: 0,
   })
 
   const entries = [

@@ -44,7 +44,7 @@ export const ENDURANCE = {
    * glorp at `TRAIT_MAX` burns hunger 30% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
-  drainFactorAtMax: 0.9,
+  drainFactorAtMax: 0.8,
 } as const;
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
