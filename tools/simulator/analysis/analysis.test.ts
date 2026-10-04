@@ -197,6 +197,13 @@ describe('individual table', () => {
     world.lineage.traits.speed[world.id[prey]] = 7
     expect(checkIntegrity(world).failures.join()).toContain('trait budget')
   })
+
+  it('flags a mutation bit outside the registry', () => {
+    const world = createWorld(0, 4)
+    const prey = spawnGlorp(world, GLORP_TYPE.prey, 100, 100)
+    world.lineage.mutations[world.id[prey]] = 0x80000000
+    expect(checkIntegrity(world).failures.join()).toContain('unknown mutation bits')
+  })
 })
 
 describe('sweep comparison', () => {

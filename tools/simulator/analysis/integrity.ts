@@ -5,7 +5,11 @@
  * produce confident nonsense.
  */
 import { DEATH_CAUSE, NO_GLORP } from '@/sim/lineage'
-import { TRAIT_BUDGET } from '@/sim/config'
+import { MAX_MUTATIONS, TRAIT_BUDGET } from '@/sim/config'
+import {
+  MUTATION_MASK_ALL,
+  countMutations,
+} from '@/sim/mutations'
 import { TRAIT_KEYS, TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
@@ -44,6 +48,16 @@ export const checkIntegrity = (world: World): IntegrityReport => {
     }
     check(budget === TRAIT_BUDGET, () => `glorp ${id} trait budget ${budget} != ${TRAIT_BUDGET}`)
     check(inRange, () => `glorp ${id} has a trait outside ${TRAIT_MIN}..${TRAIT_MAX}`)
+
+    const mutations = log.mutations[id]
+    check(
+      (mutations & ~MUTATION_MASK_ALL) === 0,
+      () => `glorp ${id} has unknown mutation bits ${mutations}`,
+    )
+    check(
+      countMutations(mutations) <= MAX_MUTATIONS,
+      () => `glorp ${id} holds more than ${MAX_MUTATIONS} mutations`,
+    )
 
     for (const parent of [log.parentA[id], log.parentB[id]]) {
       if (parent === NO_GLORP) continue
@@ -99,6 +113,10 @@ export const checkIntegrity = (world: World): IntegrityReport => {
     check(
       world.fed[index] > 0 || world.count === 0,
       () => `live glorp ${id} has no energy but was not removed`,
+    )
+    check(
+      world.mutations[index] === log.mutations[id],
+      () => `live glorp ${id} mutations ${world.mutations[index]} != log ${log.mutations[id]}`,
     )
   }
   return { checks, failures }

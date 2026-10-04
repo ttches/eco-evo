@@ -14,6 +14,7 @@ import {
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
+import { mutationSpeedFactor } from '@/sim/mutations'
 import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
@@ -75,9 +76,17 @@ const PREGNANT_SPEED_BY_LEVEL = (() => {
   return table
 })()
 
-const jogSpeed = (world: World, index: number): number =>
+/**
+ * The mechanical top speed a glorp's `speed` trait grants it, after mutation
+ * modifiers (e.g. cold blooded makes speed points less effective). Walk and
+ * wander use a flat speed and never call this.
+ */
+const speedTraitValue = (world: World, index: number): number =>
   traitValue('speed', world.speed[index]) *
-  JOG_FACTOR_BY_LEVEL[world.endurance[index]]
+  mutationSpeedFactor(world.mutations[index])
+
+const jogSpeed = (world: World, index: number): number =>
+  speedTraitValue(world, index) * JOG_FACTOR_BY_LEVEL[world.endurance[index]]
 
 /**
  * Speed for a glorp actively pursuing or fleeing: sprint when fresh, otherwise
@@ -91,7 +100,7 @@ const pursuitSpeed = (
   sprint: boolean,
   sprintMultiplier = 1,
 ): number =>
-  sprint ? traitValue('speed', world.speed[index]) * sprintMultiplier : jogSpeed(world, index)
+  sprint ? speedTraitValue(world, index) * sprintMultiplier : jogSpeed(world, index)
 
 // The latch normally implies `stamina === 0` while exhausted, but the explicit
 // `stamina > 0` guard also stops a zero-capacity glorp from sprinting forever.

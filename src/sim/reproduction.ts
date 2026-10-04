@@ -15,6 +15,7 @@ import {
 import { cloneTraits, crossTraitsFrom, readLevels } from '@/sim/genetics'
 import { NO_GLORP, recordBirth, recordBirthFromIds } from '@/sim/lineage'
 import { isEligibleMate } from '@/sim/mate'
+import { rollBirthMutations } from '@/sim/mutations'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { allocGlorp } from '@/sim/store'
@@ -90,6 +91,9 @@ export const applyReproduction = (world: World): void => {
 
     world.type[child] = world.type[index]
     cloneTraits(world, index, child)
+    world.mutations[child] = rollBirthMutations(world.random, [
+      world.mutations[index],
+    ])
     initOffspring(
       world,
       child,
@@ -125,14 +129,21 @@ const birthMatedChild = (
   const motherTraits = readLevels(world, motherIndex)
 
   let fatherTraits = motherTraits
+  let fatherMutations = 0
   if (fatherIndex >= 0) {
     fatherTraits = readLevels(world, fatherIndex)
+    fatherMutations = world.mutations[fatherIndex]
   } else if (fatherId !== NO_GLORP) {
     fatherTraits = readLevels(world.lineage.traits, fatherId)
+    fatherMutations = world.lineage.mutations[fatherId]
   }
 
   world.type[child] = GLORP_TYPE.hunter
   crossTraitsFrom(world, child, motherTraits, fatherTraits, random)
+  world.mutations[child] = rollBirthMutations(random, [
+    world.mutations[motherIndex],
+    fatherMutations,
+  ])
   initOffspring(
     world,
     child,

@@ -44,6 +44,7 @@ const levelTotal = (world: ReturnType<typeof createWorld>, index: number) =>
 describe('applyMetabolism', () => {
   it('drains fed at the base rate at level-0 endurance', () => {
     const world = createWorld(4, 5)
+    world.mutations.fill(0)
     world.endurance[0] = TRAIT_MIN
     const before = world.fed[0]
     applyMetabolism(world, 1)
@@ -52,6 +53,7 @@ describe('applyMetabolism', () => {
 
   it('interpolates the drain factor between the endpoints', () => {
     const world = createWorld(3, 5)
+    world.mutations.fill(0)
     world.endurance[0] = TRAIT_MIN
     world.endurance[1] = TRAIT_BASE
     world.endurance[2] = TRAIT_MAX
@@ -71,6 +73,7 @@ describe('applyMetabolism', () => {
 
   it('drains monotonically less at every endurance level', () => {
     const world = createWorld(8, 5)
+    world.mutations.fill(0)
     for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
       world.endurance[level] = level
     }

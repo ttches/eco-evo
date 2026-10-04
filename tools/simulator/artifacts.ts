@@ -69,7 +69,7 @@ export const writeLineageCsv = (file: string, world: World): void => {
   const log = world.lineage
   const header = [
     'id', 'type', 'parentA', 'parentB', 'generation', 'bornAt', 'diedAt',
-    'alive', 'deathCause', 'killer', ...TRAIT_KEYS,
+    'alive', 'deathCause', 'killer', ...TRAIT_KEYS, 'mutations',
   ].join(',')
   const rows = [header]
   for (let id = 0; id < log.size; id += 1) {
@@ -87,6 +87,7 @@ export const writeLineageCsv = (file: string, world: World): void => {
         CAUSE_NAME[log.deathCause[id]] ?? log.deathCause[id],
         log.killer[id],
         ...TRAIT_KEYS.map((key) => log.traits[key][id]),
+        log.mutations[id],
       ].join(','),
     )
   }

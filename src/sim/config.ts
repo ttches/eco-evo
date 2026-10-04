@@ -2,9 +2,9 @@ import { TRAIT_BASE, TRAIT_KEYS, traitValue } from "@/sim/traits";
 
 /**
  * Total levels every glorp holds across all traits: the all-`TRAIT_BASE` build.
- * Inheritance and mutation only ever move points between traits. Living in the
- * config (rather than `traits`) lets the headless simulator override the total
- * with `--set TRAIT_BUDGET=N` when experimenting with trait budgets.
+ * Inheritance and trait drift only ever move points between traits. Living in
+ * the config (rather than `traits`) lets the headless simulator override the
+ * total with `--set TRAIT_BUDGET=N` when experimenting with trait budgets.
  */
 export const TRAIT_BUDGET = TRAIT_BASE * TRAIT_KEYS.length;
 
@@ -105,14 +105,37 @@ export const SPAWN_BASE = {
 /** Point transfers applied to an all-base build when a glorp is first spawned. */
 export const SPAWN_SHUFFLES = 12;
 
-/** Chance a clone moves one trait point. Clones stay close to their parent. */
-export const CLONE_MUTATION_CHANCE = 0.25;
+/** Chance a clone's trait points drift by one. Clones stay close to their parent. */
+export const CLONE_TRAIT_DRIFT_CHANCE = 0.25;
 
 /**
- * Chance a pair-born child moves one trait point, on top of the variance from
- * recombining two parents.
+ * Chance a pair-born child's trait points drift by one, on top of the variance
+ * from recombining two parents.
  */
-export const MATED_MUTATION_CHANCE = 0.5;
+export const MATED_TRAIT_DRIFT_CHANCE = 0.5;
+
+/**
+ * Chance a newborn rolls a brand-new mutation, on top of any it inherits. Rolled
+ * once per birth; at `MAX_MUTATIONS` no more are added.
+ */
+export const MUTATION_BIRTH_CHANCE = 0.01;
+
+/** Chance each distinct mutation a parent carries is inherited by a child. */
+export const MUTATION_INHERIT_CHANCE = 0.25;
+
+/** Most mutations a single glorp can hold; further rolls are discarded. */
+export const MAX_MUTATIONS = 7;
+
+/**
+ * Cold blooded mutation effect levers. Kept here (not in the registry) so the
+ * headless simulator can sweep them with `--set COLD_BLOODED.hungerDrain=...`.
+ */
+export const COLD_BLOODED = {
+  /** Multiplier on hunger drain: 0.5 means it burns half as fast. */
+  hungerDrain: 0.5,
+  /** Multiplier on the mechanical value of the `speed` trait. */
+  speedEffectiveness: 0.7,
+} as const;
 
 export const MOVEMENT = {
   /** Fraction of a glorp's top speed used when moving without sprinting. */

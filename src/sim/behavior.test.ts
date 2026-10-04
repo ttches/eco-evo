@@ -34,6 +34,7 @@ describe("prey steering", () => {
 
   it("escapes a corner instead of pressing into it", () => {
     const world = createWorld(2, 3);
+    world.mutations.fill(0);
     world.type[0] = GLORP_TYPE.prey;
     world.type[1] = GLORP_TYPE.hunter;
     world.x[0] = world.radius;
@@ -55,6 +56,7 @@ describe("prey steering", () => {
   it("scales prey jog speed with stamina", () => {
     const jogFactorAt = (staminaLevel: number): number => {
       const world = createWorld(2, 3);
+      world.mutations.fill(0);
       world.type[0] = GLORP_TYPE.prey;
       world.type[1] = GLORP_TYPE.hunter;
       world.x[0] = 100;
@@ -118,6 +120,7 @@ describe("hunter steering", () => {
 
   it("jogs toward prey when exhausted instead of giving up the chase", () => {
     const world = createWorld(2, 4);
+    world.mutations.fill(0);
     world.type[0] = GLORP_TYPE.hunter;
     world.type[1] = GLORP_TYPE.prey;
     world.x[0] = 100;
@@ -141,6 +144,7 @@ describe("hunter steering", () => {
 
   it("jogs slower when its stamina is low", () => {
     const world = createWorld(2, 4);
+    world.mutations.fill(0);
     world.type[0] = GLORP_TYPE.hunter;
     world.type[1] = GLORP_TYPE.prey;
     world.x[0] = 100;

@@ -54,3 +54,7 @@ try to compete with speed + endurance
 balance levers:
 preds and prey use the jog mechanic when critically hungry if not eating / pursuing food
 dead unconsumed glorps create a full patch of grass after short # of seconds
+
+cold blooded:
+hunger depletes 50% slower
+speed trait points 30% less effective

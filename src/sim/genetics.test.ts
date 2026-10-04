@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
-  CLONE_MUTATION_CHANCE,
-  MATED_MUTATION_CHANCE,
+  CLONE_TRAIT_DRIFT_CHANCE,
+  MATED_TRAIT_DRIFT_CHANCE,
   TRAIT_BUDGET,
 } from '@/sim/config'
 import {
@@ -130,7 +130,7 @@ describe('rollLevels', () => {
 })
 
 describe('cloneLevels', () => {
-  it('moves one point about CLONE_MUTATION_CHANCE of the time', () => {
+  it('moves one point about CLONE_TRAIT_DRIFT_CHANCE of the time', () => {
     const random = new XorShift32(99)
     const parent = uniform(TRAIT_BASE)
     const samples = 6000
@@ -141,8 +141,8 @@ describe('cloneLevels', () => {
       expect(distance(parent, child)).toBeLessThanOrEqual(2)
       if (distance(parent, child) > 0) changed += 1
     }
-    expect(changed / samples).toBeGreaterThan(CLONE_MUTATION_CHANCE - 0.04)
-    expect(changed / samples).toBeLessThan(CLONE_MUTATION_CHANCE + 0.04)
+    expect(changed / samples).toBeGreaterThan(CLONE_TRAIT_DRIFT_CHANCE - 0.04)
+    expect(changed / samples).toBeLessThan(CLONE_TRAIT_DRIFT_CHANCE + 0.04)
   })
 })
 
@@ -170,7 +170,7 @@ describe('crossLevels', () => {
         distance(b, crossLevels(random, a, b)),
       )
     }
-    expect(MATED_MUTATION_CHANCE).toBeGreaterThan(CLONE_MUTATION_CHANCE)
+    expect(MATED_TRAIT_DRIFT_CHANCE).toBeGreaterThan(CLONE_TRAIT_DRIFT_CHANCE)
     expect(crossSpread).toBeGreaterThan(cloneSpread)
   })
 
@@ -183,6 +183,6 @@ describe('crossLevels', () => {
         unchanged += 1
       }
     }
-    expect(unchanged).toBeGreaterThan(400 * (1 - MATED_MUTATION_CHANCE) - 60)
+    expect(unchanged).toBeGreaterThan(400 * (1 - MATED_TRAIT_DRIFT_CHANCE) - 60)
   })
 })

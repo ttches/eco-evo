@@ -1,7 +1,7 @@
 import type { XorShift32 } from '@/engine/math'
 import {
-  CLONE_MUTATION_CHANCE,
-  MATED_MUTATION_CHANCE,
+  CLONE_TRAIT_DRIFT_CHANCE,
+  MATED_TRAIT_DRIFT_CHANCE,
   SPAWN_BASE,
   SPAWN_SHUFFLES,
   TRAIT_BUDGET,
@@ -73,19 +73,19 @@ export const rollLevels = (
   return levels
 }
 
-/** Clone a parent's levels; with `CLONE_MUTATION_CHANCE`, move one point. */
+/** Clone a parent's levels; with `CLONE_TRAIT_DRIFT_CHANCE`, move one point. */
 export const cloneLevels = (
   random: XorShift32,
   parent: Readonly<TraitLevels>,
 ): TraitLevels => {
   const levels = copyLevels(parent)
-  if (random.unit() < CLONE_MUTATION_CHANCE) transferPoint(random, levels)
+  if (random.unit() < CLONE_TRAIT_DRIFT_CHANCE) transferPoint(random, levels)
   return levels
 }
 
 /**
  * Recombine two parents: each trait comes from a random parent, the total is
- * repaired back to budget, then with `MATED_MUTATION_CHANCE` one point moves.
+ * repaired back to budget, then with `MATED_TRAIT_DRIFT_CHANCE` one point moves.
  */
 export const crossLevels = (
   random: XorShift32,
@@ -97,7 +97,7 @@ export const crossLevels = (
     levels[key] = random.unit() < 0.5 ? a[key] : b[key]
   }
   rebalance(random, levels)
-  if (random.unit() < MATED_MUTATION_CHANCE) transferPoint(random, levels)
+  if (random.unit() < MATED_TRAIT_DRIFT_CHANCE) transferPoint(random, levels)
   return levels
 }
 

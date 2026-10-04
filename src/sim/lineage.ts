@@ -39,6 +39,8 @@ export type LineageLog = {
   killer: Int32Array
   /** Trait levels as rolled or inherited at birth. */
   traits: Record<TraitKey, Float32Array>
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  mutations: Uint32Array
   /** User-given names, sparse because most glorps are never named. */
   readonly names: Map<number, string>
 }
@@ -55,6 +57,8 @@ export type LineageRecord = {
   readonly deathCause: DeathCause
   readonly killer: number
   readonly traits: Readonly<TraitLevels>
+  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  readonly mutations: number
   /** User-given name, or null if never named. */
   readonly name: string | null
 }
@@ -76,6 +80,7 @@ export const createLineage = (capacity = INITIAL_CAPACITY): LineageLog => ({
   deathCause: new Uint8Array(capacity),
   killer: new Int32Array(capacity),
   traits: createTraitColumns(capacity),
+  mutations: new Uint32Array(capacity),
   names: new Map(),
 })
 
@@ -98,6 +103,7 @@ const grow = (log: LineageLog): void => {
   log.diedAt = grown(log.diedAt, capacity)
   log.deathCause = grown(log.deathCause, capacity)
   log.killer = grown(log.killer, capacity)
+  log.mutations = grown(log.mutations, capacity)
   for (const key of TRAIT_KEYS) log.traits[key] = grown(log.traits[key], capacity)
   log.capacity = capacity
 }
@@ -129,6 +135,7 @@ export const recordBirthFromIds = (
   log.diedAt[id] = Number.NaN
   log.deathCause[id] = DEATH_CAUSE.alive
   log.killer[id] = NO_GLORP
+  log.mutations[id] = world.mutations[index]
   for (const key of TRAIT_KEYS) log.traits[key][id] = world[key][index]
   log.size += 1
 }
@@ -196,6 +203,7 @@ export const readLineage = (
     traits: Object.fromEntries(
       TRAIT_KEYS.map((key) => [key, log.traits[key][id]]),
     ) as TraitLevels,
+    mutations: log.mutations[id],
     name: log.names.get(id) ?? null,
   }
 }

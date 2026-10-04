@@ -1,6 +1,7 @@
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import { removeGlorp } from '@/sim/store'
 import { ENDURANCE, METABOLISM } from '@/sim/config'
+import { mutationDrainMultiplier } from '@/sim/mutations'
 import { TRAIT_MAX, TRAIT_MIN, scaleTrait } from '@/sim/traits'
 import type { World } from '@/sim/world'
 
@@ -21,7 +22,10 @@ const DRAIN_FACTOR_BY_LEVEL = (() => {
 export const applyMetabolism = (world: World, dt: number): void => {
   for (let index = 0; index < world.count; index += 1) {
     world.fed[index] -=
-      METABOLISM * DRAIN_FACTOR_BY_LEVEL[world.endurance[index]] * dt
+      METABOLISM *
+      DRAIN_FACTOR_BY_LEVEL[world.endurance[index]] *
+      mutationDrainMultiplier(world.mutations[index]) *
+      dt
   }
 }
 
