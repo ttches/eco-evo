@@ -3,7 +3,7 @@ export const WORLD_BACKGROUND = 0x09090b
 
 export const GROUND_COLOR = 0x0e1a14
 
-export const GRID_COLOR = 0x1c3328
+export const WORLD_EDGE_COLOR = 0x1c3328
 
 export const GRASS_GREEN = 0x2f8f43
 
