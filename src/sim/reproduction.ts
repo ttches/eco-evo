@@ -20,7 +20,7 @@ import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { allocGlorp } from '@/sim/store'
 import { scaleTrait, traitValue } from '@/sim/traits'
-import { GLORP_TYPE } from '@/sim/types'
+import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
 /**
@@ -91,9 +91,11 @@ export const applyReproduction = (world: World): void => {
 
     world.type[child] = world.type[index]
     cloneTraits(world, index, child)
-    world.mutations[child] = rollBirthMutations(world.random, [
-      world.mutations[index],
-    ])
+    world.mutations[child] = rollBirthMutations(
+      world.random,
+      [world.mutations[index]],
+      world.type[index] as GlorpType,
+    )
     initOffspring(
       world,
       child,
@@ -140,10 +142,11 @@ const birthMatedChild = (
 
   world.type[child] = GLORP_TYPE.hunter
   crossTraitsFrom(world, child, motherTraits, fatherTraits, random)
-  world.mutations[child] = rollBirthMutations(random, [
-    world.mutations[motherIndex],
-    fatherMutations,
-  ])
+  world.mutations[child] = rollBirthMutations(
+    random,
+    [world.mutations[motherIndex], fatherMutations],
+    GLORP_TYPE.hunter,
+  )
   initOffspring(
     world,
     child,

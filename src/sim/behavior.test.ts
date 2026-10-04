@@ -5,6 +5,7 @@ import {
   PREGNANT_SPEED_FACTOR_MIN,
 } from "@/sim/config";
 import { computeSteering } from "@/sim/behavior";
+import { MUTATIONS } from "@/sim/mutations";
 import { rebuildSpatialGrid } from "@/sim/spatial";
 import { TRAIT_MAX, TRAIT_MIN, traitValue } from "@/sim/traits";
 import { GLORP_TYPE } from "@/sim/types";
@@ -116,6 +117,45 @@ describe("hunter steering", () => {
     const steering = computeSteering(world, 0, DT);
 
     expect(steering.sprint).toBe(false);
+  });
+
+  /** A lone, well-fed hunter with nothing to chase or mate, so it wanders. */
+  const wanderHunter = (): ReturnType<typeof createWorld> => {
+    const world = createWorld(1, 11);
+    world.mutations.fill(0);
+    world.type[0] = GLORP_TYPE.hunter;
+    world.fed[0] = 100;
+    world.cooldown[0] = 0;
+    rebuildSpatialGrid(world);
+    return world;
+  };
+
+  const wanderSpeed = (world: ReturnType<typeof createWorld>): number =>
+    Math.hypot(
+      computeSteering(world, 0, DT).x,
+      computeSteering(world, 0, DT).y,
+    );
+
+  it("doubles a stoat hunter's wander speed", () => {
+    const normal = wanderSpeed(wanderHunter());
+
+    const mutated = wanderHunter();
+    mutated.mutations[0] = MUTATIONS.stoat.bit;
+    const fast = wanderSpeed(mutated);
+
+    expect(normal).toBeGreaterThan(0);
+    expect(fast / normal).toBeCloseTo(2, 5);
+  });
+
+  it("leaves a cold-blooded hunter's wander speed unchanged", () => {
+    const normal = wanderSpeed(wanderHunter());
+
+    const mutated = wanderHunter();
+    mutated.mutations[0] = MUTATIONS.coldBlooded.bit;
+    const slowed = wanderSpeed(mutated);
+
+    expect(normal).toBeGreaterThan(0);
+    expect(slowed).toBeCloseTo(normal, 5);
   });
 
   it("jogs toward prey when exhausted instead of giving up the chase", () => {

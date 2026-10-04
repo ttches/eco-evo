@@ -25,7 +25,7 @@ export type GlorpStat = {
   readonly offspring: number
   /** Heritable trait values, as rolled or inherited at birth. */
   readonly traits: Readonly<TraitLevels>
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /** Mutation bitmask as rolled or inherited at birth, or gained by predation. */
   readonly mutations: number
 }
 
@@ -63,7 +63,7 @@ export type TraitExtreme = {
   readonly type: GlorpType
   readonly alive: boolean
   readonly value: number
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /** Mutation bitmask as rolled or inherited at birth, or gained by predation. */
   readonly mutations: number
 }
 

@@ -30,7 +30,7 @@ export const spawnGlorp = (
   world.fed[index] = fed
   world.wanderSeed[index] = world.random.unit()
   rollTraits(world, index)
-  world.mutations[index] = rollSpawnMutations(world.random)
+  world.mutations[index] = rollSpawnMutations(world.random, type)
   world.stamina[index] = traitValue('endurance', world.endurance[index])
   recordBirth(world, index)
   return index

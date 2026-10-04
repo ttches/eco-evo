@@ -39,7 +39,10 @@ export type LineageLog = {
   killer: Int32Array
   /** Trait levels as rolled or inherited at birth. */
   traits: Record<TraitKey, Float32Array>
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /**
+   * Mutation bitmask as rolled or inherited at birth, then updated in place if
+   * the glorp later gains one by eating mutated prey; see `@/sim/mutations`.
+   */
   mutations: Uint32Array
   /** User-given names, sparse because most glorps are never named. */
   readonly names: Map<number, string>
@@ -57,7 +60,10 @@ export type LineageRecord = {
   readonly deathCause: DeathCause
   readonly killer: number
   readonly traits: Readonly<TraitLevels>
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /**
+   * Mutation bitmask as rolled or inherited at birth, then updated in place if
+   * the glorp later gains one by eating mutated prey; see `@/sim/mutations`.
+   */
   readonly mutations: number
   /** User-given name, or null if never named. */
   readonly name: string | null
@@ -167,6 +173,18 @@ export const recordDeath = (
   log.diedAt[id] = world.time
   log.deathCause[id] = cause
   log.killer[id] = killer === NO_GLORP ? NO_GLORP : world.id[killer]
+}
+
+/**
+ * Update a glorp's logged mutation mask after birth, e.g. when a hunter takes on
+ * a meal's mutation. Keeps the lineage log in step with the live world.
+ */
+export const recordMutationGain = (
+  world: World,
+  index: number,
+  mask: number,
+): void => {
+  world.lineage.mutations[world.id[index]] = mask
 }
 
 /** Name a glorp, alive or dead. A blank name clears it. */

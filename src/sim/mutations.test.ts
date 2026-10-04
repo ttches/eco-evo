@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
+  HUNTER_MUTATION_TRANSFER_CHANCE,
+  MAX_MUTATIONS,
   METABOLISM,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
@@ -17,9 +19,12 @@ import {
   mutationDrainMultiplier,
   mutationKeys,
   mutationSpeedFactor,
+  mutationWalkFactor,
   rollBirthMutations,
+  rollEatenMutation,
   rollSpawnMutations,
 } from '@/sim/mutations'
+import { huntPrey } from '@/sim/predation'
 import { applyReproduction } from '@/sim/reproduction'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { TRAIT_MIN } from '@/sim/traits'
@@ -28,6 +33,7 @@ import { computeSteering } from '@/sim/behavior'
 import { createWorld, step } from '@/sim/world'
 
 const COLD = MUTATIONS.coldBlooded.bit
+const STOAT = MUTATIONS.stoat.bit
 
 describe('mutation registry', () => {
   it('gives every mutation a unique power-of-two bit', () => {
@@ -53,26 +59,37 @@ describe('inheritMutations', () => {
     const samples = 20000
     let inherited = 0
     for (let i = 0; i < samples; i += 1) {
-      if (inheritMutations(random, [COLD]) !== 0) inherited += 1
+      if (inheritMutations(random, [COLD], GLORP_TYPE.hunter) !== 0) inherited += 1
     }
     expect(inherited / samples).toBeGreaterThan(MUTATION_INHERIT_CHANCE - 0.02)
     expect(inherited / samples).toBeLessThan(MUTATION_INHERIT_CHANCE + 0.02)
   })
 
-  it('rolls once for a mutation both parents carry, not once per parent', () => {
+  it('rolls the mother first, then the father only if the mother failed', () => {
     const random = new XorShift32(4321)
     const samples = 20000
     let inherited = 0
     for (let i = 0; i < samples; i += 1) {
-      if (inheritMutations(random, [COLD, COLD]) !== 0) inherited += 1
+      if (inheritMutations(random, [COLD, COLD], GLORP_TYPE.hunter) !== 0) {
+        inherited += 1
+      }
     }
-    expect(inherited / samples).toBeLessThan(MUTATION_INHERIT_CHANCE + 0.02)
+    const either = 1 - (1 - MUTATION_INHERIT_CHANCE) ** 2
+    expect(inherited / samples).toBeGreaterThan(either - 0.02)
+    expect(inherited / samples).toBeLessThan(either + 0.02)
+  })
+
+  it('never inherits a mutation exclusive to another type', () => {
+    const random = new XorShift32(77)
+    for (let i = 0; i < 5000; i += 1) {
+      expect(inheritMutations(random, [STOAT], GLORP_TYPE.prey)).toBe(0)
+    }
   })
 
   it('never inherits a mutation no parent carries', () => {
     const random = new XorShift32(7)
     for (let i = 0; i < 5000; i += 1) {
-      expect(inheritMutations(random, [0, 0])).toBe(0)
+      expect(inheritMutations(random, [0, 0], GLORP_TYPE.prey)).toBe(0)
     }
   })
 })
@@ -83,7 +100,7 @@ describe('rollBirthMutations', () => {
     const samples = 100000
     let mutated = 0
     for (let i = 0; i < samples; i += 1) {
-      if (rollBirthMutations(random, [0, 0]) !== 0) mutated += 1
+      if (rollBirthMutations(random, [0, 0], GLORP_TYPE.prey) !== 0) mutated += 1
     }
     expect(mutated / samples).toBeGreaterThan(MUTATION_BIRTH_CHANCE - 0.005)
     expect(mutated / samples).toBeLessThan(MUTATION_BIRTH_CHANCE + 0.005)
@@ -92,7 +109,7 @@ describe('rollBirthMutations', () => {
   it('stays within the known mutation mask', () => {
     const random = new XorShift32(99)
     for (let i = 0; i < 20000; i += 1) {
-      const mask = rollBirthMutations(random, [COLD])
+      const mask = rollBirthMutations(random, [COLD], GLORP_TYPE.prey)
       expect(mask & ~MUTATION_MASK_ALL).toBe(0)
       expect(countMutations(mask)).toBeLessThanOrEqual(MUTATION_KEYS.length)
     }
@@ -101,7 +118,9 @@ describe('rollBirthMutations', () => {
   it('is deterministic for a given seed', () => {
     const masks = (seed: number): number[] => {
       const random = new XorShift32(seed)
-      return Array.from({ length: 50 }, () => rollBirthMutations(random, [COLD]))
+      return Array.from({ length: 50 }, () =>
+        rollBirthMutations(random, [COLD], GLORP_TYPE.hunter),
+      )
     }
     expect(masks(2024)).toEqual(masks(2024))
   })
@@ -111,10 +130,48 @@ describe('rollBirthMutations', () => {
     const samples = 100000
     let mutated = 0
     for (let i = 0; i < samples; i += 1) {
-      if (rollSpawnMutations(random) !== 0) mutated += 1
+      if (rollSpawnMutations(random, GLORP_TYPE.prey) !== 0) mutated += 1
     }
     expect(mutated / samples).toBeGreaterThan(MUTATION_BIRTH_CHANCE - 0.005)
     expect(mutated / samples).toBeLessThan(MUTATION_BIRTH_CHANCE + 0.005)
+  })
+})
+
+describe('rollEatenMutation', () => {
+  it('does nothing when the hunter already holds a mutation', () => {
+    const random = new XorShift32(1)
+    for (let i = 0; i < 1000; i += 1) {
+      expect(rollEatenMutation(random, COLD, COLD, GLORP_TYPE.hunter)).toBe(COLD)
+    }
+  })
+
+  it('does nothing when the prey has no mutation', () => {
+    const random = new XorShift32(2)
+    for (let i = 0; i < 1000; i += 1) {
+      expect(rollEatenMutation(random, 0, 0, GLORP_TYPE.hunter)).toBe(0)
+    }
+  })
+
+  it('transfers a prey mutation near HUNTER_MUTATION_TRANSFER_CHANCE', () => {
+    const random = new XorShift32(3)
+    const samples = 100000
+    let gained = 0
+    for (let i = 0; i < samples; i += 1) {
+      if (rollEatenMutation(random, 0, COLD, GLORP_TYPE.hunter) !== 0) gained += 1
+    }
+    expect(gained / samples).toBeGreaterThan(HUNTER_MUTATION_TRANSFER_CHANCE - 0.005)
+    expect(gained / samples).toBeLessThan(HUNTER_MUTATION_TRANSFER_CHANCE + 0.005)
+  })
+
+  it('falls back to an allowed mutation when the meal mutation is exclusive', () => {
+    // Forward-looking: no prey-exclusive mutation exists yet, so pair a
+    // prey-type eater with a hunter-exclusive meal to exercise the reroll.
+    const random = new XorShift32(4)
+    for (let i = 0; i < 5000; i += 1) {
+      const gained = rollEatenMutation(random, 0, STOAT, GLORP_TYPE.prey)
+      expect(gained & STOAT).toBe(0)
+      expect(gained & ~COLD).toBe(0)
+    }
   })
 })
 
@@ -123,7 +180,14 @@ describe('mutation effects', () => {
     expect(mutationDrainMultiplier(COLD)).toBe(0.5)
     expect(mutationDrainMultiplier(0)).toBe(1)
     expect(mutationSpeedFactor(COLD)).toBe(0.7)
+    expect(mutationSpeedFactor(STOAT)).toBe(2)
     expect(mutationSpeedFactor(0)).toBe(1)
+  })
+
+  it('only raw-speed mutations change flat walking', () => {
+    expect(mutationWalkFactor(STOAT)).toBe(2)
+    expect(mutationWalkFactor(COLD)).toBe(1)
+    expect(mutationWalkFactor(0)).toBe(1)
   })
 })
 
@@ -191,6 +255,35 @@ describe('cold blooded in the simulation', () => {
   })
 })
 
+describe('mutation transfer in the simulation', () => {
+  it('logs a mutation a hunter gains by eating mutated prey', () => {
+    let transferred = false
+    for (let seed = 1; seed <= 400 && !transferred; seed += 1) {
+      const world = createWorld(2, seed)
+      world.mutations.fill(0)
+      world.type[0] = GLORP_TYPE.hunter
+      world.type[1] = GLORP_TYPE.prey
+      world.x[0] = 100
+      world.y[0] = 100
+      world.x[1] = 110
+      world.y[1] = 100
+      world.fed[0] = 50
+      world.fed[1] = 50
+      world.agility[0] = 4
+      world.agility[1] = 4
+      world.mutations[1] = COLD
+
+      huntPrey(world, 2 * world.radius)
+
+      if (world.mutations[0] === COLD) {
+        transferred = true
+        expect(world.lineage.mutations[world.id[0]]).toBe(COLD)
+      }
+    }
+    expect(transferred).toBe(true)
+  })
+})
+
 describe('mutations over a running world', () => {
   it('keeps every live and logged mask within the known bits', () => {
     const world = createWorld(200, 42)
@@ -198,7 +291,7 @@ describe('mutations over a running world', () => {
 
     for (let index = 0; index < world.count; index += 1) {
       expect(world.mutations[index] & ~MUTATION_MASK_ALL).toBe(0)
-      expect(countMutations(world.mutations[index])).toBeLessThanOrEqual(7)
+      expect(countMutations(world.mutations[index])).toBeLessThanOrEqual(MAX_MUTATIONS)
     }
     for (let id = 0; id < world.lineage.size; id += 1) {
       expect(world.lineage.mutations[id] & ~MUTATION_MASK_ALL).toBe(0)

@@ -14,7 +14,7 @@ import {
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
-import { mutationSpeedFactor } from '@/sim/mutations'
+import { mutationSpeedFactor, mutationWalkFactor } from '@/sim/mutations'
 import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
@@ -39,6 +39,10 @@ export type Drive = (
 ) => Steering | null
 
 const WALK = WALK_SPEED * MOVEMENT.walkFactor
+
+/** Flat walk speed, scaled by raw-speed mutations such as stoat. */
+const walkSpeed = (world: World, index: number): number =>
+  WALK * mutationWalkFactor(world.mutations[index])
 
 /**
  * Jog fraction per `endurance` level, precomputed so the pursuit hot path is a
@@ -170,7 +174,7 @@ const seekGrass: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
   const tile = nearestGrassTile(world.grass, world.x[index], world.y[index])
   if (!tile) return null
-  return steerToward(world, index, tile.x, tile.y, WALK, false, dt)
+  return steerToward(world, index, tile.x, tile.y, walkSpeed(world, index), false, dt)
 }
 
 /** Well-fed, off-cooldown hunters walk toward the nearest eligible mate. */
@@ -191,7 +195,7 @@ const seekMate: Drive = (world, index, dt) => {
     index,
     world.x[mate],
     world.y[mate],
-    WALK,
+    walkSpeed(world, index),
     false,
     dt,
   )
@@ -209,7 +213,7 @@ const decideSteering = (world: World, index: number, dt: number): Steering => {
     const steering = drive(world, index, dt)
     if (steering) return steering
   }
-  return steerWander(world, index, WALK, dt)
+  return steerWander(world, index, walkSpeed(world, index), dt)
 }
 
 /** Slow a pregnant glorp down (and optionally stop it sprinting). */

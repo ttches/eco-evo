@@ -1,10 +1,13 @@
 import type { XorShift32 } from '@/engine/math'
 import {
   COLD_BLOODED,
+  HUNTER_MUTATION_TRANSFER_CHANCE,
   MAX_MUTATIONS,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
+  STOAT,
 } from '@/sim/config'
+import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 
 /**
  * Every rogue-like mutation a glorp can hold, one bit each in a `mutations`
@@ -12,6 +15,9 @@ import {
  * and inherited from parents, and each folds its own modifiers into the systems
  * it touches (hunger, speed, later behavior). Adding an entry here is enough for
  * it to be inheritable and rollable; only its effect sites need to read it.
+ *
+ * `exclusive` locks a mutation to one glorp type (`null` means both). A type
+ * can never roll, inherit, or gain an exclusive mutation of the other type.
  */
 export const MUTATIONS = {
   coldBlooded: {
@@ -22,10 +28,19 @@ export const MUTATIONS = {
     )}% slower; speed trait ${Math.round(
       (1 - COLD_BLOODED.speedEffectiveness) * 100,
     )}% less effective.`,
+    exclusive: null,
     /** Multiplier on hunger drain. */
     hungerDrain: COLD_BLOODED.hungerDrain,
     /** Multiplier on the mechanical value of the `speed` trait. */
     speedEffectiveness: COLD_BLOODED.speedEffectiveness,
+  },
+  stoat: {
+    bit: 1 << 1,
+    name: 'Stoat',
+    description: `Moves ${STOAT.speedMultiplier}x as fast. Predators only.`,
+    exclusive: GLORP_TYPE.hunter,
+    /** Multiplier on every movement speed the glorp uses. */
+    speedMultiplier: STOAT.speedMultiplier,
   },
 } as const
 
@@ -56,54 +71,106 @@ export const countMutations = (mask: number): number => {
 export const mutationKeys = (mask: number): MutationKey[] =>
   MUTATION_KEYS.filter((key) => (mask & MUTATIONS[key].bit) !== 0)
 
-/** Add a random not-yet-held mutation, if any remain under the cap. */
-const addRandomMutation = (random: XorShift32, mask: number): number => {
+/** True when a glorp of `type` may hold this mutation. */
+export const mutationAllowedForType = (
+  key: MutationKey,
+  type: GlorpType,
+): boolean =>
+  MUTATIONS[key].exclusive === null || MUTATIONS[key].exclusive === type
+
+/** First mutation key a mask carries, in registry order, or null if none. */
+const firstMutationKey = (mask: number): MutationKey | null => {
+  for (const key of MUTATION_KEYS) {
+    if ((mask & MUTATIONS[key].bit) !== 0) return key
+  }
+  return null
+}
+
+/** Add a random not-yet-held mutation of an allowed type, if any remain. */
+const addRandomMutation = (
+  random: XorShift32,
+  mask: number,
+  type: GlorpType,
+): number => {
   if (countMutations(mask) >= MAX_MUTATIONS) return mask
-  const missing = MUTATION_BITS.filter((bit) => (mask & bit) === 0)
+  const missing = MUTATION_BITS.filter(
+    (bit, index) =>
+      (mask & bit) === 0 && mutationAllowedForType(MUTATION_KEYS[index], type),
+  )
   if (missing.length === 0) return mask
   return mask | missing[Math.floor(random.unit() * missing.length)]
 }
 
 /**
- * Inherit from parent masks: every mutation any parent carries is copied
- * independently with `MUTATION_INHERIT_CHANCE`, up to `MAX_MUTATIONS`. The
- * distinct-union rule means a mutation both parents carry is still one 25% roll,
- * not two.
+ * Inherit from parents in order (mother first). Each parent's carried mutation
+ * is rolled independently with `MUTATION_INHERIT_CHANCE`, so a mutation both
+ * parents carry gets a mother roll and, only if that fails, a father roll.
+ * Picking stops as soon as `MAX_MUTATIONS` is reached.
  */
 export const inheritMutations = (
   random: XorShift32,
   parentMasks: readonly number[],
+  type: GlorpType,
 ): number => {
   let mask = 0
-  let count = 0
-  for (const bit of MUTATION_BITS) {
-    if (count >= MAX_MUTATIONS) break
-    const carried = parentMasks.some((parent) => (parent & bit) !== 0)
-    if (carried && random.unit() < MUTATION_INHERIT_CHANCE) {
-      mask |= bit
-      count += 1
+  for (const parent of parentMasks) {
+    for (const key of MUTATION_KEYS) {
+      if ((parent & MUTATIONS[key].bit) === 0) continue
+      if (!mutationAllowedForType(key, type)) continue
+      if (random.unit() < MUTATION_INHERIT_CHANCE) {
+        mask |= MUTATIONS[key].bit
+        if (countMutations(mask) >= MAX_MUTATIONS) return mask
+      }
     }
   }
   return mask
 }
 
 /**
- * Roll a newborn's mutations from its parents' masks, then apply the
- * `MUTATION_BIRTH_CHANCE` roll for a brand-new mutation. The result is capped
- * at `MAX_MUTATIONS`.
+ * Roll a newborn's mutations from its parents' masks, then, when nothing was
+ * inherited, apply the `MUTATION_BIRTH_CHANCE` roll for a brand-new mutation.
  */
 export const rollBirthMutations = (
   random: XorShift32,
   parentMasks: readonly number[],
+  type: GlorpType,
 ): number => {
-  let mask = inheritMutations(random, parentMasks)
-  if (random.unit() < MUTATION_BIRTH_CHANCE) mask = addRandomMutation(random, mask)
-  return mask
+  const mask = inheritMutations(random, parentMasks, type)
+  if (mask !== 0) return mask
+  return random.unit() < MUTATION_BIRTH_CHANCE
+    ? addRandomMutation(random, 0, type)
+    : 0
 }
 
 /** Roll a parentless glorp's mutations: only the spontaneous birth roll. */
-export const rollSpawnMutations = (random: XorShift32): number =>
-  random.unit() < MUTATION_BIRTH_CHANCE ? addRandomMutation(random, 0) : 0
+export const rollSpawnMutations = (
+  random: XorShift32,
+  type: GlorpType,
+): number =>
+  random.unit() < MUTATION_BIRTH_CHANCE
+    ? addRandomMutation(random, 0, type)
+    : 0
+
+/**
+ * Roll a hunter's chance to take on a meal's mutation. A hunter with a mutation
+ * already never rolls; nor does one eating an unmutated prey. On a success the
+ * prey's mutation is copied when the hunter can hold it, otherwise (the prey's
+ * mutation is exclusive to prey) the hunter rolls a random allowed mutation.
+ */
+export const rollEatenMutation = (
+  random: XorShift32,
+  hunterMask: number,
+  preyMask: number,
+  hunterType: GlorpType,
+): number => {
+  if (hunterMask !== 0 || preyMask === 0) return hunterMask
+  if (random.unit() >= HUNTER_MUTATION_TRANSFER_CHANCE) return hunterMask
+  const preyKey = firstMutationKey(preyMask)
+  if (preyKey !== null && mutationAllowedForType(preyKey, hunterType)) {
+    return MUTATIONS[preyKey].bit
+  }
+  return addRandomMutation(random, 0, hunterType)
+}
 
 /** Multiplier a mask applies to hunger drain. */
 export const mutationDrainMultiplier = (mask: number): number =>
@@ -112,7 +179,21 @@ export const mutationDrainMultiplier = (mask: number): number =>
     : 1
 
 /** Multiplier a mask applies to the mechanical value of the `speed` trait. */
-export const mutationSpeedFactor = (mask: number): number =>
-  hasMutation(mask, MUTATIONS.coldBlooded.bit)
-    ? MUTATIONS.coldBlooded.speedEffectiveness
-    : 1
+export const mutationSpeedFactor = (mask: number): number => {
+  let factor = 1
+  if (hasMutation(mask, MUTATIONS.coldBlooded.bit)) {
+    factor *= MUTATIONS.coldBlooded.speedEffectiveness
+  }
+  if (hasMutation(mask, MUTATIONS.stoat.bit)) {
+    factor *= MUTATIONS.stoat.speedMultiplier
+  }
+  return factor
+}
+
+/**
+ * Multiplier a mask applies to flat movement (walk, wander, mate-seeking).
+ * Only mutations that promise raw speed belong here; ones that reshape the
+ * `speed` trait (cold blooded) leave walking untouched.
+ */
+export const mutationWalkFactor = (mask: number): number =>
+  hasMutation(mask, MUTATIONS.stoat.bit) ? MUTATIONS.stoat.speedMultiplier : 1

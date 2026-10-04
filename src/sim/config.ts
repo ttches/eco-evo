@@ -36,7 +36,7 @@ export const MATED_OFFSPRING_FED_MAX = 100;
 export const FED_MAX = 100;
 
 /** Energy every glorp burns per second at level-0 endurance. */
-export const METABOLISM = 2.75;
+export const METABOLISM = 2.85;
 
 export const ENDURANCE = {
   /**
@@ -115,16 +115,22 @@ export const CLONE_TRAIT_DRIFT_CHANCE = 0.25;
 export const MATED_TRAIT_DRIFT_CHANCE = 0.5;
 
 /**
- * Chance a newborn rolls a brand-new mutation, on top of any it inherits. Rolled
- * once per birth; at `MAX_MUTATIONS` no more are added.
+ * Chance a newborn rolls a brand-new mutation when it inherited none. A glorp
+ * never holds more than `MAX_MUTATIONS`.
  */
 export const MUTATION_BIRTH_CHANCE = 0.01;
 
-/** Chance each distinct mutation a parent carries is inherited by a child. */
+/** Chance each parent's carried mutation is inherited by a child, in parent order. */
 export const MUTATION_INHERIT_CHANCE = 0.25;
 
 /** Most mutations a single glorp can hold; further rolls are discarded. */
-export const MAX_MUTATIONS = 7;
+export const MAX_MUTATIONS = 1;
+
+/**
+ * Chance an unmutated hunter that eats a prey takes on that prey's mutation (or,
+ * when the prey's mutation is exclusive to prey, a random mutation of its own).
+ */
+export const HUNTER_MUTATION_TRANSFER_CHANCE = 0.02;
 
 /**
  * Cold blooded mutation effect levers. Kept here (not in the registry) so the
@@ -135,6 +141,15 @@ export const COLD_BLOODED = {
   hungerDrain: 0.5,
   /** Multiplier on the mechanical value of the `speed` trait. */
   speedEffectiveness: 0.7,
+} as const;
+
+/**
+ * Stoat mutation effect levers. Kept here so the headless simulator can sweep
+ * them with `--set STOAT.speedMultiplier=...`.
+ */
+export const STOAT = {
+  /** Multiplier on every movement speed the glorp uses. */
+  speedMultiplier: 2,
 } as const;
 
 export const MOVEMENT = {

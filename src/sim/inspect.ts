@@ -21,7 +21,7 @@ export type GlorpRef = {
   readonly generation: number
   /** Seconds lived so far, or total lifespan once dead. */
   readonly timeAlive: number
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /** Mutation bitmask as rolled or inherited at birth, or gained by predation. */
   readonly mutations: number
 }
 
@@ -56,7 +56,7 @@ export type GlorpView = {
   readonly parents: readonly GlorpRef[]
   readonly children: readonly GlorpRef[]
   readonly traits: Readonly<TraitLevels>
-  /** Mutation bitmask as rolled or inherited at birth; see `@/sim/mutations`. */
+  /** Mutation bitmask as rolled or inherited at birth, or gained by predation. */
   readonly mutations: number
   readonly live: GlorpLiveState | null
 }

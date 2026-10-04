@@ -9,9 +9,11 @@ import { MAX_MUTATIONS, TRAIT_BUDGET } from '@/sim/config'
 import {
   MUTATION_MASK_ALL,
   countMutations,
+  mutationAllowedForType,
+  mutationKeys,
 } from '@/sim/mutations'
 import { TRAIT_KEYS, TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
-import { GLORP_TYPE } from '@/sim/types'
+import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { World } from '@/sim/world'
 
 export type IntegrityReport = {
@@ -57,6 +59,12 @@ export const checkIntegrity = (world: World): IntegrityReport => {
     check(
       countMutations(mutations) <= MAX_MUTATIONS,
       () => `glorp ${id} holds more than ${MAX_MUTATIONS} mutations`,
+    )
+    check(
+      mutationKeys(mutations).every((key) =>
+        mutationAllowedForType(key, log.type[id] as GlorpType),
+      ),
+      () => `glorp ${id} holds a mutation exclusive to another type`,
     )
 
     for (const parent of [log.parentA[id], log.parentB[id]]) {

@@ -47,9 +47,24 @@ const ColdBloodedIcon = () => (
   </svg>
 )
 
+/** Single lightning bolt, reading as "fast", for the stoat mutation. */
+const StoatIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+  </svg>
+)
+
 /** Icon for each mutation, in registry order. Every mutation must have an entry. */
 const MUTATION_ICONS = {
   coldBlooded: <ColdBloodedIcon />,
+  stoat: <StoatIcon />,
 } satisfies Record<MutationKey, ReactNode>
 
 /** The mutations a glorp holds, as a row of icons with hover descriptions. */
