@@ -16,6 +16,7 @@ const makeWorld = (): RenderableWorld =>
     fed: new Float32Array(1),
     pregnant: new Float32Array(1),
     dodgeTimer: new Float32Array(1),
+    mutations: new Uint32Array(1),
     grass: {} as never,
   }) as RenderableWorld
 

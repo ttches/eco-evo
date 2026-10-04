@@ -1,4 +1,6 @@
 import { clamp } from '@/engine/math'
+import { DETAIL_MIN_ZOOM } from '@/render/lod'
+import { GLORP_RADIUS } from '@/sim/config'
 
 /**
  * Pure tuning for the detailed glorp, kept free of Three.js so the sizing math
@@ -18,6 +20,30 @@ export const GLORP_OUTLINE_SHADE = 0.2
  * stays inside `1 + GLORP_BLOB_AMPLITUDE`.
  */
 export const GLORP_BLOB_AMPLITUDE = 0.12
+
+/**
+ * The blob silhouette, shared by the production detail shader and the lab's
+ * holo shader so both agree on exactly where a glorp's edge is. `vLocal` is the
+ * unit-disc position and `pixel` the render-pixel size in local units.
+ */
+export const GLORP_SILHOUETTE_GLSL = /* glsl */ `
+  // Snap a local point to the render-pixel grid so the silhouette reads as
+  // pixel art.
+  vec2 glorpSnap(vec2 local, float pixel) {
+    return floor(local / pixel + 0.5) * pixel;
+  }
+
+  // Two harmonics give each glorp a stable, slightly lumpy outline. seed is
+  // the glorp's phase and amplitude its maximum stray from a circle.
+  float glorpBoundary(vec2 p, float seed, float amplitude) {
+    float angle = atan(p.y, p.x);
+    float wobble = amplitude * (
+      sin(angle * 3.0 + seed) * 0.6 +
+      sin(angle * 5.0 - seed * 1.3) * 0.4
+    );
+    return 1.0 + wobble;
+  }
+`
 
 /** Local units per render pixel for a glorp of `radius` at `zoom`. */
 export const pixelSize = (radius: number, zoom: number): number => {
@@ -39,3 +65,21 @@ export const outlineWidth = (
   if (screenRadius <= 0) return 0
   return clamp(pixels / screenRadius, 0, 1)
 }
+
+/** Segments in the coverage disc; enough that it never clips the silhouette. */
+export const GLORP_BLOB_SEGMENTS = 32
+
+/** Furthest a sample can sit from the pixel it snaps to, in render pixels. */
+export const GLORP_SNAP_OVERSHOOT = Math.SQRT1_2
+
+/**
+ * Radius of the coverage disc the detail shader draws into: it must reach past
+ * the lumpiest, pixel-snapped silhouette or it would clip it. The snap is worst
+ * at the lowest detail zoom, so size the margin from there and account for the
+ * polygon's inscribed radius.
+ */
+export const glorpShapeRadius = (radius = GLORP_RADIUS): number =>
+  (1 +
+    GLORP_BLOB_AMPLITUDE +
+    GLORP_SNAP_OVERSHOOT * pixelSize(radius, DETAIL_MIN_ZOOM)) /
+  Math.cos(Math.PI / GLORP_BLOB_SEGMENTS)

@@ -17,5 +17,7 @@ export type RenderableWorld = {
   readonly pregnant: Float32Array
   /** Dodge-dart seconds remaining; 0 when not dodging. */
   readonly dodgeTimer: Float32Array
+  /** Bitmask of rogue-like mutations held; 0 when none. */
+  readonly mutations: Uint32Array
   readonly grass: GrassField
 }

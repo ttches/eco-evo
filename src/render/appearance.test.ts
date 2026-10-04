@@ -31,6 +31,7 @@ describe('writeGlorpColor', () => {
       fed: Float32Array.of(50),
       pregnant: Float32Array.of(0),
       dodgeTimer: Float32Array.of(dodgeTimer),
+      mutations: new Uint32Array(1),
       grass: {} as never,
     }) as RenderableWorld
 

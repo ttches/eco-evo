@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
+import { GLORP_HOLO_STILL_TIME } from '@/render/glorp-holo'
 import { GlorpLayer } from '@/render/glorp-layer'
 import { GrassLayer } from '@/render/grass-layer'
 import { GroundPass } from '@/render/ground'
@@ -19,6 +20,11 @@ export class Renderer {
   private readonly glorpDetail = new GlorpDetailLayer()
   private readonly hearts = new HeartLayer()
   private readonly selection = new SelectionRing()
+  /** Wall clock for the animated sheen, so it keeps moving between sim steps. */
+  private readonly startedAt = performance.now()
+  private readonly reducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   public constructor(canvas: HTMLCanvasElement, viewport: Viewport) {
     THREE.ColorManagement.enabled = false
@@ -64,8 +70,11 @@ export class Renderer {
     this.camera.updateProjectionMatrix()
 
     this.grass.update(world)
+    const time = this.reducedMotion
+      ? GLORP_HOLO_STILL_TIME
+      : (performance.now() - this.startedAt) / 1000
     this.glorps.update(world, bounds, camera.zoom)
-    this.glorpDetail.update(world, bounds, camera.zoom)
+    this.glorpDetail.update(world, bounds, camera.zoom, time)
     this.hearts.update(world, bounds, camera.zoom)
     this.selection.update(world, selectedIndex)
 

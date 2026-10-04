@@ -5,44 +5,57 @@ import { TAU, hashUnit } from '@/engine/math'
 import { writeGlorpColor } from '@/render/appearance'
 import {
   GLORP_BLOB_AMPLITUDE,
+  GLORP_BLOB_SEGMENTS,
   GLORP_OUTLINE_SHADE,
+  GLORP_SILHOUETTE_GLSL,
+  glorpShapeRadius,
   outlineWidth,
   pixelSize,
 } from '@/render/glorp-detail'
+import {
+  GLORP_HOLO_SPEED,
+  GLORP_HOLO_STRENGTH,
+  glorpHoloIndex,
+  holoForType,
+} from '@/render/glorp-holo'
+import { GLORP_HOLO_GLSL } from '@/render/glorp-holo-shader'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
-import { GLORP_RADIUS, MAX_GLORPS } from '@/sim/config'
+import { MAX_GLORPS } from '@/sim/config'
+import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
-/** Segments in the coverage disc; enough that it never clips the silhouette. */
-const BLOB_SEGMENTS = 32
+/** Coverage disc sized once from the worst-case snap at the detail threshold. */
+const SHAPE_RADIUS = glorpShapeRadius()
 
-/** Furthest a sample can sit from the pixel it snaps to, in render pixels. */
-const SNAP_OVERSHOOT = Math.SQRT1_2
+/** Chooses the sheen branch for the mutated glorp at `index`. */
+export type GlorpHoloPicker = (world: RenderableWorld, index: number) => number
 
-/**
- * The coverage disc must reach past the lumpiest, pixel-snapped silhouette or
- * it would clip it. The snap is worst at the lowest detail zoom, so size the
- * margin from there and account for the polygon's inscribed radius.
- */
-const SHAPE_RADIUS =
-  (1 +
-    GLORP_BLOB_AMPLITUDE +
-    SNAP_OVERSHOOT * pixelSize(GLORP_RADIUS, DETAIL_MIN_ZOOM)) /
-  Math.cos(Math.PI / BLOB_SEGMENTS)
+const typeOf = (world: RenderableWorld, index: number): GlorpType =>
+  world.type[index] === GLORP_TYPE.hunter ? GLORP_TYPE.hunter : GLORP_TYPE.prey
+
+/** The game look: prey shimmer green, hunters shimmer orange. */
+const holoByType: GlorpHoloPicker = (world, index) =>
+  glorpHoloIndex(holoForType(typeOf(world, index)))
 
 const vertexShader = /* glsl */ `
   attribute vec3 aColor;
   attribute float aSeed;
+  attribute float aMutated;
+  attribute float aHolo;
 
   varying vec2 vLocal;
   varying vec3 vColor;
   varying float vSeed;
+  varying float vMutated;
+  varying float vHolo;
 
   void main() {
     // The unit disc, so the fragment stage can shade by distance from center.
     vLocal = position.xy;
     vColor = aColor;
     vSeed = aSeed;
+    vMutated = aMutated;
+    vHolo = aHolo;
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
   }
 `
@@ -51,57 +64,80 @@ const fragmentShader = /* glsl */ `
   varying vec2 vLocal;
   varying vec3 vColor;
   varying float vSeed;
+  varying float vMutated;
+  varying float vHolo;
 
   uniform float uOutlineWidth;
   uniform float uOutlineShade;
   uniform float uPixel;
   uniform float uBlobAmp;
+  uniform float uTime;
+  uniform float uSpeed;
+  uniform float uStrength;
+
+  ${GLORP_SILHOUETTE_GLSL}
+  ${GLORP_HOLO_GLSL}
 
   void main() {
     // Snap the silhouette to the render-pixel grid (in the glorp's own frame)
     // so it reads as pixel art.
-    vec2 p = floor(vLocal / uPixel + 0.5) * uPixel;
+    vec2 p = glorpSnap(vLocal, uPixel);
     float r = length(p);
-    float angle = atan(p.y, p.x);
-
-    // Two harmonics give each glorp a stable, slightly lumpy outline.
-    float wobble = uBlobAmp * (
-      sin(angle * 3.0 + vSeed) * 0.6 +
-      sin(angle * 5.0 - vSeed * 1.3) * 0.4
-    );
-    float boundary = 1.0 + wobble;
+    float boundary = glorpBoundary(p, vSeed, uBlobAmp);
     if (r > boundary) discard;
 
+    vec3 body = vColor;
+    if (vMutated > 0.5) {
+      body = glorpHolo(vColor, p, boundary, r, vHolo, vSeed, uTime * uSpeed, uStrength);
+    }
+
     vec3 outline = vColor * uOutlineShade;
-    gl_FragColor = vec4(r > boundary - uOutlineWidth ? outline : vColor, 1.0);
+    gl_FragColor = vec4(r > boundary - uOutlineWidth ? outline : body, 1.0);
   }
 `
 
 /**
  * Outlined, blobby glorps drawn only when zoomed in enough to read the detail.
  * Below `DETAIL_MIN_ZOOM` the layer draws nothing and `GlorpLayer`'s flat disc
- * takes over, so the zoomed-out look is unchanged.
+ * takes over, so the zoomed-out look is unchanged. Mutated glorps additionally
+ * wear a `glorpHolo` sheen; `pickHolo` selects which, so the lab can override
+ * the type-based production mapping.
  */
 export class GlorpDetailLayer {
   public readonly mesh: THREE.InstancedMesh
   private readonly geometry: THREE.CircleGeometry
   private readonly material: THREE.ShaderMaterial
+  private readonly pickHolo: GlorpHoloPicker
   private readonly colors = new Float32Array(MAX_GLORPS * 3)
   private readonly seeds = new Float32Array(MAX_GLORPS)
+  private readonly mutated = new Float32Array(MAX_GLORPS)
+  private readonly holos = new Float32Array(MAX_GLORPS)
   private readonly colorAttr: THREE.InstancedBufferAttribute
   private readonly seedAttr: THREE.InstancedBufferAttribute
+  private readonly mutatedAttr: THREE.InstancedBufferAttribute
+  private readonly holoAttr: THREE.InstancedBufferAttribute
   private readonly matrix = new THREE.Matrix4()
 
-  public constructor() {
-    this.geometry = new THREE.CircleGeometry(SHAPE_RADIUS, BLOB_SEGMENTS)
+  public constructor(pickHolo: GlorpHoloPicker = holoByType) {
+    this.pickHolo = pickHolo
+    this.geometry = new THREE.CircleGeometry(SHAPE_RADIUS, GLORP_BLOB_SEGMENTS)
 
     this.colorAttr = new THREE.InstancedBufferAttribute(this.colors, 3)
     this.seedAttr = new THREE.InstancedBufferAttribute(this.seeds, 1)
-    for (const attribute of [this.colorAttr, this.seedAttr]) {
+    this.mutatedAttr = new THREE.InstancedBufferAttribute(this.mutated, 1)
+    this.holoAttr = new THREE.InstancedBufferAttribute(this.holos, 1)
+    for (const attribute of [
+      this.colorAttr,
+      this.seedAttr,
+      this.mutatedAttr,
+      this.holoAttr,
+    ]) {
       attribute.setUsage(THREE.DynamicDrawUsage)
     }
     this.geometry.setAttribute('aColor', this.colorAttr)
     this.geometry.setAttribute('aSeed', this.seedAttr)
+    this.geometry.setAttribute('aMutated', this.mutatedAttr)
+    this.geometry.setAttribute('aHolo', this.holoAttr)
 
     this.material = new THREE.ShaderMaterial({
       vertexShader,
@@ -111,6 +147,9 @@ export class GlorpDetailLayer {
         uOutlineShade: { value: GLORP_OUTLINE_SHADE },
         uPixel: { value: 0 },
         uBlobAmp: { value: GLORP_BLOB_AMPLITUDE },
+        uTime: { value: 0 },
+        uSpeed: { value: GLORP_HOLO_SPEED },
+        uStrength: { value: GLORP_HOLO_STRENGTH },
       },
       toneMapped: false,
       side: THREE.DoubleSide,
@@ -134,6 +173,7 @@ export class GlorpDetailLayer {
     world: RenderableWorld,
     bounds: ViewBounds,
     zoom: number,
+    time: number,
   ): void {
     if (zoom < DETAIL_MIN_ZOOM) {
       this.mesh.count = 0
@@ -152,6 +192,7 @@ export class GlorpDetailLayer {
     const margin = radius + CAMERA.cullMargin
     this.material.uniforms.uOutlineWidth.value = outlineWidth(radius, zoom)
     this.material.uniforms.uPixel.value = pixel
+    this.material.uniforms.uTime.value = time
     let visible = 0
 
     for (let index = 0; index < count; index += 1) {
@@ -167,6 +208,8 @@ export class GlorpDetailLayer {
       // Hash the id to a stable phase, so each glorp keeps its own blob shape
       // without large ids losing precision in the float attribute.
       this.seeds[visible] = hashUnit(world.id[index]) * TAU
+      this.mutated[visible] = world.mutations[index] !== 0 ? 1 : 0
+      this.holos[visible] = this.pickHolo(world, index)
       visible += 1
     }
 
@@ -174,6 +217,8 @@ export class GlorpDetailLayer {
     this.mesh.instanceMatrix.needsUpdate = true
     this.colorAttr.needsUpdate = true
     this.seedAttr.needsUpdate = true
+    this.mutatedAttr.needsUpdate = true
+    this.holoAttr.needsUpdate = true
   }
 
   public dispose(): void {

@@ -19,6 +19,77 @@
   font-size: 0.85rem;
 }
 
+.tabs {
+  display: flex;
+  width: fit-content;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border, #27272a);
+  border-radius: 999px;
+  background: var(--surface, #18181b);
+}
+
+.tab {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground, #a1a1aa);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 640;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.tab:hover:not(.active) {
+  color: var(--foreground, #f4f4f5);
+}
+
+.tab.active {
+  background: var(--foreground, #f4f4f5);
+  color: var(--background, #09090b);
+}
+
+.tabNote {
+  max-width: 46rem;
+  margin: 0 0 1.25rem;
+  color: var(--muted-foreground, #a1a1aa);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.worldStage {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+
+.worldLabels {
+  position: relative;
+  flex-shrink: 0;
+  width: 9rem;
+}
+
+.worldLabel {
+  position: absolute;
+  right: 0.75rem;
+  color: var(--muted-foreground, #a1a1aa);
+  font-size: 0.72rem;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  text-align: right;
+  white-space: nowrap;
+  transform: translateY(-50%);
+}
+
+.worldCanvas {
+  display: block;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
 .variant {
   margin-bottom: 1.75rem;
   padding-top: 1rem;

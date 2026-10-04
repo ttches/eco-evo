@@ -55,6 +55,19 @@ balance levers:
 preds and prey use the jog mechanic when critically hungry if not eating / pursuing food
 dead unconsumed glorps create a full patch of grass after short # of seconds
 
-cold blooded:
-hunger depletes 50% slower
-speed trait points 30% less effective
+mutations:
+stoat
+twice as fast.
+exclusive to predators
+
+introduce corpses
+2 seconds existance - in config
+
+scavenger
+can eat corpse of prey for 10hp
+
+Mutation changes
+limit of 1
+new exclusive property
+if pregnant and both parents had mutation: roll for mother's first if failed roll for fathers
+hunter has 2% chance of gaining prey's mutation if it has no mutation itself. If prey had prey only mutation, roll for random mutation

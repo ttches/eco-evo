@@ -1,73 +1,60 @@
-import { GLORP_TYPE } from '@/sim/types'
-import GlorpAvatar from '@/ui/GlorpInspector/GlorpAvatar/GlorpAvatar'
-import {
-  HOLO_LABELS,
-  HOLO_VARIANTS,
-} from '@/ui/GlorpInspector/GlorpAvatar/holo'
+import { useState } from 'react'
+import { GLORP_HOLO_PREVIEW_SCALE } from '@/render/glorp-holo'
+import HoloLabSvg from './HoloLabSvg'
+import HoloLabWorld from './HoloLabWorld'
 import styles from './HoloLab.module.css'
 
-const SIZES = [16, 20, 32, 64, 96]
-
-/** A couple of distinct silhouettes/colors to judge each variant against. */
-const SAMPLES = [
-  { id: 7, type: GLORP_TYPE.prey, fed: 80 },
-  { id: 42, type: GLORP_TYPE.hunter, fed: 100 },
+const TABS = [
+  { id: 'svg', label: 'SVG Avatars' },
+  { id: 'world', label: 'World Shader' },
 ] as const
 
+type TabId = (typeof TABS)[number]['id']
+
 /**
- * Preview gallery for the mutation holographic sheen, reached at `?holo`.
- * Shows every variant at the sizes avatars actually render at, plus a
- * non-mutated control, so the best-looking one can be chosen as `DEFAULT_HOLO`.
+ * Preview gallery for glorp mutation looks, reached at `?holo`. Two tabs: the
+ * SVG avatars the inspector draws, and the WebGL detail shader the world draws
+ * at `.35x`. Compare variants and pick the ones worth wiring in.
  */
-const HoloLab = () => (
-  <main className={styles.lab}>
-    <h1 className={styles.title}>Holo Lab</h1>
-    <p className={styles.note}>
-      Mutated glorp avatars, always animating. Compare variants and sizes.
-    </p>
+const HoloLab = () => {
+  const [tab, setTab] = useState<TabId>('world')
 
-    {HOLO_VARIANTS.map((variant) => (
-      <section key={variant} className={styles.variant}>
-        <h2 className={styles.variantName}>{HOLO_LABELS[variant]}</h2>
-        <div className={styles.row}>
-          {SAMPLES.map((sample) => (
-            <div key={sample.id} className={styles.sample}>
-              {SIZES.map((size) => (
-                <div key={size} className={styles.cell}>
-                  <GlorpAvatar
-                    id={sample.id}
-                    type={sample.type}
-                    alive
-                    fed={sample.fed}
-                    mutated
-                    holo={variant}
-                    size={size}
-                  />
-                  <span className={styles.size}>{size}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </section>
-    ))}
+  return (
+    <main className={styles.lab}>
+      <h1 className={styles.title}>Holo Lab</h1>
+      <p className={styles.note}>
+        Mutated glorp sheens, always animating. Compare variants, then pick one.
+      </p>
 
-    <section className={styles.variant}>
-      <h2 className={styles.variantName}>Control (no mutation)</h2>
-      <div className={styles.row}>
-        {SAMPLES.map((sample) => (
-          <GlorpAvatar
-            key={sample.id}
-            id={sample.id}
-            type={sample.type}
-            alive
-            fed={sample.fed}
-            size={48}
-          />
+      <div className={styles.tabs} role="tablist" aria-label="Holo lab view">
+        {TABS.map((entry) => (
+          <button
+            key={entry.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === entry.id}
+            className={`${styles.tab} ${tab === entry.id ? styles.active : ''}`}
+            onClick={() => setTab(entry.id)}
+          >
+            {entry.label}
+          </button>
         ))}
       </div>
-    </section>
-  </main>
-)
+
+      {tab === 'svg' ? (
+        <HoloLabSvg />
+      ) : (
+        <>
+          <p className={styles.tabNote}>
+            World detail shader at the .35x look, magnified{' '}
+            {GLORP_HOLO_PREVIEW_SCALE}× so the pixels are readable. Each row is
+            one candidate; the left side of each pair is the unmutated control.
+          </p>
+          <HoloLabWorld />
+        </>
+      )}
+    </main>
+  )
+}
 
 export default HoloLab
