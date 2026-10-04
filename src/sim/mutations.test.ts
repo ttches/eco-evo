@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
+  ENDURANCE,
   GESTATION_SECONDS,
   MATE_RANGE,
   MAX_MUTATIONS,
@@ -31,7 +32,7 @@ import {
   applyReproduction,
 } from '@/sim/reproduction'
 import { rebuildSpatialGrid } from '@/sim/spatial'
-import { TRAIT_MIN } from '@/sim/traits'
+import { TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { computeSteering } from '@/sim/behavior'
 import { createWorld, step } from '@/sim/world'
@@ -198,8 +199,10 @@ describe('pregnancy mutation in the simulation', () => {
 })
 
 describe('mutation effects', () => {
-  it('maps cold blooded to its hunger and speed modifiers, and others to 1', () => {
+  it('maps each mutation to its hunger and speed modifiers, and an empty mask to 1', () => {
     expect(mutationDrainMultiplier(COLD)).toBe(0.5)
+    expect(mutationDrainMultiplier(STOAT)).toBe(3)
+    expect(mutationDrainMultiplier(COLD | STOAT)).toBe(1.5)
     expect(mutationDrainMultiplier(0)).toBe(1)
     expect(mutationSpeedFactor(COLD)).toBe(0.7)
     expect(mutationSpeedFactor(STOAT)).toBe(2)
@@ -274,6 +277,23 @@ describe('cold blooded in the simulation', () => {
     const child = readLineage(world.lineage, world.id[1])
     expect(child?.mutations).toBe(world.mutations[1])
     expect(world.mutations[1] & ~MUTATION_MASK_ALL).toBe(0)
+  })
+})
+
+describe('stoat in the simulation', () => {
+  it('drains hunger at triple the endurance-adjusted rate', () => {
+    const world = createWorld(2, 5)
+    world.mutations.fill(0)
+    world.endurance[0] = TRAIT_MAX
+    world.endurance[1] = TRAIT_MAX
+    world.mutations[0] = STOAT
+
+    applyMetabolism(world, 1)
+
+    // The mutation multiplies the drain *after* endurance trims it, so the
+    // stoat glorp burns three times the endurance-adjusted base rate.
+    const base = METABOLISM * ENDURANCE.drainFactorAtMax
+    expect(world.fed[1] - world.fed[0]).toBeCloseTo(base * 2)
   })
 })
 

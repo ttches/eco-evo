@@ -53,8 +53,8 @@ export const METABOLISM = 2.85
 
 export const ENDURANCE = {
   /**
-   * Life-force (hunger) drain multiplier at maximum endurance. `0.7` means a
-   * glorp at `TRAIT_MAX` burns hunger 30% slower than at level 0. Interpolated
+   * Life-force (hunger) drain multiplier at maximum endurance. `0.8` means a
+   * glorp at `TRAIT_MAX` burns hunger 20% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
   drainFactorAtMax: 0.8,
@@ -164,11 +164,16 @@ export const COLD_BLOODED = {
 
 /**
  * Stoat mutation effect levers. Kept here so the headless simulator can sweep
- * them with `--set STOAT.speedMultiplier=...`.
+ * them with `--set STOAT.speedMultiplier=...` or `--set STOAT.hungerDrain=...`.
  */
 export const STOAT = {
   /** Multiplier on every movement speed the glorp uses. */
   speedMultiplier: 2,
+  /**
+   * Multiplier on hunger drain: 3 means it burns three times as fast. Applied
+   * after the `endurance` modifier, mirroring how cold blooded cuts the drain.
+   */
+  hungerDrain: 3,
 } as const
 
 // ---------------------------------------------------------------------------

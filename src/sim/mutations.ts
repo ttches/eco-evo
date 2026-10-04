@@ -36,10 +36,12 @@ export const MUTATIONS = {
   stoat: {
     bit: 1 << 1,
     name: 'Stoat',
-    description: `Moves ${STOAT.speedMultiplier}x as fast. Predators only.`,
+    description: `Moves ${STOAT.speedMultiplier}x as fast but burns hunger ${STOAT.hungerDrain}x as fast. Predators only.`,
     exclusive: GLORP_TYPE.hunter,
     /** Multiplier on every movement speed the glorp uses. */
     speedMultiplier: STOAT.speedMultiplier,
+    /** Multiplier on hunger drain. */
+    hungerDrain: STOAT.hungerDrain,
   },
 } as const
 
@@ -144,10 +146,16 @@ export const rollSpawnMutations = (
   random.unit() < MUTATION_BIRTH_CHANCE ? addRandomMutation(random, 0, type) : 0
 
 /** Multiplier a mask applies to hunger drain. */
-export const mutationDrainMultiplier = (mask: number): number =>
-  hasMutation(mask, MUTATIONS.coldBlooded.bit)
-    ? MUTATIONS.coldBlooded.hungerDrain
-    : 1
+export const mutationDrainMultiplier = (mask: number): number => {
+  let factor = 1
+  if (hasMutation(mask, MUTATIONS.coldBlooded.bit)) {
+    factor *= MUTATIONS.coldBlooded.hungerDrain
+  }
+  if (hasMutation(mask, MUTATIONS.stoat.bit)) {
+    factor *= MUTATIONS.stoat.hungerDrain
+  }
+  return factor
+}
 
 /** Multiplier a mask applies to the mechanical value of the `speed` trait. */
 export const mutationSpeedFactor = (mask: number): number => {
