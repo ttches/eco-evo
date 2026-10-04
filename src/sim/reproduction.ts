@@ -208,7 +208,10 @@ export const applyPairReproduction = (world: World, dt = 0): void => {
 
   for (let index = 0; index < world.count; index += 1) {
     if (!isEligibleMate(world, index)) continue
-    if (MATE_CONTACT_SECONDS > 0 && world.mateContact[index] < MATE_CONTACT_SECONDS) {
+    if (
+      MATE_CONTACT_SECONDS > 0 &&
+      world.mateContact[index] < MATE_CONTACT_SECONDS
+    ) {
       continue
     }
     const mate = nearestOfType(

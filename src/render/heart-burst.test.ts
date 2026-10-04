@@ -27,17 +27,15 @@ describe('burstProgress', () => {
     expect(burstProgress(GESTATION - HEART_LIFE / 2, 0, GESTATION)).toBeCloseTo(
       0.5,
     )
-    expect(burstProgress(GESTATION - HEART_LIFE - 0.01, 0, GESTATION)).toBeNull()
+    expect(
+      burstProgress(GESTATION - HEART_LIFE - 0.01, 0, GESTATION),
+    ).toBeNull()
   })
 
   it('staggeres later hearts behind the first', () => {
     expect(burstProgress(GESTATION, 1, GESTATION)).toBeNull()
 
-    const afterStagger = burstProgress(
-      GESTATION - HEART_STAGGER,
-      1,
-      GESTATION,
-    )
+    const afterStagger = burstProgress(GESTATION - HEART_STAGGER, 1, GESTATION)
     expect(afterStagger).toBeCloseTo(0)
   })
 })

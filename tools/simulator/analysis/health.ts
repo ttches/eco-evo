@@ -71,11 +71,19 @@ const flag = (level: FlagLevel, code: string, message: string): Flag => ({
 })
 
 const integrityFlags = ({ integrity }: HealthInput): Flag[] =>
-  integrity.failures.map((failure) => flag('crash', 'integrity', `integrity: ${failure}`))
+  integrity.failures.map((failure) =>
+    flag('crash', 'integrity', `integrity: ${failure}`),
+  )
 
 const populationFlags = (type: TypeName, d: TypeDynamics): Flag[] => {
   if (d.extinctAt !== null) {
-    return [flag('crash', `${type}-extinct`, `${type}s went extinct at ${secs(d.extinctAt)}`)]
+    return [
+      flag(
+        'crash',
+        `${type}-extinct`,
+        `${type}s went extinct at ${secs(d.extinctAt)}`,
+      ),
+    ]
   }
   const flags: Flag[] = []
   if (d.belowFloor.firstAt !== null) {
@@ -88,14 +96,27 @@ const populationFlags = (type: TypeName, d: TypeDynamics): Flag[] => {
       ),
     )
   } else if (d.belowFloor.inWarmup) {
-    flags.push(flag('info', `${type}-early-dip`, `${type} dipped to the floor (${d.floor}) during warmup only`))
+    flags.push(
+      flag(
+        'info',
+        `${type}-early-dip`,
+        `${type} dipped to the floor (${d.floor}) during warmup only`,
+      ),
+    )
   }
 
   const { swingRatio, swingGrowth, peaks } = d.cycles
   if (swingRatio !== null && swingRatio >= THRESHOLDS.swingRatioWarn) {
-    const growth = swingGrowth === null ? '' : `, swing growth x${swingGrowth.toFixed(2)} later vs earlier`
+    const growth =
+      swingGrowth === null
+        ? ''
+        : `, swing growth x${swingGrowth.toFixed(2)} later vs earlier`
     flags.push(
-      flag('info', `${type}-deep-cycles`, `${type} boom/bust is deep: ${peaks} peaks, peak/trough ${swingRatio.toFixed(1)}x${growth}`),
+      flag(
+        'info',
+        `${type}-deep-cycles`,
+        `${type} boom/bust is deep: ${peaks} peaks, peak/trough ${swingRatio.toFixed(1)}x${growth}`,
+      ),
     )
   }
   if (d.trend.change !== null && d.trend.change <= THRESHOLDS.declineWarn) {
@@ -112,16 +133,34 @@ const populationFlags = (type: TypeName, d: TypeDynamics): Flag[] => {
 
 const capFlags = ({ dynamics, maxGlorps }: HealthInput): Flag[] =>
   dynamics.peakTotal >= maxGlorps * THRESHOLDS.capShare
-    ? [flag('warn', 'pop-cap', `population reached ${dynamics.peakTotal}/${maxGlorps}: births are dropped at the cap`)]
+    ? [
+        flag(
+          'warn',
+          'pop-cap',
+          `population reached ${dynamics.peakTotal}/${maxGlorps}: births are dropped at the cap`,
+        ),
+      ]
     : []
 
 const predationFlags = ({ overview }: HealthInput): Flag[] => {
   const flags: Flag[] = []
   const preyEaten = overview.eatenShare.prey
   if (preyEaten < THRESHOLDS.weakPredation) {
-    flags.push(flag('info', 'weak-predation', `only ${pct(preyEaten)} of prey deaths are predation: hunters barely shape the prey`))
+    flags.push(
+      flag(
+        'info',
+        'weak-predation',
+        `only ${pct(preyEaten)} of prey deaths are predation: hunters barely shape the prey`,
+      ),
+    )
   } else if (preyEaten > THRESHOLDS.strongPredation) {
-    flags.push(flag('info', 'strong-predation', `${pct(preyEaten)} of prey deaths are predation: hunters dominate prey mortality`))
+    flags.push(
+      flag(
+        'info',
+        'strong-predation',
+        `${pct(preyEaten)} of prey deaths are predation: hunters dominate prey mortality`,
+      ),
+    )
   }
 
   const p = overview.predation
@@ -134,20 +173,43 @@ const predationFlags = ({ overview }: HealthInput): Flag[] => {
       ),
     )
   }
-  if (p.huntersEverBorn >= THRESHOLDS.minHuntersForShares && p.zeroKillShare >= THRESHOLDS.zeroKillWarn) {
-    flags.push(flag('warn', 'hunters-no-kills', `${pct(p.zeroKillShare)} of hunters never killed anything`))
+  if (
+    p.huntersEverBorn >= THRESHOLDS.minHuntersForShares &&
+    p.zeroKillShare >= THRESHOLDS.zeroKillWarn
+  ) {
+    flags.push(
+      flag(
+        'warn',
+        'hunters-no-kills',
+        `${pct(p.zeroKillShare)} of hunters never killed anything`,
+      ),
+    )
   }
-  if (p.preyKills >= THRESHOLDS.minKillsForConcentration && p.top10Share >= THRESHOLDS.killConcentrationWarn) {
-    flags.push(flag('info', 'elite-killers', `the top 10% of hunters made ${pct(p.top10Share)} of kills (gini ${p.gini.toFixed(2)})`))
+  if (
+    p.preyKills >= THRESHOLDS.minKillsForConcentration &&
+    p.top10Share >= THRESHOLDS.killConcentrationWarn
+  ) {
+    flags.push(
+      flag(
+        'info',
+        'elite-killers',
+        `the top 10% of hunters made ${pct(p.top10Share)} of kills (gini ${p.gini.toFixed(2)})`,
+      ),
+    )
   }
   return flags
 }
 
-const neutralTraitFlags = (type: TypeName, selection: SelectionReport): Flag[] =>
+const neutralTraitFlags = (
+  type: TypeName,
+  selection: SelectionReport,
+): Flag[] =>
   selection.traits
     .filter((trait) => trait.verdict === 'neutral')
     .map((trait) => {
-      const strongest = Math.max(...Object.values(trait.effect).map((value) => Math.abs(value ?? 0)))
+      const strongest = Math.max(
+        ...Object.values(trait.effect).map((value) => Math.abs(value ?? 0)),
+      )
       return flag(
         'info',
         `${type}-${trait.trait}-neutral`,
@@ -168,20 +230,45 @@ const traitFlags = (type: TypeName, input: HealthInput): Flag[] => {
     const extreme = diversity.extremeShare[key]
     const pinned = Math.max(extreme.low, extreme.high)
     if (Math.abs(average - input.traitBase) >= THRESHOLDS.convergedMean) {
-      const verdict = average > input.traitBase ? 'everyone stacks it' : 'everyone dumps it'
-      flags.push(flag('warn', `${type}-${key}-converged`, `${type} ${key} converged to ${average.toFixed(2)} (base ${input.traitBase}): ${verdict}`))
+      const verdict =
+        average > input.traitBase ? 'everyone stacks it' : 'everyone dumps it'
+      flags.push(
+        flag(
+          'warn',
+          `${type}-${key}-converged`,
+          `${type} ${key} converged to ${average.toFixed(2)} (base ${input.traitBase}): ${verdict}`,
+        ),
+      )
     } else if (pinned >= THRESHOLDS.fixationShare) {
       const level = extreme.high > extreme.low ? TRAIT_MAX : TRAIT_MIN
-      flags.push(flag('warn', `${type}-${key}-fixed`, `${type} ${key}: ${pct(pinned)} of the final cohort sits at level ${level}`))
+      flags.push(
+        flag(
+          'warn',
+          `${type}-${key}-fixed`,
+          `${type} ${key}: ${pct(pinned)} of the final cohort sits at level ${level}`,
+        ),
+      )
     }
   }
   if (selection.n >= LOW_N) {
     flags.push(...neutralTraitFlags(type, selection))
   } else {
-    flags.push(flag('info', `${type}-low-n`, `only ${selection.n} ${type}s in the selection analysis (< ${LOW_N}): verdicts are noisy, use more seeds`))
+    flags.push(
+      flag(
+        'info',
+        `${type}-low-n`,
+        `only ${selection.n} ${type}s in the selection analysis (< ${LOW_N}): verdicts are noisy, use more seeds`,
+      ),
+    )
   }
   if (diversity.trend.verdict === 'converging') {
-    flags.push(flag('info', `${type}-converging`, `${type} builds are converging: pairwise build distance ${pct(diversity.trend.distanceChange ?? 0)} vs founders`))
+    flags.push(
+      flag(
+        'info',
+        `${type}-converging`,
+        `${type} builds are converging: pairwise build distance ${pct(diversity.trend.distanceChange ?? 0)} vs founders`,
+      ),
+    )
   }
   return flags
 }
@@ -190,14 +277,17 @@ const SEVERITY: Record<FlagLevel, number> = { crash: 0, warn: 1, info: 2 }
 
 const statusOf = (flags: Flag[], dynamics: PopulationDynamics): RunStatus => {
   if (flags.some((f) => f.level === 'crash')) return 'CRASH'
-  if (TYPE_NAMES.some((type) => dynamics[type].belowFloor.firstAt !== null)) return 'NEAR-CRASH'
+  if (TYPE_NAMES.some((type) => dynamics[type].belowFloor.firstAt !== null))
+    return 'NEAR-CRASH'
   return flags.some((f) => f.level === 'warn') ? 'WARN' : 'OK'
 }
 
 export const assessHealth = (input: HealthInput): Health => {
   const flags = [
     ...integrityFlags(input),
-    ...TYPE_NAMES.flatMap((type) => populationFlags(type, input.dynamics[type])),
+    ...TYPE_NAMES.flatMap((type) =>
+      populationFlags(type, input.dynamics[type]),
+    ),
     ...capFlags(input),
     ...predationFlags(input),
     ...TYPE_NAMES.flatMap((type) => traitFlags(type, input)),

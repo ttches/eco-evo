@@ -78,7 +78,10 @@ export const useCanvasControls = (
       const rect = canvas.getBoundingClientRect()
       if (rect.width === 0 || rect.height === 0) return null
       const { viewport } = cameraRef.current
-      return { x: viewport.width / rect.width, y: viewport.height / rect.height }
+      return {
+        x: viewport.width / rect.width,
+        y: viewport.height / rect.height,
+      }
     }
 
     /** Midpoint and distance of the first two pointers, in client px. */
@@ -141,7 +144,12 @@ export const useCanvasControls = (
       const viewport = toViewport(event.clientX, event.clientY)
       if (!viewport) return
       const factor = Math.exp(-event.deltaY * CAMERA.wheelSensitivity)
-      cameraRef.current = zoomAt(cameraRef.current, factor, viewport.x, viewport.y)
+      cameraRef.current = zoomAt(
+        cameraRef.current,
+        factor,
+        viewport.x,
+        viewport.y,
+      )
       onCameraChange()
     }
 

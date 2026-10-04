@@ -20,10 +20,7 @@ import { createWorld, step } from '@/sim/world'
 const DT = 1 / 60
 
 /** One hunter and one prey within eating reach, with chosen agility levels. */
-const setupHunt = (
-  hunterAgility: number,
-  preyAgility: number,
-) => {
+const setupHunt = (hunterAgility: number, preyAgility: number) => {
   const world = createWorld(2, 21)
   world.type[0] = GLORP_TYPE.hunter
   world.type[1] = GLORP_TYPE.prey
@@ -56,7 +53,9 @@ describe('dodgeChance', () => {
   })
 
   it('scales with each level of agility advantage', () => {
-    expect(dodgeChance(setupHunt(4, 5), 0, 1)).toBeCloseTo(DODGE_CHANCE_PER_LEVEL)
+    expect(dodgeChance(setupHunt(4, 5), 0, 1)).toBeCloseTo(
+      DODGE_CHANCE_PER_LEVEL,
+    )
     expect(dodgeChance(setupHunt(4, 6), 0, 1)).toBeCloseTo(
       DODGE_CHANCE_PER_LEVEL * 2,
     )

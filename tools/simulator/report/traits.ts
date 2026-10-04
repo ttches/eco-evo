@@ -26,8 +26,12 @@ const OUTCOME_HEADER: Record<Outcome, string> = {
 
 // ------------------------------------------------------------------ selection
 
-const driftTable = (selection: SelectionReport, diversity: DiversityReport): string => {
-  const first = diversity.rows.find((row) => row.epoch === -1) ?? diversity.rows[0]
+const driftTable = (
+  selection: SelectionReport,
+  diversity: DiversityReport,
+): string => {
+  const first =
+    diversity.rows.find((row) => row.epoch === -1) ?? diversity.rows[0]
   const last = [...diversity.rows].reverse().find((row) => row.epoch >= 0)
   const rows = selection.traits.map((trait) => {
     const key = trait.trait
@@ -36,8 +40,12 @@ const driftTable = (selection: SelectionReport, diversity: DiversityReport): str
       key,
       first ? num(first.traitMean[key]) : 'n/a',
       last ? num(last.traitMean[key]) : 'n/a',
-      first && last ? signed(last.traitMean[key] - first.traitMean[key]) : 'n/a',
-      first && last ? `${num(first.traitSd[key])}->${num(last.traitSd[key])}` : 'n/a',
+      first && last
+        ? signed(last.traitMean[key] - first.traitMean[key])
+        : 'n/a',
+      first && last
+        ? `${num(first.traitSd[key])}->${num(last.traitSd[key])}`
+        : 'n/a',
       `${pct(extreme.low)}/${pct(extreme.high)}`,
       ...selection.outcomes.map((outcome) => signed(trait.effect[outcome])),
       trait.verdict,
@@ -45,8 +53,15 @@ const driftTable = (selection: SelectionReport, diversity: DiversityReport): str
   })
   return table(
     [
-      'trait', 'founders', 'final', 'shift', 'sd first->last', '@floor/@cap',
-      ...selection.outcomes.map((outcome) => `effect:${OUTCOME_HEADER[outcome]}`),
+      'trait',
+      'founders',
+      'final',
+      'shift',
+      'sd first->last',
+      '@floor/@cap',
+      ...selection.outcomes.map(
+        (outcome) => `effect:${OUTCOME_HEADER[outcome]}`,
+      ),
       'verdict',
     ],
     rows,
@@ -54,41 +69,78 @@ const driftTable = (selection: SelectionReport, diversity: DiversityReport): str
 }
 
 /** One metric row across levels, e.g. mean offspring at L0..L7. */
-const levelCells = (trait: TraitSelection, pick: (row: LevelRow) => string): string[] =>
-  trait.byLevel.map(pick)
+const levelCells = (
+  trait: TraitSelection,
+  pick: (row: LevelRow) => string,
+): string[] => trait.byLevel.map(pick)
 
-const levelRows = (selection: SelectionReport, trait: TraitSelection): string[][] => {
+const levelRows = (
+  selection: SelectionReport,
+  trait: TraitSelection,
+): string[][] => {
   const present = (format: (row: LevelRow) => string) => (row: LevelRow) =>
     row.n === 0 ? '-' : format(row)
   const extraMetric =
     selection.type === 'hunter'
-      ? ['', 'kills', ...levelCells(trait, present((row) => num(row.kills)))]
+      ? [
+          '',
+          'kills',
+          ...levelCells(
+            trait,
+            present((row) => num(row.kills)),
+          ),
+        ]
       : [
           '',
           'eaten share',
-          ...levelCells(trait, (row) => (row.eatenShare === null ? '-' : pct(row.eatenShare))),
+          ...levelCells(trait, (row) =>
+            row.eatenShare === null ? '-' : pct(row.eatenShare),
+          ),
         ]
   return [
-    [trait.trait, 'offspring', ...levelCells(trait, present((row) => num(row.offspring)))],
-    ['', 'lifespan s', ...levelCells(trait, present((row) => num(row.lifespan, 0)))],
+    [
+      trait.trait,
+      'offspring',
+      ...levelCells(
+        trait,
+        present((row) => num(row.offspring)),
+      ),
+    ],
+    [
+      '',
+      'lifespan s',
+      ...levelCells(
+        trait,
+        present((row) => num(row.lifespan, 0)),
+      ),
+    ],
     extraMetric,
     ['', 'n', ...levelCells(trait, (row) => String(row.n))],
   ]
 }
 
 const levelTable = (selection: SelectionReport): string => {
-  const levels = Array.from({ length: TRAIT_MAX - TRAIT_MIN + 1 }, (_, i) => `L${TRAIT_MIN + i}`)
+  const levels = Array.from(
+    { length: TRAIT_MAX - TRAIT_MIN + 1 },
+    (_, i) => `L${TRAIT_MIN + i}`,
+  )
   return table(
     ['trait', 'metric', ...levels],
     selection.traits.flatMap((trait) => levelRows(selection, trait)),
   )
 }
 
-const selectionSection = (selection: SelectionReport, diversity: DiversityReport): string => {
+const selectionSection = (
+  selection: SelectionReport,
+  diversity: DiversityReport,
+): string => {
   const noun = selection.type === 'prey' ? 'prey' : 'hunters'
   const lowN =
-    selection.n < LOW_N ? `  ** LOW n (< ${LOW_N}): treat verdicts as noise; use more seeds **` : ''
-  const killsMean = selection.type === 'hunter' ? `, kills ${num(selection.means.kills)}` : ''
+    selection.n < LOW_N
+      ? `  ** LOW n (< ${LOW_N}): treat verdicts as noise; use more seeds **`
+      : ''
+  const killsMean =
+    selection.type === 'hunter' ? `, kills ${num(selection.means.kills)}` : ''
   return [
     `n=${selection.n} eligible ${noun} (${selection.censored} still alive, so lifespan/offspring are lower bounds)${lowN}`,
     `mean lifespan ${num(selection.means.lifespan, 0)}s, offspring ${num(selection.means.offspring)}${killsMean}`,
@@ -116,22 +168,32 @@ const cohortRow = (cohort: Cohort, keys: string[]): string[] => [
   `${cohort.means.lifespan.toFixed(0)}s`,
   num(cohort.means.offspring),
   num(cohort.means.kills),
-  ...keys.map((key) => `${num(cohort.traits[key].mean)} (${signed(cohort.traits[key].z, 1)}σ)`),
+  ...keys.map(
+    (key) =>
+      `${num(cohort.traits[key].mean)} (${signed(cohort.traits[key].z, 1)}σ)`,
+  ),
   cohort.topBuilds.map((build) => `${build.build} x${build.n}`).join(', '),
 ]
 
 const performersSection = (performers: PerformerReport): string => {
-  if (performers.cohorts.length === 0) return 'No cohorts (too few individuals).'
+  if (performers.cohorts.length === 0)
+    return 'No cohorts (too few individuals).'
   const keys = Object.keys(performers.population)
   const everyone = [
     `everyone (n=${performers.n})`,
     '',
     '',
     '',
-    ...keys.map((key) => `${num(performers.population[key].mean)} (sd ${num(performers.population[key].sd)})`),
+    ...keys.map(
+      (key) =>
+        `${num(performers.population[key].mean)} (sd ${num(performers.population[key].sd)})`,
+    ),
     '',
   ]
-  const rows = [everyone, ...performers.cohorts.map((cohort) => cohortRow(cohort, keys))]
+  const rows = [
+    everyone,
+    ...performers.cohorts.map((cohort) => cohortRow(cohort, keys)),
+  ]
   return [
     'Top-performer cohorts: trait mean and its gap to the population in σ (population sd). Big |σ| = that',
     'trait separates winners from the rest; ~0σ = winners look like everyone else in that trait.',
@@ -158,7 +220,16 @@ const buildRow = (row: BuildRow): string[] => [
 
 const diversityTable = (diversity: DiversityReport, keys: string[]): string =>
   table(
-    ['cohort', 'n', 'builds', 'eff', 'top build (share)', 'distance', 'mean sd', ...keys.map((key) => `mean ${key}`)],
+    [
+      'cohort',
+      'n',
+      'builds',
+      'eff',
+      'top build (share)',
+      'distance',
+      'mean sd',
+      ...keys.map((key) => `mean ${key}`),
+    ],
     diversity.rows.map((row) => [
       row.label,
       String(row.n),
@@ -171,16 +242,24 @@ const diversityTable = (diversity: DiversityReport, keys: string[]): string =>
     ]),
   )
 
-const varianceVerdict = (diversity: DiversityReport, keys: string[]): string => {
+const varianceVerdict = (
+  diversity: DiversityReport,
+  keys: string[],
+): string => {
   const { trend } = diversity
-  const perTrait = keys.map((key) => `${key} ${signedPct(trend.traitSdChange[key])}`).join(', ')
+  const perTrait = keys
+    .map((key) => `${key} ${signedPct(trend.traitSdChange[key])}`)
+    .join(', ')
   return (
     `Variance vs founders: ${trend.verdict.toUpperCase()} ` +
     `(pairwise build distance ${signedPct(trend.distanceChange)}, mean trait sd ${signedPct(trend.meanTraitSdChange)}; per trait sd: ${perTrait})`
   )
 }
 
-const buildsSection = (diversity: DiversityReport, builds: BuildTables): string => {
+const buildsSection = (
+  diversity: DiversityReport,
+  builds: BuildTables,
+): string => {
   const keys = Object.keys(diversity.rows[0]?.traitMean ?? {})
   const best =
     builds.best.length > 0

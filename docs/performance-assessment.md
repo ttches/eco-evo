@@ -10,11 +10,11 @@ objects; both are solved, see "Done" below.
 `step()` timings in Node (Vitest) on an Apple-silicon laptop, averaged over 300
 steps, first run (not JIT-warmed):
 
-| Scenario | ms / step | Share of a 60 Hz second |
-|---|---:|---:|
-| ~150 glorps (120 prey / 30 hunters) | 0.075 | ~0.5% |
-| ~500 glorps, all hungry (400 / 100) | 0.145 | ~0.9% |
-| 3840×2160 world, default start, 10 sim-minutes (peaks ~830 glorps) | 0.13–0.22 | ~1% |
+| Scenario                                                           | ms / step | Share of a 60 Hz second |
+| ------------------------------------------------------------------ | --------: | ----------------------: |
+| ~150 glorps (120 prey / 30 hunters)                                |     0.075 |                   ~0.5% |
+| ~500 glorps, all hungry (400 / 100)                                |     0.145 |                   ~0.9% |
+| 3840×2160 world, default start, 10 sim-minutes (peaks ~830 glorps) | 0.13–0.22 |                     ~1% |
 
 Warmed-up runs are ~40% faster again. Before the spatial grid the same
 scenarios cost 0.61 and 1.30 ms. Phone CPUs are roughly 4–5× slower, which still

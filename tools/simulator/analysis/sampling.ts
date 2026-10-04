@@ -70,7 +70,8 @@ export const sampleWorld = (world: World): SampleRow => {
     n[type] === 0 ? 0 : sum / n[type]
   const traits = perType((type) => {
     const means = zeroTraits()
-    for (const key of TRAIT_KEYS) means[key] = average(traitSums[type][key], type)
+    for (const key of TRAIT_KEYS)
+      means[key] = average(traitSums[type][key], type)
     return means
   })
 

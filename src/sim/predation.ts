@@ -58,7 +58,7 @@ export const cannibalWins = (world: World, a: number, b: number): boolean => {
   const low = Math.min(idA, idB)
   const high = Math.max(idA, idB)
   const flip = hashUnit(Math.imul(low ^ 0x9e3779b9, 0x85ebca6b) ^ high)
-  return (flip < 0.5) === (idA === low)
+  return flip < 0.5 === (idA === low)
 }
 
 /** Prey graze on grass. */
@@ -239,7 +239,8 @@ export const cannibalize = (
   // the removed slot and a later higher index would evict the wrong glorp.
   const victims = eaten.subarray(0, kills)
   victims.sort()
-  for (let kill = kills - 1; kill >= 0; kill -= 1) removeGlorp(world, victims[kill])
+  for (let kill = kills - 1; kill >= 0; kill -= 1)
+    removeGlorp(world, victims[kill])
 }
 
 /** Prey graze, hunters hunt, and starving hunters may cannibalize. */

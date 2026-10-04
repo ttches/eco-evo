@@ -25,20 +25,22 @@ const pickKey = (
   eligible: (key: TraitKey) => boolean,
 ): TraitKey | null => {
   const candidates = TRAIT_KEYS.filter(eligible)
-  return candidates.length === 0 ? null : candidates[pick(random, candidates.length)]
+  return candidates.length === 0
+    ? null
+    : candidates[pick(random, candidates.length)]
 }
 
 /**
  * Move one point from a random trait above the minimum to a different random
  * trait below the maximum. Zero-sum and directionless, so the budget holds.
  */
-export const transferPoint = (random: XorShift32, levels: TraitLevels): void => {
+export const transferPoint = (
+  random: XorShift32,
+  levels: TraitLevels,
+): void => {
   const from = pickKey(random, (key) => levels[key] > TRAIT_MIN)
   if (from === null) return
-  const to = pickKey(
-    random,
-    (key) => key !== from && levels[key] < TRAIT_MAX,
-  )
+  const to = pickKey(random, (key) => key !== from && levels[key] < TRAIT_MAX)
   if (to === null) return
   levels[from] -= 1
   levels[to] += 1
@@ -46,7 +48,8 @@ export const transferPoint = (random: XorShift32, levels: TraitLevels): void => 
 
 /** Add or remove random points until the levels sum to `TRAIT_BUDGET`. */
 const rebalance = (random: XorShift32, levels: TraitLevels): void => {
-  let surplus = TRAIT_KEYS.reduce((sum, key) => sum + levels[key], 0) - TRAIT_BUDGET
+  let surplus =
+    TRAIT_KEYS.reduce((sum, key) => sum + levels[key], 0) - TRAIT_BUDGET
   while (surplus !== 0) {
     const step = surplus > 0 ? -1 : 1
     const key = pickKey(random, (candidate) =>
@@ -58,7 +61,9 @@ const rebalance = (random: XorShift32, levels: TraitLevels): void => {
   }
 }
 
-const copyLevels = (levels: Readonly<TraitLevels>): TraitLevels => ({ ...levels })
+const copyLevels = (levels: Readonly<TraitLevels>): TraitLevels => ({
+  ...levels,
+})
 
 /** A type's `SPAWN_BASE` build, shuffled by `SPAWN_SHUFFLES` transfers. */
 export const rollLevels = (
@@ -121,7 +126,11 @@ export const readLevels = (
 
 /** Roll a freshly spawned glorp's levels; its type must already be set. */
 export const rollTraits = (world: World, index: number): void =>
-  writeLevels(world, index, rollLevels(world.random, world.type[index] as GlorpType))
+  writeLevels(
+    world,
+    index,
+    rollLevels(world.random, world.type[index] as GlorpType),
+  )
 
 /** Asexual inheritance: copy the parent's levels, occasionally moving a point. */
 export const cloneTraits = (
@@ -129,7 +138,11 @@ export const cloneTraits = (
   parent: number,
   child: number,
 ): void =>
-  writeLevels(world, child, cloneLevels(world.random, readLevels(world, parent)))
+  writeLevels(
+    world,
+    child,
+    cloneLevels(world.random, readLevels(world, parent)),
+  )
 
 /**
  * Paired inheritance from explicit parent levels, for cases where the parents

@@ -57,7 +57,11 @@ export class HeartLayer {
     this.mesh.renderOrder = 4
   }
 
-  public update(world: RenderableWorld, bounds: ViewBounds, zoom: number): void {
+  public update(
+    world: RenderableWorld,
+    bounds: ViewBounds,
+    zoom: number,
+  ): void {
     if (zoom < DETAIL_MIN_ZOOM) {
       this.mesh.count = 0
       return
@@ -87,11 +91,7 @@ export class HeartLayer {
         const scale = HEART_SIZE * Math.sin(Math.PI * progress)
         const fan = (heart - (HEARTS_PER_BURST - 1) / 2) * HEART_SIZE
         this.matrix.makeScale(scale, scale, 1)
-        this.matrix.setPosition(
-          x + fan,
-          y - radius - HEART_RISE * progress,
-          0,
-        )
+        this.matrix.setPosition(x + fan, y - radius - HEART_RISE * progress, 0)
         this.mesh.setMatrixAt(visible, this.matrix)
         visible += 1
       }

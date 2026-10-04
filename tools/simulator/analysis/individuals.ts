@@ -68,13 +68,23 @@ const CAUSE_OF: Record<number, Cause> = {
 }
 
 /** Bucket a birth time into one of `epochs` equal slices of the run. */
-export const epochOf = (time: number, endedAt: number, epochs: number): number => {
+export const epochOf = (
+  time: number,
+  endedAt: number,
+  epochs: number,
+): number => {
   if (endedAt <= 0) return 0
-  return Math.min(epochs - 1, Math.max(0, Math.floor((time / endedAt) * epochs)))
+  return Math.min(
+    epochs - 1,
+    Math.max(0, Math.floor((time / endedAt) * epochs)),
+  )
 }
 
 /** Read the lineage log of a finished world into an `IndividualTable`. */
-export const buildTable = (world: World, options: TableOptions): IndividualTable => {
+export const buildTable = (
+  world: World,
+  options: TableOptions,
+): IndividualTable => {
   const log = world.lineage
   const { epochs, settleSeconds, seed } = options
   const run = options.run ?? 0
@@ -139,8 +149,21 @@ export const concatTables = (tables: IndividualTable[]): IndividualTable => {
 }
 
 const COLUMNS = [
-  'run', 'id', 'type', 'generation', 'founder', 'bornAt', 'endAt', 'age', 'alive',
-  'cause', 'offspring', 'kills', 'cannibalKills', 'eligible', 'epoch',
+  'run',
+  'id',
+  'type',
+  'generation',
+  'founder',
+  'bornAt',
+  'endAt',
+  'age',
+  'alive',
+  'cause',
+  'offspring',
+  'kills',
+  'cannibalKills',
+  'eligible',
+  'epoch',
 ] as const
 
 /** Compact columnar-ish JSON: a header plus one array per row. */

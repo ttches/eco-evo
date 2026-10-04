@@ -90,7 +90,9 @@ export const createLineage = (capacity = INITIAL_CAPACITY): LineageLog => ({
   names: new Map(),
 })
 
-const grown = <T extends Uint8Array | Int32Array | Uint32Array | Float32Array | Float64Array>(
+const grown = <
+  T extends Uint8Array | Int32Array | Uint32Array | Float32Array | Float64Array,
+>(
   column: T,
   capacity: number,
 ): T => {
@@ -110,7 +112,8 @@ const grow = (log: LineageLog): void => {
   log.deathCause = grown(log.deathCause, capacity)
   log.killer = grown(log.killer, capacity)
   log.mutations = grown(log.mutations, capacity)
-  for (const key of TRAIT_KEYS) log.traits[key] = grown(log.traits[key], capacity)
+  for (const key of TRAIT_KEYS)
+    log.traits[key] = grown(log.traits[key], capacity)
   log.capacity = capacity
 }
 

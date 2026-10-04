@@ -33,7 +33,10 @@ export const deathsSection = (overview: Overview): string => {
     lifespanRow('hunter eaten', t.hunter.eaten),
   ].filter((row) => row[1] !== '0')
   return [
-    table(['type', 'born', 'alive at end', 'starved', 'eaten', 'eaten share'], counts),
+    table(
+      ['type', 'born', 'alive at end', 'starved', 'eaten', 'eaten share'],
+      counts,
+    ),
     '',
     'Lifespan of the dead (alive-at-end excluded):',
     '',

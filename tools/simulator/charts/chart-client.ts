@@ -41,4 +41,3 @@ tip.innerHTML='<b>'+t.toFixed(0)+'s</b><br>'+rows.join('<br>');tip.style.display
 svg.addEventListener('mouseleave',()=>{cross.style.display='none';tip.style.display='none'});
 });
 `
-

@@ -82,8 +82,7 @@ export const focusCamera = (
   x: number,
   y: number,
   zoom: number,
-): Camera =>
-  clampCamera({ ...camera, x, y, zoom: Math.max(camera.zoom, zoom) })
+): Camera => clampCamera({ ...camera, x, y, zoom: Math.max(camera.zoom, zoom) })
 
 /** Recenter on a world point, keeping the current zoom, for a locked follow. */
 export const followCamera = (camera: Camera, x: number, y: number): Camera =>

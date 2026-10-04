@@ -25,7 +25,9 @@ import { formatSweepReport, writeSweepReport } from './sweep/sweep-report.ts'
 import type { Job, RunSummary } from './types.ts'
 
 const root = path.resolve(import.meta.dirname, '../..')
-const loaderPath = pathToFileURL(path.join(import.meta.dirname, 'loader.mjs')).href
+const loaderPath = pathToFileURL(
+  path.join(import.meta.dirname, 'loader.mjs'),
+).href
 const workerPath = path.join(import.meta.dirname, 'worker.ts')
 
 const children = new Set<ChildProcess>()
@@ -85,7 +87,10 @@ const runPool = async (
       ) as RunSummary
       summaries.push(summary)
       if (single) {
-        if (!quiet) console.log(`\n${readFileSync(path.join(job.outDir, 'report.md'), 'utf8')}`)
+        if (!quiet)
+          console.log(
+            `\n${readFileSync(path.join(job.outDir, 'report.md'), 'utf8')}`,
+          )
       } else {
         console.log(formatCompactRow(summary))
       }
@@ -93,7 +98,10 @@ const runPool = async (
   }
 
   await Promise.all(
-    Array.from({ length: Math.max(1, Math.min(concurrency, jobs.length)) }, worker),
+    Array.from(
+      { length: Math.max(1, Math.min(concurrency, jobs.length)) },
+      worker,
+    ),
   )
   return { summaries, failures }
 }
@@ -110,7 +118,10 @@ const finishSweep = (
   const dirOf = (summary: RunSummary): string =>
     single ? baseOut : path.join(baseOut, `seed-${summary.run.seed}`)
   const sweep = buildSweepFile(summaries, dirOf, configLayers, overrides)
-  writeFileSync(path.join(baseOut, 'sweep.json'), `${JSON.stringify(sweep, null, 2)}\n`)
+  writeFileSync(
+    path.join(baseOut, 'sweep.json'),
+    `${JSON.stringify(sweep, null, 2)}\n`,
+  )
   if (single || summaries.length === 0) return
   const { markdown, html } = formatSweepReport(
     sweep,
@@ -120,16 +131,24 @@ const finishSweep = (
   if (!quiet) console.log(`\n${markdown}`)
 }
 
-const diffAgainstBaseline = (baselineArg: string, summaries: RunSummary[]): void => {
+const diffAgainstBaseline = (
+  baselineArg: string,
+  summaries: RunSummary[],
+): void => {
   const baseline = readBaseline(root, baselineArg)
-  const current = aggregateHeadlines(summaries.map((summary) => summary.analysis.headline))
+  const current = aggregateHeadlines(
+    summaries.map((summary) => summary.analysis.headline),
+  )
   console.log(`\n${formatComparison(baseline, current)}`)
 }
 
 const describeConfig = (layers: string[]): string =>
   layers.length > 0 ? layers.join(' + ') : 'game default'
 
-const compareToBaseline = (baselineArg: string, summaries: RunSummary[]): void => {
+const compareToBaseline = (
+  baselineArg: string,
+  summaries: RunSummary[],
+): void => {
   try {
     diffAgainstBaseline(baselineArg, summaries)
   } catch (error) {
@@ -149,7 +168,8 @@ const main = async (): Promise<void> => {
   const overrides = buildOverrides(args.set)
   const baseOut = path.resolve(
     root,
-    args.out ?? path.join('runs', `${timestamp()}${args.label ? `-${args.label}` : ''}`),
+    args.out ??
+      path.join('runs', `${timestamp()}${args.label ? `-${args.label}` : ''}`),
   )
   const single = seeds.length === 1
   const env: NodeJS.ProcessEnv = {
@@ -167,7 +187,13 @@ const main = async (): Promise<void> => {
   }
   if (!single) console.log(formatCompactHeader)
 
-  const { summaries, failures } = await runPool(jobs, env, args.jobs, single, args.quiet)
+  const { summaries, failures } = await runPool(
+    jobs,
+    env,
+    args.jobs,
+    single,
+    args.quiet,
+  )
   summaries.sort((a, b) => a.run.seed - b.run.seed)
   finishSweep(baseOut, args.config, overrides, summaries, single, args.quiet)
   if (args.baseline) compareToBaseline(args.baseline, summaries)

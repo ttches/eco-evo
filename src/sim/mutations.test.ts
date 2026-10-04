@@ -59,7 +59,8 @@ describe('inheritMutations', () => {
     const samples = 20000
     let inherited = 0
     for (let i = 0; i < samples; i += 1) {
-      if (inheritMutations(random, [COLD], GLORP_TYPE.hunter) !== 0) inherited += 1
+      if (inheritMutations(random, [COLD], GLORP_TYPE.hunter) !== 0)
+        inherited += 1
     }
     expect(inherited / samples).toBeGreaterThan(MUTATION_INHERIT_CHANCE - 0.02)
     expect(inherited / samples).toBeLessThan(MUTATION_INHERIT_CHANCE + 0.02)
@@ -100,7 +101,8 @@ describe('rollBirthMutations', () => {
     const samples = 100000
     let mutated = 0
     for (let i = 0; i < samples; i += 1) {
-      if (rollBirthMutations(random, [0, 0], GLORP_TYPE.prey) !== 0) mutated += 1
+      if (rollBirthMutations(random, [0, 0], GLORP_TYPE.prey) !== 0)
+        mutated += 1
     }
     expect(mutated / samples).toBeGreaterThan(MUTATION_BIRTH_CHANCE - 0.005)
     expect(mutated / samples).toBeLessThan(MUTATION_BIRTH_CHANCE + 0.005)
@@ -141,7 +143,9 @@ describe('rollEatenMutation', () => {
   it('does nothing when the hunter already holds a mutation', () => {
     const random = new XorShift32(1)
     for (let i = 0; i < 1000; i += 1) {
-      expect(rollEatenMutation(random, COLD, COLD, GLORP_TYPE.hunter)).toBe(COLD)
+      expect(rollEatenMutation(random, COLD, COLD, GLORP_TYPE.hunter)).toBe(
+        COLD,
+      )
     }
   })
 
@@ -157,10 +161,15 @@ describe('rollEatenMutation', () => {
     const samples = 100000
     let gained = 0
     for (let i = 0; i < samples; i += 1) {
-      if (rollEatenMutation(random, 0, COLD, GLORP_TYPE.hunter) !== 0) gained += 1
+      if (rollEatenMutation(random, 0, COLD, GLORP_TYPE.hunter) !== 0)
+        gained += 1
     }
-    expect(gained / samples).toBeGreaterThan(HUNTER_MUTATION_TRANSFER_CHANCE - 0.005)
-    expect(gained / samples).toBeLessThan(HUNTER_MUTATION_TRANSFER_CHANCE + 0.005)
+    expect(gained / samples).toBeGreaterThan(
+      HUNTER_MUTATION_TRANSFER_CHANCE - 0.005,
+    )
+    expect(gained / samples).toBeLessThan(
+      HUNTER_MUTATION_TRANSFER_CHANCE + 0.005,
+    )
   })
 
   it('falls back to an allowed mutation when the meal mutation is exclusive', () => {
@@ -291,7 +300,9 @@ describe('mutations over a running world', () => {
 
     for (let index = 0; index < world.count; index += 1) {
       expect(world.mutations[index] & ~MUTATION_MASK_ALL).toBe(0)
-      expect(countMutations(world.mutations[index])).toBeLessThanOrEqual(MAX_MUTATIONS)
+      expect(countMutations(world.mutations[index])).toBeLessThanOrEqual(
+        MAX_MUTATIONS,
+      )
     }
     for (let id = 0; id < world.lineage.size; id += 1) {
       expect(world.lineage.mutations[id] & ~MUTATION_MASK_ALL).toBe(0)

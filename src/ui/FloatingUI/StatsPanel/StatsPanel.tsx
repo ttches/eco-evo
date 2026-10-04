@@ -108,7 +108,9 @@ const StatRow = memo(
         type="button"
         className={`${styles.row} ${entry.alive ? '' : styles.rowDead}`}
         onClick={() => onNavigate(entry.id)}
-        onMouseEnter={(event) => onPreview(entry.id, anchorOf(event.currentTarget))}
+        onMouseEnter={(event) =>
+          onPreview(entry.id, anchorOf(event.currentTarget))
+        }
         onMouseLeave={onPreviewEnd}
         onFocus={(event) => onPreview(entry.id, anchorOf(event.currentTarget))}
         onBlur={onPreviewEnd}
@@ -170,10 +172,7 @@ const StatsPanel = ({
   const extremes = useMemo(() => traitExtremesFromStats(pool), [pool])
   const sorted = useMemo(() => sortStats(pool, active), [pool, active])
   const formatActive = useMemo(
-    () =>
-      isStatKey(active)
-        ? TABS[active].format
-        : formatTraitValue,
+    () => (isStatKey(active) ? TABS[active].format : formatTraitValue),
     [active],
   )
   const rows = sorted.slice(0, MAX_ROWS)
@@ -197,7 +196,11 @@ const StatsPanel = ({
         </header>
 
         <div className={styles.filterRow}>
-          <div className={styles.filter} role="group" aria-label="Filter by diet">
+          <div
+            className={styles.filter}
+            role="group"
+            aria-label="Filter by diet"
+          >
             {DIETS.map((option) => (
               <button
                 key={option.value}

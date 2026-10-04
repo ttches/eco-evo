@@ -348,7 +348,9 @@ describe('applyPairReproduction', () => {
 
 describe('fertility-scaled offspring energy', () => {
   /** Two adjacent, well-fed hunters sharing one fertility level. */
-  const setupPairAtFertility = (level: number): ReturnType<typeof createWorld> => {
+  const setupPairAtFertility = (
+    level: number,
+  ): ReturnType<typeof createWorld> => {
     const world = createWorld(2, 17)
     world.type[0] = GLORP_TYPE.hunter
     world.type[1] = GLORP_TYPE.hunter

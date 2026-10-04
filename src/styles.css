@@ -7,7 +7,8 @@
   --surface: rgb(24 24 27 / 92%);
   --accent: #2f8f6b;
   --radius: 0.625rem;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'SFMono-Regular', 'Cascadia Mono', 'Roboto Mono', monospace;
 
   color-scheme: dark;

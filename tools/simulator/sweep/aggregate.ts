@@ -71,7 +71,9 @@ export const buildSweepFile = (
   overrides,
   seeds: summaries.map((summary) => summary.run.seed),
   statusCounts: countStatuses(summaries),
-  aggregate: aggregateHeadlines(summaries.map((summary) => summary.analysis.headline)),
+  aggregate: aggregateHeadlines(
+    summaries.map((summary) => summary.analysis.headline),
+  ),
   runs: summaries.map((summary) => ({
     seed: summary.run.seed,
     dir: dirOf(summary),

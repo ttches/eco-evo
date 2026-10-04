@@ -11,19 +11,29 @@ import { MAX_GLORPS } from '@/sim/config'
 import { TRAIT_BASE, TRAIT_KEYS } from '@/sim/traits'
 import type { World } from '@/sim/world'
 import { analyzeDiversity, type DiversityReport } from './analysis/diversity.ts'
-import { analyzeDynamics, type PopulationDynamics } from './analysis/dynamics.ts'
+import {
+  analyzeDynamics,
+  type PopulationDynamics,
+} from './analysis/dynamics.ts'
 import { assessHealth, type Health } from './analysis/health.ts'
 import { buildHeadline, type Headline } from './analysis/headline.ts'
 import { buildTable, type IndividualTable } from './analysis/individuals.ts'
 import { checkIntegrity, type IntegrityReport } from './analysis/integrity.ts'
-import { extinctionTimes, lineageStats, type LineageStats } from './analysis/lineage-stats.ts'
+import {
+  extinctionTimes,
+  lineageStats,
+  type LineageStats,
+} from './analysis/lineage-stats.ts'
 import {
   analyzeFlows,
   analyzeOverview,
   type EpochFlow,
   type Overview,
 } from './analysis/overview.ts'
-import { analyzePerformers, type PerformerReport } from './analysis/performers.ts'
+import {
+  analyzePerformers,
+  type PerformerReport,
+} from './analysis/performers.ts'
 import { sampleWorld, type SampleRow } from './analysis/sampling.ts'
 import {
   analyzeSelection,
@@ -126,20 +136,30 @@ const resolveOptions = (
 ): AnalysisOptions => ({
   ...DEFAULT_ANALYSIS,
   seed: 0,
-  floors: defaultFloors(samples[0]?.alivePrey ?? 0, samples[0]?.aliveHunter ?? 0),
+  floors: defaultFloors(
+    samples[0]?.alivePrey ?? 0,
+    samples[0]?.aliveHunter ?? 0,
+  ),
   ...partial,
 })
 
-const staminaStats = (world: World, table: IndividualTable): RunAnalysis['stamina'] => {
+const staminaStats = (
+  world: World,
+  table: IndividualTable,
+): RunAnalysis['stamina'] => {
   const glorpSeconds = table.rows.reduce((sum, row) => sum + row.age, 0)
   return {
     sprintStarts: world.sprintStarts,
     exhaustionEvents: world.exhaustionEvents,
-    sprintStartsPerGlorpSecond: glorpSeconds === 0 ? 0 : world.sprintStarts / glorpSeconds,
+    sprintStartsPerGlorpSecond:
+      glorpSeconds === 0 ? 0 : world.sprintStarts / glorpSeconds,
   }
 }
 
-const combatStats = (world: World, table: IndividualTable): RunAnalysis['combat'] => {
+const combatStats = (
+  world: World,
+  table: IndividualTable,
+): RunAnalysis['combat'] => {
   const glorpSeconds = table.rows.reduce((sum, row) => sum + row.age, 0)
   return {
     dodges: world.dodges,
@@ -155,10 +175,16 @@ export const analyzeWorld = (
 ): RunAnalysis => {
   const options = resolveOptions(samples, partial)
   const endedAt = world.time
-  const effectiveWarmup = Math.min(options.warmupSeconds, endedAt * MAX_WARMUP_SHARE)
+  const effectiveWarmup = Math.min(
+    options.warmupSeconds,
+    endedAt * MAX_WARMUP_SHARE,
+  )
 
   const table = buildTable(world, options)
-  const individuals = analyzeIndividuals(table, epochBoundsOf(endedAt, options.epochs))
+  const individuals = analyzeIndividuals(
+    table,
+    epochBoundsOf(endedAt, options.epochs),
+  )
   const dynamics = analyzeDynamics(samples, {
     warmupSeconds: effectiveWarmup,
     floors: options.floors,

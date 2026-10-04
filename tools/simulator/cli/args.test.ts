@@ -1,16 +1,39 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SEED } from '@/sim/config'
-import { buildJobs, buildOverrides, parseArgs, resolveSeeds, timestamp } from './args.ts'
+import {
+  buildJobs,
+  buildOverrides,
+  parseArgs,
+  resolveSeeds,
+  timestamp,
+} from './args.ts'
 
 describe('parseArgs', () => {
   it('fills numbers, strings, lists and booleans from their flag tables', () => {
     const args = parseArgs([
-      '--seconds', '300', '--warmup', '30', '--out', 'runs/x',
-      '--config', 'a.ts', '--config', 'b.ts', '--set', 'HUNGER=85', '--quiet', '--no-csv',
+      '--seconds',
+      '300',
+      '--warmup',
+      '30',
+      '--out',
+      'runs/x',
+      '--config',
+      'a.ts',
+      '--config',
+      'b.ts',
+      '--set',
+      'HUNGER=85',
+      '--quiet',
+      '--no-csv',
     ])
     expect(args).toMatchObject({
-      seconds: 300, warmup: 30, out: 'runs/x', quiet: true, noCsv: true,
-      config: ['a.ts', 'b.ts'], set: ['HUNGER=85'],
+      seconds: 300,
+      warmup: 30,
+      out: 'runs/x',
+      quiet: true,
+      noCsv: true,
+      config: ['a.ts', 'b.ts'],
+      set: ['HUNGER=85'],
     })
   })
 
@@ -32,7 +55,9 @@ describe('parseArgs', () => {
 describe('resolveSeeds and buildJobs', () => {
   it('prefers an explicit list, then --runs from a base, then one seed', () => {
     expect(resolveSeeds(parseArgs(['--seeds', '3, 9'])).join()).toBe('3,9')
-    expect(resolveSeeds(parseArgs(['--seed', '10', '--runs', '3'])).join()).toBe('10,11,12')
+    expect(
+      resolveSeeds(parseArgs(['--seed', '10', '--runs', '3'])).join(),
+    ).toBe('10,11,12')
     expect(resolveSeeds(parseArgs([]))).toEqual([DEFAULT_SEED])
   })
 
@@ -42,15 +67,22 @@ describe('resolveSeeds and buildJobs', () => {
     expect(single.outDir).toBe('/out')
     expect(single.writeIndividuals).toBe(false)
     const multi = buildJobs(args, [1, 2], '/out')
-    expect(multi.map((job) => job.outDir)).toEqual(['/out/seed-1', '/out/seed-2'])
+    expect(multi.map((job) => job.outDir)).toEqual([
+      '/out/seed-1',
+      '/out/seed-2',
+    ])
     expect(multi.every((job) => job.writeIndividuals)).toBe(true)
   })
 })
 
 describe('buildOverrides', () => {
   it('parses JSON values, falls back to strings, and rejects bad keys', () => {
-    expect(buildOverrides(['HUNGER=85', 'MOVEMENT.walkFactor=0.6', 'NAME=abc'])).toEqual({
-      HUNGER: 85, 'MOVEMENT.walkFactor': 0.6, NAME: 'abc',
+    expect(
+      buildOverrides(['HUNGER=85', 'MOVEMENT.walkFactor=0.6', 'NAME=abc']),
+    ).toEqual({
+      HUNGER: 85,
+      'MOVEMENT.walkFactor': 0.6,
+      NAME: 'abc',
     })
     expect(() => buildOverrides(['A.B.C=1'])).toThrow(/at most one/)
     expect(() => buildOverrides(['1bad=1'])).toThrow(/not an identifier/)

@@ -17,8 +17,12 @@ const headerLines = (summary: RunSummary): string[] => {
   const { run, analysis } = summary
   const o = analysis.options
   const keys = Object.keys(analysis.diversity.prey.rows[0]?.traitMean ?? {})
-  const config = run.configLayers.length > 0 ? run.configLayers.join(' + ') : 'game default'
-  const overrides = Object.keys(run.overrides).length > 0 ? ` + ${JSON.stringify(run.overrides)}` : ''
+  const config =
+    run.configLayers.length > 0 ? run.configLayers.join(' + ') : 'game default'
+  const overrides =
+    Object.keys(run.overrides).length > 0
+      ? ` + ${JSON.stringify(run.overrides)}`
+      : ''
   return [
     `${run.endedAt.toFixed(1)}s of ${run.simSeconds}s simulated (${run.survived ? 'ran to the end' : `stopped: ${run.stopReason}`}), ` +
       `start ${run.startPrey} prey / ${run.startHunters} hunters, config: ${config}${overrides}`,
@@ -43,7 +47,10 @@ const footerLines = (summary: RunSummary): string[] => {
   ]
 }
 
-export const formatReport = (summary: RunSummary, samples: SampleRow[]): string => {
+export const formatReport = (
+  summary: RunSummary,
+  samples: SampleRow[],
+): string => {
   const { run, analysis } = summary
   return [
     `# eco-evo run report: seed ${run.seed}`,
@@ -68,7 +75,11 @@ export const formatReport = (summary: RunSummary, samples: SampleRow[]): string 
     '',
     '## Predation',
     '',
-    predationSection(analysis.overview, analysis.performers.hunter, analysis.lineage.timeToFirstKill),
+    predationSection(
+      analysis.overview,
+      analysis.performers.hunter,
+      analysis.lineage.timeToFirstKill,
+    ),
     '',
     '## Traits, selection, performers, builds',
     '',

@@ -18,6 +18,7 @@ that eco-evo should base itself on.
 ## 1. What we are taking from nagomi
 
 A browser-native, watch-first simulation with:
+
 - A **fixed-timestep** simulation loop decoupled from rendering.
 - A **strict separation of simulation and rendering**.
 - A **multi-pass WebGL renderer** at a **fixed low logical resolution**, upscaled with
@@ -32,18 +33,18 @@ The simulation content itself (koi behavior, water, weather) is not reused.
 
 ## 2. Tech stack
 
-| Area | Choice | Version |
-|---|---|---|
-| Framework | React + ReactDOM | `^19.3.0` |
-| Language | TypeScript | `^7.0.2` |
-| Build | Vite (`@vitejs/plugin-react`) | `^8.2.2` |
-| 3D / GPU | Three.js (WebGL) | `^0.186.0` |
-| Styling | Tailwind CSS v4 (CSS-first) + plain CSS | `^4.3.3` |
-| UI primitives | shadcn "base-rhea" on Base UI | `^1.8.0` |
-| Animation | `motion` | `^13.2.0` |
-| Fonts | `@fontsource-variable/inter` | `^5.3.0` |
-| Testing | Vitest | `^5.0.2` |
-| Deploy | Static SPA (nagomi uses Cloudflare Workers; **not Next.js**) | `wrangler` 4.131.2 |
+| Area          | Choice                                                       | Version            |
+| ------------- | ------------------------------------------------------------ | ------------------ |
+| Framework     | React + ReactDOM                                             | `^19.3.0`          |
+| Language      | TypeScript                                                   | `^7.0.2`           |
+| Build         | Vite (`@vitejs/plugin-react`)                                | `^8.2.2`           |
+| 3D / GPU      | Three.js (WebGL)                                             | `^0.186.0`         |
+| Styling       | Tailwind CSS v4 (CSS-first) + plain CSS                      | `^4.3.3`           |
+| UI primitives | shadcn "base-rhea" on Base UI                                | `^1.8.0`           |
+| Animation     | `motion`                                                     | `^13.2.0`          |
+| Fonts         | `@fontsource-variable/inter`                                 | `^5.3.0`           |
+| Testing       | Vitest                                                       | `^5.0.2`           |
+| Deploy        | Static SPA (nagomi uses Cloudflare Workers; **not Next.js**) | `wrangler` 4.131.2 |
 
 No ESLint/Biome/Prettier config; no Tailwind config file (Tailwind v4 uses `@theme` in CSS).
 ESM (`"type": "module"`).
@@ -52,9 +53,10 @@ ESM (`"type": "module"`).
 // vite.config.ts
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
-});
+  resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
+})
 ```
+
 ```json
 // tsconfig
 "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler",
@@ -62,6 +64,7 @@ export default defineConfig({
 "noUnusedLocals": true, "noUnusedParameters": true,
 "paths": { "@/*": ["./src/*"] }
 ```
+
 ```json
 "dev": "vite", "build": "tsc && vite build", "preview": "vite preview", "test": "vitest run"
 ```
@@ -96,21 +99,23 @@ Simulation modules are flat in `src/`; React UI in `src/components`; settings in
 ## 4. Simulation loop (core engine pattern)
 
 Fixed timestep, decoupled from render (`app.tsx`):
+
 ```ts
-let accumulator = 0;
-let previousTime = performance.now();
+let accumulator = 0
+let previousTime = performance.now()
 const animate = (now: number): void => {
-  accumulator += Math.min((now - previousTime) / 1000, 0.1); // clamp 100ms
-  previousTime = now;
+  accumulator += Math.min((now - previousTime) / 1000, 0.1) // clamp 100ms
+  previousTime = now
   while (accumulator >= FIXED_STEP) {
-    simulationTime += FIXED_STEP;
-    simulation.update(FIXED_STEP, simulationTime);
-    accumulator -= FIXED_STEP;
+    simulationTime += FIXED_STEP
+    simulation.update(FIXED_STEP, simulationTime)
+    accumulator -= FIXED_STEP
   }
-  renderer.draw(simulation, simulationTime, runtime.showDebug);
-  requestAnimationFrame(animate);
-};
+  renderer.draw(simulation, simulationTime, runtime.showDebug)
+  requestAnimationFrame(animate)
+}
 ```
+
 `FIXED_STEP = 1/60`. Simulation is fixed 60 Hz; rendering runs once per display frame. A
 `ResizeObserver` rescales entities and render targets while preserving relative positions.
 
@@ -122,10 +127,14 @@ render cost never changes simulation outcomes.
 ## 5. Rendering architecture
 
 ### 5.1 Fixed logical resolution -> pixel-art upscale
+
 - The renderer works at a **fixed logical resolution (480×270 in nagomi)** and upscales to the
   display. The canvas is CSS-scaled with:
   ```css
-  #canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+  #canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
   ```
   This is the source of the crisp pixel-art look. It is also cheap: fragment cost is constant
   regardless of window size.
@@ -136,8 +145,10 @@ render cost never changes simulation outcomes.
   ```
 
 ### 5.2 Multi-pass render targets (generic technique)
+
 nagomi composites scenes through intermediate `WebGLRenderTarget`s rather than drawing
 straight to the screen. The generalizable pattern:
+
 - Render "world/background layers" into an intermediate target.
 - Render an effect layer that **samples and distorts** that target (nagomi uses water for
   this — eco-evo would use whatever full-screen effect it needs, or skip it).
@@ -145,17 +156,18 @@ straight to the screen. The generalizable pattern:
 - Apply a final full-screen post-process pass to the screen.
 
 ```ts
-renderer.setRenderTarget(intermediateTarget);
-renderer.clear();
-renderer.render(backgroundScene, camera);
-renderer.render(entityScene, camera);
-renderer.setRenderTarget(compositeTarget);
-renderer.clear();
-renderer.render(effectScene, fullscreenCamera);   // samples intermediateTarget
-renderer.render(foregroundScene, camera);
-renderer.setRenderTarget(null);
-renderer.render(postScene, fullscreenCamera);
+renderer.setRenderTarget(intermediateTarget)
+renderer.clear()
+renderer.render(backgroundScene, camera)
+renderer.render(entityScene, camera)
+renderer.setRenderTarget(compositeTarget)
+renderer.clear()
+renderer.render(effectScene, fullscreenCamera) // samples intermediateTarget
+renderer.render(foregroundScene, camera)
+renderer.setRenderTarget(null)
+renderer.render(postScene, fullscreenCamera)
 ```
+
 Full-screen passes use an identity `THREE.Camera()` with `PlaneGeometry(2,2)` and a vertex
 shader writing clip-space directly (`gl_Position = vec4(position.xy, 0.0, 1.0)`).
 
@@ -163,28 +175,40 @@ shader writing clip-space directly (`gl_Position = vec4(position.xy, 0.0, 1.0)`)
 specific water/reflection/refraction passes are dropped.
 
 ### 5.3 CPU tessellation into preallocated typed arrays
+
 Instead of one mesh per entity, nagomi tessellates primitives on the CPU into preallocated
 `Float32Array` buffers with `DynamicDrawUsage`, then commits a draw range:
+
 ```ts
 class GeometryBatch {
   constructor(geometry, capacity, includeColors) {
-    this.values = new Float32Array(capacity);
-    this.attribute = new THREE.BufferAttribute(this.values, 3);
-    this.attribute.setUsage(THREE.DynamicDrawUsage);
-    geometry.setAttribute("position", this.attribute);
+    this.values = new Float32Array(capacity)
+    this.attribute = new THREE.BufferAttribute(this.values, 3)
+    this.attribute.setUsage(THREE.DynamicDrawUsage)
+    geometry.setAttribute('position', this.attribute)
     // optional per-vertex color attribute, same pattern
   }
-  point(p, color) { /* write x,y,z (+rgb) at cursor, advance */ }
-  triangle(a, b, c, color) { this.point(a, color); this.point(b, color); this.point(c, color); }
-  circle(center, radius, color, segments) { /* fan of triangles */ }
+  point(p, color) {
+    /* write x,y,z (+rgb) at cursor, advance */
+  }
+  triangle(a, b, c, color) {
+    this.point(a, color)
+    this.point(b, color)
+    this.point(c, color)
+  }
+  circle(center, radius, color, segments) {
+    /* fan of triangles */
+  }
   commit() {
-    geometry.setDrawRange(0, this.cursor / 3);
-    this.attribute.addUpdateRange(0, this.cursor);
-    this.attribute.needsUpdate = true;
+    geometry.setDrawRange(0, this.cursor / 3)
+    this.attribute.addUpdateRange(0, this.cursor)
+    this.attribute.needsUpdate = true
   }
 }
 ```
+
 Properties worth keeping:
+
 - **Zero per-frame allocation** of GPU buffers; capacity is a fixed constant.
 - Materials are flat `MeshBasicMaterial`/`LineBasicMaterial` with `vertexColors`,
   `depthTest:false`, `depthWrite:false`, `toneMapped:false` — no lighting, no depth sorting.
@@ -195,16 +219,29 @@ tens-to-hundreds of entities. For thousands, use **GPU instancing** (`THREE.Inst
 instead of growing these batches.
 
 ### 5.4 Pass class convention
+
 Every renderer pass has the same shape:
+
 ```ts
 class SomePass {
-  constructor() { /* build geometry + materials, expose .mesh/.group */ }
-  update(time: number): void { /* regenerate dynamic buffers / uniforms */ }
-  refreshConfig(): void { /* re-read settings */ }
-  resize(w, h, oldW, oldH): void { /* resize targets */ }
-  dispose(): void { /* free GPU resources */ }
+  constructor() {
+    /* build geometry + materials, expose .mesh/.group */
+  }
+  update(time: number): void {
+    /* regenerate dynamic buffers / uniforms */
+  }
+  refreshConfig(): void {
+    /* re-read settings */
+  }
+  resize(w, h, oldW, oldH): void {
+    /* resize targets */
+  }
+  dispose(): void {
+    /* free GPU resources */
+  }
 }
 ```
+
 Top-level renderer owns scenes, the camera, render targets, and the draw pipeline.
 
 ---
@@ -293,9 +330,9 @@ tag; add an `effects.ts` handler only if the tag is new. The UI is generated fro
 ## 10. Engine constants (nagomi reference)
 
 ```ts
-CANVAS = { width: 480, height: 270 }      // logical resolution
+CANVAS = { width: 480, height: 270 } // logical resolution
 SIMULATION = { updatesPerSecond: 60 }
-FIXED_STEP = 1/60
+FIXED_STEP = 1 / 60
 ```
 
 ---
@@ -309,9 +346,11 @@ its only Vercel tie is the optional `@vercel/analytics` snippet injected when a 
 detected (`main.tsx`). There is no server runtime or SSR requirement.
 
 ### eco-evo target: GitHub Pages or self-hosted
+
 Both work with the same static `dist/`.
 
 **GitHub Pages (project site):**
+
 - Set `base` in `vite.config.ts` to the repo subpath, e.g. `base: "/eco-evo/"`, so asset URLs
   resolve correctly. (User/org sites at the root use `base: "/"`.)
 - SPA deep links need a fallback: copy `index.html` to `404.html` on deploy, or use a hash
@@ -319,12 +358,14 @@ Both work with the same static `dist/`.
 - Deploy via GitHub Actions (`actions/upload-pages-artifact` + `actions/deploy-pages`).
 
 **Self-hosted (static):**
+
 - Serve `dist/` with nginx/Caddy. Add an SPA fallback (`try_files $uri /index.html;` in nginx,
   or `try_files {path} /index.html` in Caddy).
 - Set `base: "/"` (or a subpath if serving under one).
 - The app is fully client-side; no backend is required unless you add one for saved worlds.
 
 **Practical notes:**
+
 - Everything nagomi does runs in the browser (WebGL); no server needed.
 - Avoid `@vercel/analytics` and `wrangler`; use GitHub Pages' built-in analytics or a
   self-hosted option (e.g. Plausible/Umami) if desired.

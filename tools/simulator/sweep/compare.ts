@@ -32,7 +32,8 @@ export const readBaseline = (root: string, baselineArg: string): Aggregate => {
       `Baseline not found: ${baselineArg} (point at a run/sweep directory, sweep.json or summary.json)`,
     )
   }
-  const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<SweepFile> & Partial<RunSummary>
+  const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<SweepFile> &
+    Partial<RunSummary>
   if (parsed.aggregate) return parsed.aggregate
   const headline = parsed.analysis?.headline
   if (!headline) {
@@ -52,13 +53,22 @@ type Change = {
   z: number | null
 }
 
-const measureChange = (def: MetricDef, before: MetricStats, after: MetricStats): Change => {
+const measureChange = (
+  def: MetricDef,
+  before: MetricStats,
+  after: MetricStats,
+): Change => {
   const delta = after.mean - before.mean
   if (before.n < 2 || after.n < 2) return { def, before, after, delta, z: null }
   const standardError = Math.sqrt(
     (before.sd * before.sd) / before.n + (after.sd * after.sd) / after.n,
   )
-  const z = standardError === 0 ? (delta === 0 ? 0 : Infinity) : Math.abs(delta) / standardError
+  const z =
+    standardError === 0
+      ? delta === 0
+        ? 0
+        : Infinity
+      : Math.abs(delta) / standardError
   return { def, before, after, delta, z }
 }
 
@@ -73,7 +83,9 @@ const significanceMark = (change: Change): string => {
 const changeRow = (change: Change): string[] => {
   const { def } = change
   const relative =
-    change.before.mean === 0 ? null : change.delta / Math.abs(change.before.mean)
+    change.before.mean === 0
+      ? null
+      : change.delta / Math.abs(change.before.mean)
   const delta = def.percent
     ? `${(change.delta * 100).toFixed(0)}pt`
     : `${change.delta >= 0 ? '+' : ''}${formatValue(def, change.delta)}`
@@ -82,7 +94,9 @@ const changeRow = (change: Change): string[] => {
     formatValue(def, change.before.mean),
     formatValue(def, change.after.mean),
     delta,
-    relative === null ? 'n/a' : `${relative >= 0 ? '+' : ''}${(relative * 100).toFixed(0)}%`,
+    relative === null
+      ? 'n/a'
+      : `${relative >= 0 ? '+' : ''}${(relative * 100).toFixed(0)}%`,
     significanceMark(change),
   ]
 }
@@ -111,13 +125,19 @@ const summaryLine = (changes: Change[]): string => {
   }
   const named = significant
     .slice(0, SUMMARY_LIMIT)
-    .map((change) => `${change.def.key} (${change.delta > 0 ? '+' : ''}${num(change.delta)})`)
+    .map(
+      (change) =>
+        `${change.def.key} (${change.delta > 0 ? '+' : ''}${num(change.delta)})`,
+    )
     .join(', ')
   const more = significant.length > SUMMARY_LIMIT ? ', ...' : ''
   return `${significant.length} of ${changes.length} metrics changed beyond noise: ${named}${more}`
 }
 
-export const formatComparison = (before: Aggregate, after: Aggregate): string => {
+export const formatComparison = (
+  before: Aggregate,
+  after: Aggregate,
+): string => {
   const changes: Change[] = []
   for (const def of METRICS) {
     const a = before[def.key]
@@ -132,7 +152,21 @@ export const formatComparison = (before: Aggregate, after: Aggregate): string =>
       .map(changeRow)
     if (rows.length === 0) return []
     return [
-      [`#### ${group}`, '', table(['metric', 'baseline', 'current', 'delta', 'rel', hasNoise ? 'sig' : ''], rows)].join('\n'),
+      [
+        `#### ${group}`,
+        '',
+        table(
+          [
+            'metric',
+            'baseline',
+            'current',
+            'delta',
+            'rel',
+            hasNoise ? 'sig' : '',
+          ],
+          rows,
+        ),
+      ].join('\n'),
     ]
   })
 

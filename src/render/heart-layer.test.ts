@@ -1,9 +1,6 @@
 import { Matrix4, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
-import {
-  HEARTS_PER_BURST,
-  HEART_SIZE,
-} from '@/render/heart-burst'
+import { HEARTS_PER_BURST, HEART_SIZE } from '@/render/heart-burst'
 import { HeartLayer } from '@/render/heart-layer'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
 import { GESTATION_SECONDS } from '@/sim/config'

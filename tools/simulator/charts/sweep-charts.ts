@@ -27,21 +27,30 @@ const overlay = (
     color,
     width: 1,
     opacity: 0.35,
-    points: file.times.map((time, at) => [time, file[type][at]] as [number, number]),
+    points: file.times.map(
+      (time, at) => [time, file[type][at]] as [number, number],
+    ),
   }))
-  const longest = files.reduce((best, file) => (file.times.length > best.times.length ? file : best))
+  const longest = files.reduce((best, file) =>
+    file.times.length > best.times.length ? file : best,
+  )
   const median: ChartSeries = {
     name: `${type} median across seeds`,
     color,
     width: 2.5,
     points: longest.times.map((time, at) => [
       time,
-      lowerMedian(files.filter((file) => at < file.times.length).map((file) => file[type][at])),
+      lowerMedian(
+        files
+          .filter((file) => at < file.times.length)
+          .map((file) => file[type][at]),
+      ),
     ]),
   }
   return {
     title: `${capitalize(type)} population, every seed`,
-    subtitle: 'Thin lines are single seeds; the thick line is the median. Dips to zero are extinctions.',
+    subtitle:
+      'Thin lines are single seeds; the thick line is the median. Dips to zero are extinctions.',
     series: [...seeds, median],
     warmup,
     legend: false,
@@ -57,5 +66,9 @@ export const renderSweepHtml = (
   htmlPage(
     title,
     intro,
-    files.length === 0 ? [] : TYPE_NAMES.map((type, index) => overlay(files, type, SLOT[index], warmup)),
+    files.length === 0
+      ? []
+      : TYPE_NAMES.map((type, index) =>
+          overlay(files, type, SLOT[index], warmup),
+        ),
   )

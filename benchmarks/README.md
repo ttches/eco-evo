@@ -43,7 +43,9 @@ machine-specific). A recorded file looks like:
   "configLayers": [],
   "overrides": {},
   "statusCounts": { "WARN": 10, "NEAR-CRASH": 9, "CRASH": 1 },
-  "aggregate": { "prey.pop.mean": { "n": 20, "mean": 0, "sd": 0, "min": 0, "max": 0 } }
+  "aggregate": {
+    "prey.pop.mean": { "n": 20, "mean": 0, "sd": 0, "min": 0, "max": 0 }
+  }
 }
 ```
 

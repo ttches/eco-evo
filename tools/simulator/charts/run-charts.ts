@@ -8,8 +8,10 @@ import { escapeHtml, htmlPage, SLOT, type ChartSpec } from './page.ts'
 
 type Point = [number, number]
 
-const series = (samples: SampleRow[], pick: (row: SampleRow) => number): Point[] =>
-  samples.map((row) => [row.time, pick(row)])
+const series = (
+  samples: SampleRow[],
+  pick: (row: SampleRow) => number,
+): Point[] => samples.map((row) => [row.time, pick(row)])
 
 const traitChart = (
   type: (typeof TYPE_NAMES)[number],
@@ -35,14 +37,26 @@ const runCharts = (summary: RunSummary, samples: SampleRow[]): ChartSpec[] => {
   return [
     {
       title: 'Prey population',
-      series: [{ name: 'prey', color: SLOT[0], points: series(samples, (row) => row.alivePrey) }],
+      series: [
+        {
+          name: 'prey',
+          color: SLOT[0],
+          points: series(samples, (row) => row.alivePrey),
+        },
+      ],
       warmup,
       floor: options.floors.prey,
       legend: false,
     },
     {
       title: 'Hunter population',
-      series: [{ name: 'hunters', color: SLOT[1], points: series(samples, (row) => row.aliveHunter) }],
+      series: [
+        {
+          name: 'hunters',
+          color: SLOT[1],
+          points: series(samples, (row) => row.aliveHunter),
+        },
+      ],
       warmup,
       floor: options.floors.hunter,
       legend: false,
@@ -51,15 +65,29 @@ const runCharts = (summary: RunSummary, samples: SampleRow[]): ChartSpec[] => {
       title: 'Mean energy',
       subtitle: 'Average fed level of living glorps (0 = starving, 100 = full)',
       series: [
-        { name: 'prey', color: SLOT[0], points: series(samples, (row) => row.preyFed) },
-        { name: 'hunters', color: SLOT[1], points: series(samples, (row) => row.hunterFed) },
+        {
+          name: 'prey',
+          color: SLOT[0],
+          points: series(samples, (row) => row.preyFed),
+        },
+        {
+          name: 'hunters',
+          color: SLOT[1],
+          points: series(samples, (row) => row.hunterFed),
+        },
       ],
       warmup,
     },
     {
       title: 'Grass',
       subtitle: 'Mean grass density across the map (food supply)',
-      series: [{ name: 'grass', color: SLOT[2], points: series(samples, (row) => row.grassMean) }],
+      series: [
+        {
+          name: 'grass',
+          color: SLOT[2],
+          points: series(samples, (row) => row.grassMean),
+        },
+      ],
       warmup,
       legend: false,
     },
@@ -70,7 +98,9 @@ const runCharts = (summary: RunSummary, samples: SampleRow[]): ChartSpec[] => {
 const introHtml = (summary: RunSummary): string => {
   const { run, analysis } = summary
   const flags = analysis.health.flags
-    .map((flag) => `<li>${flagIcon(flag.level)} ${escapeHtml(flag.message)}</li>`)
+    .map(
+      (flag) => `<li>${flagIcon(flag.level)} ${escapeHtml(flag.message)}</li>`,
+    )
     .join('')
   return (
     `<p class="sub">seed ${run.seed} · ${run.endedAt.toFixed(0)}s simulated · ` +
@@ -79,5 +109,12 @@ const introHtml = (summary: RunSummary): string => {
   )
 }
 
-export const renderRunHtml = (summary: RunSummary, samples: SampleRow[]): string =>
-  htmlPage(`eco-evo run: seed ${summary.run.seed}`, introHtml(summary), runCharts(summary, samples))
+export const renderRunHtml = (
+  summary: RunSummary,
+  samples: SampleRow[],
+): string =>
+  htmlPage(
+    `eco-evo run: seed ${summary.run.seed}`,
+    introHtml(summary),
+    runCharts(summary, samples),
+  )

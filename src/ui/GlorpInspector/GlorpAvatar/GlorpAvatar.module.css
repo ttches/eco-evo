@@ -79,7 +79,9 @@
       rgb(255 255 255 / 0%) 80%
     ),
     linear-gradient(180deg, #6b3f00 0%, #ffd98a 50%, #6b3f00 100%);
-  background-size: 250% 250%, 100% 100%;
+  background-size:
+    250% 250%,
+    100% 100%;
   mix-blend-mode: color-dodge;
   opacity: 0.85;
   animation-duration: 3.5s;
@@ -107,7 +109,9 @@
       #cc4cfa 88%,
       #ff0084 100%
     );
-  background-size: 200% 200%, 300% 300%;
+  background-size:
+    200% 200%,
+    300% 300%;
   mix-blend-mode: color-dodge;
   opacity: 0.8;
   filter: saturate(1.4) contrast(1.1);
@@ -135,7 +139,9 @@
       #8a1aff 88%,
       #ff0090 100%
     );
-  background-size: 200% 200%, 300% 300%;
+  background-size:
+    200% 200%,
+    300% 300%;
   mix-blend-mode: color-dodge;
   opacity: 0.8;
   filter: saturate(1.6) brightness(1);
@@ -285,7 +291,12 @@
     radial-gradient(circle, #ffe45e 0 1.4px, rgb(255 255 255 / 0%) 1.8px),
     radial-gradient(circle, #7dffb0 0 1.4px, rgb(255 255 255 / 0%) 1.8px),
     linear-gradient(135deg, #1b1040, #2a0f4a 50%, #0f1b40);
-  background-size: 26px 26px, 33px 33px, 41px 41px, 52px 52px, 100% 100%;
+  background-size:
+    26px 26px,
+    33px 33px,
+    41px 41px,
+    52px 52px,
+    100% 100%;
   mix-blend-mode: color-dodge;
   opacity: 0.85;
   animation-duration: 8s;
@@ -304,7 +315,9 @@
       rgb(255 255 255 / 0%) 6px 10px
     ),
     linear-gradient(180deg, #ffd98a, #7fe0ff 50%, #ff9ad5);
-  background-size: 24px 100%, 100% 200%;
+  background-size:
+    24px 100%,
+    100% 200%;
   mix-blend-mode: overlay;
   opacity: 0.85;
   animation-duration: 4s;

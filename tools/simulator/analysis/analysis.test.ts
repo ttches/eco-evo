@@ -30,8 +30,18 @@ describe('stats', () => {
 
   it('correlates monotone data perfectly with spearman', () => {
     const xs = [1, 2, 3, 4, 5, 6]
-    expect(spearman(xs, xs.map((x) => x ** 3))).toBeCloseTo(1, 6)
-    expect(pearson(xs, xs.map(() => 1))).toBeNull()
+    expect(
+      spearman(
+        xs,
+        xs.map((x) => x ** 3),
+      ),
+    ).toBeCloseTo(1, 6)
+    expect(
+      pearson(
+        xs,
+        xs.map(() => 1),
+      ),
+    ).toBeNull()
   })
 
   it('recovers budget-relative slopes despite collinear traits', () => {
@@ -39,7 +49,7 @@ describe('stats', () => {
     const rows: number[][] = []
     const y: number[] = []
     let seed = 1
-    const rand = (): number => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+    const rand = (): number => (seed = (seed * 16807) % 2147483647) / 2147483647
     for (let i = 0; i < 400; i += 1) {
       const row = [4, 4, 4, 4]
       for (let k = 0; k < 6; k += 1) {
@@ -75,12 +85,19 @@ const sample = (time: number, prey: number, hunter: number): SampleRow => ({
   exhaustedFraction: 0,
   grassMean: 0.2,
   traits: {
-    prey: Object.fromEntries(TRAIT_KEYS.map((k) => [k, 4])) as SampleRow['traits']['prey'],
-    hunter: Object.fromEntries(TRAIT_KEYS.map((k) => [k, 4])) as SampleRow['traits']['hunter'],
+    prey: Object.fromEntries(
+      TRAIT_KEYS.map((k) => [k, 4]),
+    ) as SampleRow['traits']['prey'],
+    hunter: Object.fromEntries(
+      TRAIT_KEYS.map((k) => [k, 4]),
+    ) as SampleRow['traits']['hunter'],
   },
 })
 
-const options = (extinctAt: { prey: number | null; hunter: number | null }) => ({
+const options = (extinctAt: {
+  prey: number | null
+  hunter: number | null
+}) => ({
   warmupSeconds: 20,
   floors: { prey: 10, hunter: 3 },
   extinctAt,
@@ -101,13 +118,20 @@ describe('dynamics', () => {
     expect(d.hunter.status).toBe('near-crash')
     expect(d.prey.status).toBe('ok')
 
-    const early = series.map((row) => ({ ...row, aliveHunter: row.time < 10 ? 2 : 12 }))
-    expect(analyzeDynamics(early, options({ prey: null, hunter: null })).hunter.status).toBe('early-dip')
+    const early = series.map((row) => ({
+      ...row,
+      aliveHunter: row.time < 10 ? 2 : 12,
+    }))
+    expect(
+      analyzeDynamics(early, options({ prey: null, hunter: null })).hunter
+        .status,
+    ).toBe('early-dip')
   })
 
   it('reports extinction and a full drawdown', () => {
     const series: SampleRow[] = []
-    for (let t = 0; t <= 100; t += 1) series.push(sample(t, 50, t < 50 ? 10 : 0))
+    for (let t = 0; t <= 100; t += 1)
+      series.push(sample(t, 50, t < 50 ? 10 : 0))
     const d = analyzeDynamics(series, options({ prey: null, hunter: 49 }))
     expect(d.hunter.status).toBe('extinct')
     expect(d.hunter.extinctAt).toBe(49)
@@ -120,14 +144,34 @@ describe('dynamics', () => {
     const cycles = findCycles(wave, times, 40)
     expect(cycles.peaks).toBeGreaterThanOrEqual(3)
     expect(cycles.meanPeriod).toBeCloseTo(100, -1)
-    expect(findCycles(times.map((t) => 100 + (t % 2)), times, 40).peaks).toBe(0)
+    expect(
+      findCycles(
+        times.map((t) => 100 + (t % 2)),
+        times,
+        40,
+      ).peaks,
+    ).toBe(0)
   })
 })
 
 const person = (over: Partial<Individual>): Individual => ({
-  run: 0, id: 0, type: 'prey', generation: 1, founder: false, bornAt: 10, endAt: 110,
-  age: 100, alive: false, cause: 'starved', offspring: 0, kills: 0, cannibalKills: 0,
-  eligible: true, epoch: 0, traits: [4, 4, 4, 4], ...over,
+  run: 0,
+  id: 0,
+  type: 'prey',
+  generation: 1,
+  founder: false,
+  bornAt: 10,
+  endAt: 110,
+  age: 100,
+  alive: false,
+  cause: 'starved',
+  offspring: 0,
+  kills: 0,
+  cannibalKills: 0,
+  eligible: true,
+  epoch: 0,
+  traits: [4, 4, 4, 4],
+  ...over,
 })
 
 const tableOf = (rows: Individual[]): IndividualTable => ({
@@ -146,7 +190,14 @@ describe('selection and diversity', () => {
       const a = Math.min(7, Math.max(1, Math.floor(rest / 3)))
       const b = Math.min(7, Math.max(1, Math.floor((rest - a) / 2)))
       const c = Math.min(7, Math.max(1, Math.round(rest - a - b - 0)))
-      rows.push(person({ id: i, offspring: speed, age: 50 + speed * 5, traits: [speed, a, b, c] }))
+      rows.push(
+        person({
+          id: i,
+          offspring: speed,
+          age: 50 + speed * 5,
+          traits: [speed, a, b, c],
+        }),
+      )
     }
     const selection = analyzeSelection(tableOf(rows), 'prey')
     const speed = selection.traits.find((trait) => trait.trait === 'speed')!
@@ -159,8 +210,14 @@ describe('selection and diversity', () => {
     const mix = Array.from({ length: 20 }, (_, id) =>
       person({ id, traits: id % 2 === 0 ? [4, 4, 4, 4] : [6, 2, 4, 4] }),
     )
-    const bounds = [{ from: 0, to: 100 }, { from: 100, to: 200 }]
-    expect(analyzeDiversity(tableOf(clones), 'prey', bounds).rows[0].pairwiseDistance).toBe(0)
+    const bounds = [
+      { from: 0, to: 100 },
+      { from: 100, to: 200 },
+    ]
+    expect(
+      analyzeDiversity(tableOf(clones), 'prey', bounds).rows[0]
+        .pairwiseDistance,
+    ).toBe(0)
     const mixed = analyzeDiversity(tableOf(mix), 'prey', bounds).rows[0]
     expect(mixed.pairwiseDistance).toBeGreaterThan(0)
     expect(mixed.distinctBuilds).toBe(2)
@@ -168,10 +225,21 @@ describe('selection and diversity', () => {
 
   it('detects converging builds against founders', () => {
     const founders = Array.from({ length: 20 }, (_, id) =>
-      person({ id, founder: true, epoch: -1, traits: id % 2 === 0 ? [4, 4, 4, 4] : [7, 1, 4, 4] }),
+      person({
+        id,
+        founder: true,
+        epoch: -1,
+        traits: id % 2 === 0 ? [4, 4, 4, 4] : [7, 1, 4, 4],
+      }),
     )
-    const later = Array.from({ length: 20 }, (_, id) => person({ id: 100 + id, epoch: 1 }))
-    const report = analyzeDiversity(tableOf([...founders, ...later]), 'prey', [])
+    const later = Array.from({ length: 20 }, (_, id) =>
+      person({ id: 100 + id, epoch: 1 }),
+    )
+    const report = analyzeDiversity(
+      tableOf([...founders, ...later]),
+      'prey',
+      [],
+    )
     expect(report.trend.verdict).toBe('converging')
   })
 })
@@ -202,7 +270,9 @@ describe('individual table', () => {
     const world = createWorld(0, 4)
     const prey = spawnGlorp(world, GLORP_TYPE.prey, 100, 100)
     world.lineage.mutations[world.id[prey]] = 0x80000000
-    expect(checkIntegrity(world).failures.join()).toContain('unknown mutation bits')
+    expect(checkIntegrity(world).failures.join()).toContain(
+      'unknown mutation bits',
+    )
   })
 })
 
@@ -216,10 +286,17 @@ describe('sweep comparison', () => {
     const before = aggregateHeadlines(make(100))
     const after = aggregateHeadlines(make(150))
     const text = formatComparison(before, after)
-    const minRow = text.split('\n').find((line) => line.includes('settled min') && line.includes('prey') === false)
+    const minRow = text
+      .split('\n')
+      .find(
+        (line) =>
+          line.includes('settled min') && line.includes('prey') === false,
+      )
     expect(text).toContain('sig ↑')
     expect(minRow).toBeDefined()
-    const meanRow = text.split('\n').find((line) => line.includes('settled mean'))
+    const meanRow = text
+      .split('\n')
+      .find((line) => line.includes('settled mean'))
     expect(meanRow).not.toContain('sig')
   })
 })

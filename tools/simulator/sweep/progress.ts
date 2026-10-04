@@ -15,10 +15,15 @@ export const formatCompactRow = (summary: RunSummary): string => {
   const h = analysis.headline
   const triple = (type: string): string =>
     `${h[`${type}.pop.min`]}/${Math.round(h[`${type}.pop.mean`] ?? 0)}/${h[`${type}.pop.max`]}`
-  const extinct = (['prey', 'hunter'] as const).find((type) => h[`${type}.extinct`])
+  const extinct = (['prey', 'hunter'] as const).find(
+    (type) => h[`${type}.extinct`],
+  )
   return [
     String(run.seed).padStart(6),
-    (extinct ? `${analysis.health.status}:${extinct[0]}` : analysis.health.status).padEnd(10),
+    (extinct
+      ? `${analysis.health.status}:${extinct[0]}`
+      : analysis.health.status
+    ).padEnd(10),
     `${run.endedAt.toFixed(0)}s`.padStart(6),
     triple('prey').padStart(18),
     triple('hunter').padStart(18),

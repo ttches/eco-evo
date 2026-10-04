@@ -119,7 +119,10 @@ export const nearestGrassTile = (
         const deltaX = col * tileSize + half - x
         const deltaY = centerY - y
         const distance = deltaX * deltaX + deltaY * deltaY
-        if (distance < bestDistance || (distance === bestDistance && index < best)) {
+        if (
+          distance < bestDistance ||
+          (distance === bestDistance && index < best)
+        ) {
           bestDistance = distance
           best = index
         }

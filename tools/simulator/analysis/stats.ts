@@ -21,7 +21,10 @@ export const describe = (values: ArrayLike<number>): Distribution => {
   const sorted = Array.from(values).sort((a, b) => a - b)
   const at = (q: number): number =>
     sorted[
-      Math.min(sorted.length - 1, Math.max(0, Math.floor(q * (sorted.length - 1))))
+      Math.min(
+        sorted.length - 1,
+        Math.max(0, Math.floor(q * (sorted.length - 1))),
+      )
     ]
   let sum = 0
   for (const value of sorted) sum += value
@@ -168,7 +171,9 @@ export const ridgeSlopes = (
     for (let col = 0; col < k; col += 1) means[col] += rows[row][col] / n
   }
   const my = mean(y)
-  const a: number[][] = Array.from({ length: k }, () => new Array<number>(k + 1).fill(0))
+  const a: number[][] = Array.from({ length: k }, () =>
+    new Array<number>(k + 1).fill(0),
+  )
   for (let row = 0; row < n; row += 1) {
     for (let i = 0; i < k; i += 1) {
       const xi = rows[row][i] - means[i]
@@ -207,7 +212,10 @@ export const sparkline = (
   const bucket = Math.max(1, values.length / width)
   for (let cell = 0; cell * bucket < values.length; cell += 1) {
     const from = Math.floor(cell * bucket)
-    const to = Math.max(from + 1, Math.min(values.length, Math.floor((cell + 1) * bucket)))
+    const to = Math.max(
+      from + 1,
+      Math.min(values.length, Math.floor((cell + 1) * bucket)),
+    )
     let sum = 0
     for (let index = from; index < to; index += 1) sum += values[index]
     cells.push(sum / (to - from))

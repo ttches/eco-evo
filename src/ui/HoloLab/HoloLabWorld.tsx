@@ -124,9 +124,8 @@ const HoloLabWorld = () => {
       bottom: CONTENT_HEIGHT,
     }
     const world = makeWorld()
-    const layer = new GlorpDetailLayer(
-      (_world, index) =>
-        glorpHoloIndex(GLORP_HOLO_VARIANTS[Math.floor(index / COLUMNS)]),
+    const layer = new GlorpDetailLayer((_world, index) =>
+      glorpHoloIndex(GLORP_HOLO_VARIANTS[Math.floor(index / COLUMNS)]),
     )
     scene.add(layer.mesh)
 
@@ -135,7 +134,9 @@ const HoloLabWorld = () => {
     let frame = 0
 
     const draw = () => {
-      const time = still ? GLORP_HOLO_STILL_TIME : (performance.now() - start) / 1000
+      const time = still
+        ? GLORP_HOLO_STILL_TIME
+        : (performance.now() - start) / 1000
       layer.update(world, bounds, DETAIL_MIN_ZOOM, time)
       renderer.render(scene, camera)
       frame = requestAnimationFrame(draw)

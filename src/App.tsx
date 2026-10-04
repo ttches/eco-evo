@@ -9,16 +9,9 @@ import {
 import { CAMERA, FIXED_STEP } from '@/engine/config'
 import { createLoop } from '@/engine/loop'
 import { Renderer } from '@/render/renderer'
-import {
-  findGlorpById,
-  readGlorpView,
-  type GlorpView,
-} from '@/sim/inspect'
+import { findGlorpById, readGlorpView, type GlorpView } from '@/sim/inspect'
 import { setName } from '@/sim/lineage'
-import {
-  buildLeaderboard,
-  type GlorpStat,
-} from '@/sim/leaderboard'
+import { buildLeaderboard, type GlorpStat } from '@/sim/leaderboard'
 import { glorpAt } from '@/sim/query'
 import { spawnGlorp, spawnRandom } from '@/sim/spawn'
 import { resolveInitialSeed } from '@/sim/seed'

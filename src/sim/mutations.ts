@@ -54,7 +54,10 @@ const MUTATION_BITS: readonly number[] = MUTATION_KEYS.map(
 )
 
 /** Mask with every defined mutation bit set, used to reject unknown bits. */
-export const MUTATION_MASK_ALL = MUTATION_BITS.reduce((mask, bit) => mask | bit, 0)
+export const MUTATION_MASK_ALL = MUTATION_BITS.reduce(
+  (mask, bit) => mask | bit,
+  0,
+)
 
 /** True when the glorp's mask carries the mutation. */
 export const hasMutation = (mask: number, bit: number): boolean =>
@@ -147,9 +150,7 @@ export const rollSpawnMutations = (
   random: XorShift32,
   type: GlorpType,
 ): number =>
-  random.unit() < MUTATION_BIRTH_CHANCE
-    ? addRandomMutation(random, 0, type)
-    : 0
+  random.unit() < MUTATION_BIRTH_CHANCE ? addRandomMutation(random, 0, type) : 0
 
 /**
  * Roll a hunter's chance to take on a meal's mutation. A hunter with a mutation

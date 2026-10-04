@@ -75,7 +75,9 @@ export const findCycles = (
   if (values.length < 3 || threshold <= 0) return NO_CYCLES
   const { peaks, troughs } = zigzag(values, times, threshold)
 
-  const gaps = peaks.slice(1).map((peak, index) => peak.time - peaks[index].time)
+  const gaps = peaks
+    .slice(1)
+    .map((peak, index) => peak.time - peaks[index].time)
   const meanTrough = mean(troughs.map((trough) => trough.value))
   const swings = peaks.map((peak, index) => {
     const trough = troughs[index] ?? troughs[index - 1]

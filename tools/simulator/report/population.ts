@@ -21,7 +21,19 @@ const SPARK_WIDTH = 60
 
 const settledTable = (dynamics: PopulationDynamics): string =>
   table(
-    ['type', 'start', 'end', 'min', 'p10', 'median', 'mean', 'p90', 'max', 'cv', 'status'],
+    [
+      'type',
+      'start',
+      'end',
+      'min',
+      'p10',
+      'median',
+      'mean',
+      'p90',
+      'max',
+      'cv',
+      'status',
+    ],
     TYPE_NAMES.map((type) => {
       const d = dynamics[type]
       const s = d.settled
@@ -36,14 +48,24 @@ const settledTable = (dynamics: PopulationDynamics): string =>
         num(s.p90, 0),
         `${s.max} @${secs(s.maxAt)}`,
         num(s.cv, 2),
-        STATUS_NOTE[d.status] + (d.extinctAt !== null ? ` @${secs(d.extinctAt)}` : ''),
+        STATUS_NOTE[d.status] +
+          (d.extinctAt !== null ? ` @${secs(d.extinctAt)}` : ''),
       ]
     }),
   )
 
 const shapeTable = (dynamics: PopulationDynamics): string =>
   table(
-    ['type', 'worst drawdown', 'trend', 'cycles', 'period', 'swing', 'growth', 'time at/below floor'],
+    [
+      'type',
+      'worst drawdown',
+      'trend',
+      'cycles',
+      'period',
+      'swing',
+      'growth',
+      'time at/below floor',
+    ],
     TYPE_NAMES.map((type) => {
       const d = dynamics[type]
       const { drawdown, cycles } = d
@@ -54,13 +76,18 @@ const shapeTable = (dynamics: PopulationDynamics): string =>
         String(cycles.peaks),
         cycles.meanPeriod === null ? 'n/a' : secs(cycles.meanPeriod),
         cycles.swingRatio === null ? 'n/a' : `${cycles.swingRatio.toFixed(1)}x`,
-        cycles.swingGrowth === null ? 'n/a' : `x${cycles.swingGrowth.toFixed(2)}`,
+        cycles.swingGrowth === null
+          ? 'n/a'
+          : `x${cycles.swingGrowth.toFixed(2)}`,
         `${secs(d.belowFloor.seconds)} (floor ${d.floor})`,
       ]
     }),
   )
 
-const sparklines = (dynamics: PopulationDynamics, samples: SampleRow[]): string => {
+const sparklines = (
+  dynamics: PopulationDynamics,
+  samples: SampleRow[],
+): string => {
   const prey = samples.map((row) => row.alivePrey)
   const hunter = samples.map((row) => row.aliveHunter)
   const end = samples.length > 0 ? samples[samples.length - 1].time : 1
@@ -91,10 +118,18 @@ export const populationSection = (
     sparklines(dynamics, samples),
   ].join('\n')
 
-const windowLabel = (window: WindowRow | undefined, fallback: number): string =>
-  window ? `${window.from.toFixed(0)}-${window.to.toFixed(0)}s` : String(fallback)
+const windowLabel = (
+  window: WindowRow | undefined,
+  fallback: number,
+): string =>
+  window
+    ? `${window.from.toFixed(0)}-${window.to.toFixed(0)}s`
+    : String(fallback)
 
-export const epochSection = (windows: WindowRow[], flows: EpochFlow[]): string => {
+export const epochSection = (
+  windows: WindowRow[],
+  flows: EpochFlow[],
+): string => {
   const populations = windows.map((w) => [
     windowLabel(w, w.index),
     `${w.prey.mean.toFixed(0)} (${w.prey.min}-${w.prey.max})`,
@@ -103,7 +138,8 @@ export const epochSection = (windows: WindowRow[], flows: EpochFlow[]): string =
     num(w.hunterFed, 0),
     num(w.grass, 2),
   ])
-  const life = (seconds: number): string => (seconds === 0 ? '-' : secs(seconds))
+  const life = (seconds: number): string =>
+    seconds === 0 ? '-' : secs(seconds)
   const flowRows = flows.map((f) => [
     windowLabel(windows[f.index], f.index),
     `${f.born.prey}/${f.starved.prey}/${f.eaten.prey}`,
@@ -112,10 +148,23 @@ export const epochSection = (windows: WindowRow[], flows: EpochFlow[]): string =
     life(f.lifespan.hunter),
   ])
   return [
-    table(['window', 'prey mean (min-max)', 'hunter mean (min-max)', 'prey fed', 'hunter fed', 'grass'], populations),
+    table(
+      [
+        'window',
+        'prey mean (min-max)',
+        'hunter mean (min-max)',
+        'prey fed',
+        'hunter fed',
+        'grass',
+      ],
+      populations,
+    ),
     '',
     'Births / starved / eaten per window (eaten = killed by a hunter; for hunters, cannibalism):',
     '',
-    table(['window', 'prey b/s/e', 'prey life', 'hunter b/s/e', 'hunter life'], flowRows),
+    table(
+      ['window', 'prey b/s/e', 'prey life', 'hunter b/s/e', 'hunter life'],
+      flowRows,
+    ),
   ].join('\n')
 }

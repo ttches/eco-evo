@@ -84,7 +84,18 @@ export type DynamicsOptions = {
 
 const seriesStats = (values: number[], times: number[]): SeriesStats => {
   if (values.length === 0) {
-    return { min: 0, minAt: 0, max: 0, maxAt: 0, mean: 0, median: 0, p10: 0, p90: 0, sd: 0, cv: 0 }
+    return {
+      min: 0,
+      minAt: 0,
+      max: 0,
+      maxAt: 0,
+      mean: 0,
+      median: 0,
+      p10: 0,
+      p90: 0,
+      sd: 0,
+      cv: 0,
+    }
   }
   let minIndex = 0
   let maxIndex = 0
@@ -172,7 +183,10 @@ const floorBreaches = (
   }
 }
 
-const classify = (extinctAt: number | null, breaches: FloorBreaches): PopulationStatus => {
+const classify = (
+  extinctAt: number | null,
+  breaches: FloorBreaches,
+): PopulationStatus => {
   if (extinctAt !== null) return 'extinct'
   if (breaches.firstAt !== null) return 'near-crash'
   return breaches.inWarmup ? 'early-dip' : 'ok'
@@ -186,7 +200,8 @@ const halfTrend = (values: number[]): TypeDynamics['trend'] => {
   return {
     firstHalf,
     secondHalf,
-    change: half < 2 || firstHalf === 0 ? null : (secondHalf - firstHalf) / firstHalf,
+    change:
+      half < 2 || firstHalf === 0 ? null : (secondHalf - firstHalf) / firstHalf,
   }
 }
 
@@ -198,16 +213,27 @@ const analyzeType = (
 ): TypeDynamics => {
   const times = samples.map((row) => row.time)
   const values = samples.map((row) => countOf(row, type))
-  const firstSettled = samples.findIndex((row) => row.time >= options.warmupSeconds)
+  const firstSettled = samples.findIndex(
+    (row) => row.time >= options.warmupSeconds,
+  )
   const settledFrom = firstSettled < 0 ? samples.length : firstSettled
   const settledValues = values.slice(settledFrom)
   const settledTimes = times.slice(settledFrom)
   const settled = seriesStats(settledValues, settledTimes)
   const extinctAt = options.extinctAt[type]
   const floor = options.floors[type]
-  const belowFloor = floorBreaches(values, times, settledFrom, floor, sampleSeconds)
+  const belowFloor = floorBreaches(
+    values,
+    times,
+    settledFrom,
+    floor,
+    sampleSeconds,
+  )
 
-  const smoothingRadius = Math.max(0, Math.round(SMOOTHING_SECONDS / sampleSeconds / 2))
+  const smoothingRadius = Math.max(
+    0,
+    Math.round(SMOOTHING_SECONDS / sampleSeconds / 2),
+  )
   const swingThreshold = Math.max(
     MIN_CYCLE_SWING,
     settled.mean * (options.cycleProminence ?? CYCLE_PROMINENCE),
@@ -223,7 +249,11 @@ const analyzeType = (
     belowFloor,
     drawdown: maxDrawdown(settledValues, settledTimes),
     trend: halfTrend(settledValues),
-    cycles: findCycles(smooth(settledValues, smoothingRadius), settledTimes, swingThreshold),
+    cycles: findCycles(
+      smooth(settledValues, smoothingRadius),
+      settledTimes,
+      swingThreshold,
+    ),
     status: classify(extinctAt, belowFloor),
   }
 }
@@ -236,12 +266,18 @@ const windowRows = (samples: SampleRow[], windows: number): WindowRow[] => {
     const from = (end * index) / windows
     const to = (end * (index + 1)) / windows
     const inside = samples.filter(
-      (row) => row.time >= from && (index === windows - 1 ? row.time <= to : row.time < to),
+      (row) =>
+        row.time >= from &&
+        (index === windows - 1 ? row.time <= to : row.time < to),
     )
     if (inside.length === 0) continue
     const summarize = (pick: (row: SampleRow) => number) => {
       const values = inside.map(pick)
-      return { mean: mean(values), min: Math.min(...values), max: Math.max(...values) }
+      return {
+        mean: mean(values),
+        min: Math.min(...values),
+        max: Math.max(...values),
+      }
     }
     rows.push({
       index,
@@ -262,7 +298,10 @@ export const analyzeDynamics = (
   options: DynamicsOptions,
 ): PopulationDynamics => {
   const sampleSeconds =
-    samples.length > 1 ? (samples[samples.length - 1].time - samples[0].time) / (samples.length - 1) : 1
+    samples.length > 1
+      ? (samples[samples.length - 1].time - samples[0].time) /
+        (samples.length - 1)
+      : 1
   return {
     warmup: options.warmupSeconds,
     sampleSeconds,

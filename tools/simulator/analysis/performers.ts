@@ -5,7 +5,11 @@
  * compare with everyone of that type? `z` is the gap in population standard
  * deviations: +1 means the cohort runs a full sd above average in that trait.
  */
-import { buildKey, type Individual, type IndividualTable } from './individuals.ts'
+import {
+  buildKey,
+  type Individual,
+  type IndividualTable,
+} from './individuals.ts'
 import type { TypeName } from './types.ts'
 import { gini, mean, sd } from './stats.ts'
 
@@ -53,7 +57,10 @@ export type PerformerReport = {
 const COHORT_SIZE = 0.1
 const MIN_COHORT = 5
 
-const describeTraits = (rows: Individual[], keys: readonly string[]): PopulationTraits =>
+const describeTraits = (
+  rows: Individual[],
+  keys: readonly string[],
+): PopulationTraits =>
   Object.fromEntries(
     keys.map((key, index) => {
       const levels = rows.map((row) => row.traits[index])
@@ -129,35 +136,78 @@ export const analyzePerformers = (
   const keys = table.traitKeys
   const rows = table.rows.filter((row) => row.type === type && row.eligible)
   const population = describeTraits(rows, keys)
-  const size = Math.min(rows.length, Math.max(MIN_COHORT, Math.ceil(rows.length * COHORT_SIZE)))
+  const size = Math.min(
+    rows.length,
+    Math.max(MIN_COHORT, Math.ceil(rows.length * COHORT_SIZE)),
+  )
   const cohorts: Cohort[] = []
 
   if (rows.length >= MIN_COHORT) {
-    const byOffspring = ranked(rows, (r) => r.offspring, (r) => r.age).slice(0, size)
+    const byOffspring = ranked(
+      rows,
+      (r) => r.offspring,
+      (r) => r.age,
+    ).slice(0, size)
     cohorts.push(
-      buildCohort('offspring', 'most offspring', byOffspring, population, keys,
-        byOffspring[byOffspring.length - 1].offspring),
+      buildCohort(
+        'offspring',
+        'most offspring',
+        byOffspring,
+        population,
+        keys,
+        byOffspring[byOffspring.length - 1].offspring,
+      ),
     )
-    const byLife = ranked(rows, (r) => r.age, (r) => r.offspring).slice(0, size)
+    const byLife = ranked(
+      rows,
+      (r) => r.age,
+      (r) => r.offspring,
+    ).slice(0, size)
     cohorts.push(
-      buildCohort('lifespan', 'longest lived', byLife, population, keys,
-        byLife[byLife.length - 1].age),
+      buildCohort(
+        'lifespan',
+        'longest lived',
+        byLife,
+        population,
+        keys,
+        byLife[byLife.length - 1].age,
+      ),
     )
     // Short-lived is only meaningful among those who actually died young.
     const dead = rows.filter((row) => !row.alive)
     if (dead.length >= MIN_COHORT) {
       const shortSize = Math.min(dead.length, size)
-      const byDeath = ranked(dead, (r) => -r.age, (r) => -r.offspring).slice(0, shortSize)
+      const byDeath = ranked(
+        dead,
+        (r) => -r.age,
+        (r) => -r.offspring,
+      ).slice(0, shortSize)
       cohorts.push(
-        buildCohort('short-lived', 'shortest lived', byDeath, population, keys,
-          byDeath[byDeath.length - 1].age),
+        buildCohort(
+          'short-lived',
+          'shortest lived',
+          byDeath,
+          population,
+          keys,
+          byDeath[byDeath.length - 1].age,
+        ),
       )
     }
     if (type === 'hunter') {
-      const byKills = ranked(rows, (r) => r.kills, (r) => r.age).slice(0, size)
+      const byKills = ranked(
+        rows,
+        (r) => r.kills,
+        (r) => r.age,
+      ).slice(0, size)
       cohorts.push(
-        buildCohort('kills', 'most kills', byKills, population, keys,
-          byKills[byKills.length - 1].kills),
+        buildCohort(
+          'kills',
+          'most kills',
+          byKills,
+          population,
+          keys,
+          byKills[byKills.length - 1].kills,
+        ),
       )
     }
   }
@@ -165,7 +215,11 @@ export const analyzePerformers = (
   let topKillers: Killer[] = []
   let killShare: PerformerReport['killShare'] = null
   if (type === 'hunter' && rows.length > 0) {
-    topKillers = ranked(rows, (r) => r.kills, (r) => r.age)
+    topKillers = ranked(
+      rows,
+      (r) => r.kills,
+      (r) => r.age,
+    )
       .slice(0, 5)
       .filter((row) => row.kills > 0)
       .map((row) => ({
@@ -184,7 +238,8 @@ export const analyzePerformers = (
     const topCount = Math.max(1, Math.ceil(kills.length * COHORT_SIZE))
     const top = [...kills].sort((a, b) => b - a).slice(0, topCount)
     killShare = {
-      top10Share: total === 0 ? 0 : top.reduce((sum, value) => sum + value, 0) / total,
+      top10Share:
+        total === 0 ? 0 : top.reduce((sum, value) => sum + value, 0) / total,
       gini: gini(kills),
       zeroKillShare: kills.filter((value) => value === 0).length / kills.length,
     }

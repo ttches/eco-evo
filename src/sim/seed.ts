@@ -35,6 +35,6 @@ export const resolveInitialSeed = (
   search: string,
   random: () => number = randomUint32,
 ): number => {
-  const seed = parseSeed(search) ?? (random() >>> 0)
+  const seed = parseSeed(search) ?? random() >>> 0
   return seed === 0 ? 1 : seed
 }

@@ -50,7 +50,9 @@ const assertValidOverrides = (overrides) => {
     }
     for (const part of parts) {
       if (!IDENTIFIER.test(part)) {
-        throw new Error(`Invalid --set key "${key}": "${part}" is not an identifier`)
+        throw new Error(
+          `Invalid --set key "${key}": "${part}" is not an identifier`,
+        )
       }
     }
   }

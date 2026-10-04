@@ -2,7 +2,11 @@
  * Table-derived run overview: who was born, who died of what, how long they
  * lived, how much killing happened, and how all that flowed over time.
  */
-import { epochOf, type Individual, type IndividualTable } from './individuals.ts'
+import {
+  epochOf,
+  type Individual,
+  type IndividualTable,
+} from './individuals.ts'
 import { TYPE_NAMES, type TypeCounts, type TypeName } from './types.ts'
 import { describe, gini, mean, type Distribution } from './stats.ts'
 
@@ -82,8 +86,12 @@ const timeToDeath = (rows: Individual[]): TimeToDeath => {
   const dead = rows.filter((row) => !row.alive)
   return {
     all: describe(dead.map((row) => row.age)),
-    eaten: describe(dead.filter((row) => row.cause === 'eaten').map((row) => row.age)),
-    starved: describe(dead.filter((row) => row.cause === 'starved').map((row) => row.age)),
+    eaten: describe(
+      dead.filter((row) => row.cause === 'eaten').map((row) => row.age),
+    ),
+    starved: describe(
+      dead.filter((row) => row.cause === 'starved').map((row) => row.age),
+    ),
   }
 }
 
@@ -120,10 +128,16 @@ export const analyzeOverview = (table: IndividualTable): Overview => {
     born,
     alive,
     deaths,
-    timeToDeath: { prey: timeToDeath(byType.prey), hunter: timeToDeath(byType.hunter) },
+    timeToDeath: {
+      prey: timeToDeath(byType.prey),
+      hunter: timeToDeath(byType.hunter),
+    },
     eatenShare: {
       prey: deaths.prey.total === 0 ? 0 : deaths.prey.eaten / deaths.prey.total,
-      hunter: deaths.hunter.total === 0 ? 0 : deaths.hunter.eaten / deaths.hunter.total,
+      hunter:
+        deaths.hunter.total === 0
+          ? 0
+          : deaths.hunter.eaten / deaths.hunter.total,
     },
     predation: {
       preyKills,
@@ -137,21 +151,32 @@ export const analyzeOverview = (table: IndividualTable): Overview => {
       maxKills: kills.length === 0 ? 0 : Math.max(...kills),
       killsPerHunterMinute: hunterMinutes === 0 ? 0 : preyKills / hunterMinutes,
       top10Share:
-        preyKills === 0 ? 0 : topKills.reduce((sum, value) => sum + value, 0) / preyKills,
+        preyKills === 0
+          ? 0
+          : topKills.reduce((sum, value) => sum + value, 0) / preyKills,
       gini: gini(kills),
       zeroKillShare:
-        hunters.length === 0 ? 0 : hunters.filter((row) => row.kills === 0).length / hunters.length,
+        hunters.length === 0
+          ? 0
+          : hunters.filter((row) => row.kills === 0).length / hunters.length,
     },
     ageAtDeath: {
       bucketSeconds: AGE_BUCKET_SECONDS,
-      prey: toBuckets(byType.prey.filter((row) => !row.alive).map((row) => row.age)),
-      hunter: toBuckets(byType.hunter.filter((row) => !row.alive).map((row) => row.age)),
+      prey: toBuckets(
+        byType.prey.filter((row) => !row.alive).map((row) => row.age),
+      ),
+      hunter: toBuckets(
+        byType.hunter.filter((row) => !row.alive).map((row) => row.age),
+      ),
     },
   }
 }
 
 /** Births and deaths per equal slice of a single run's timeline. */
-export const analyzeFlows = (table: IndividualTable, endedAt: number): EpochFlow[] => {
+export const analyzeFlows = (
+  table: IndividualTable,
+  endedAt: number,
+): EpochFlow[] => {
   const epochs = table.epochs
   const flows: EpochFlow[] = Array.from({ length: epochs }, (_, index) => ({
     index,
@@ -167,7 +192,8 @@ export const analyzeFlows = (table: IndividualTable, endedAt: number): EpochFlow
     hunter: Array.from({ length: epochs }, () => []),
   }
   for (const row of table.rows) {
-    if (!row.founder) flows[epochOf(row.bornAt, endedAt, epochs)].born[row.type] += 1
+    if (!row.founder)
+      flows[epochOf(row.bornAt, endedAt, epochs)].born[row.type] += 1
     if (row.alive) continue
     const at = epochOf(row.endAt, endedAt, epochs)
     if (row.cause === 'eaten') flows[at].eaten[row.type] += 1
@@ -175,7 +201,8 @@ export const analyzeFlows = (table: IndividualTable, endedAt: number): EpochFlow
     lives[row.type][at].push(row.age)
   }
   for (const flow of flows) {
-    for (const type of TYPE_NAMES) flow.lifespan[type] = mean(lives[type][flow.index])
+    for (const type of TYPE_NAMES)
+      flow.lifespan[type] = mean(lives[type][flow.index])
   }
   return flows
 }

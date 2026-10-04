@@ -101,6 +101,12 @@ const encodePng = (grid) => {
   ])
 }
 
-const output = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'favicon.png')
+const output = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'public',
+  'favicon.png',
+)
 writeFileSync(output, encodePng(buildGrid()))
 console.log(`wrote ${output} (${GRID * SCALE}x${GRID * SCALE})`)

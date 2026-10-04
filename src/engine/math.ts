@@ -1,7 +1,10 @@
 export const TAU = Math.PI * 2
 
-export const clamp = (value: number, minimum: number, maximum: number): number =>
-  Math.min(Math.max(value, minimum), maximum)
+export const clamp = (
+  value: number,
+  minimum: number,
+  maximum: number,
+): number => Math.min(Math.max(value, minimum), maximum)
 
 export const lerp = (start: number, end: number, amount: number): number =>
   start + (end - start) * amount
@@ -19,7 +22,7 @@ export class XorShift32 {
   private state: number
 
   public constructor(seed = 0x00c0ffee) {
-    this.state = (seed >>> 0) || 0x00c0ffee
+    this.state = seed >>> 0 || 0x00c0ffee
   }
 
   public nextUint32(): number {

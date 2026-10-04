@@ -144,7 +144,11 @@ describe('sortStats', () => {
 })
 
 describe('filterStats', () => {
-  const stat = (id: number, type: GlorpStat['type'], alive: boolean): GlorpStat => ({
+  const stat = (
+    id: number,
+    type: GlorpStat['type'],
+    alive: boolean,
+  ): GlorpStat => ({
     id,
     name: `Glorp #${id}`,
     type,
@@ -169,8 +173,12 @@ describe('filterStats', () => {
 
   it('filters by diet and life status together', () => {
     expect(filterStats(entries, 'all', 'both')).toHaveLength(3)
-    expect(filterStats(entries, GLORP_TYPE.prey, 'both').map((e) => e.id)).toEqual([0, 1])
-    expect(filterStats(entries, 'all', 'alive').map((e) => e.id)).toEqual([0, 2])
+    expect(
+      filterStats(entries, GLORP_TYPE.prey, 'both').map((e) => e.id),
+    ).toEqual([0, 1])
+    expect(filterStats(entries, 'all', 'alive').map((e) => e.id)).toEqual([
+      0, 2,
+    ])
     expect(filterStats(entries, 'all', 'dead').map((e) => e.id)).toEqual([1])
     expect(filterStats(entries, GLORP_TYPE.hunter, 'dead')).toEqual([])
   })

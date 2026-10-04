@@ -32,11 +32,7 @@ import type { World } from '@/sim/world'
  * One motivation a glorp can act on. Returns a steering to take over this
  * step, or null to defer to the next, lower-priority drive.
  */
-export type Drive = (
-  world: World,
-  index: number,
-  dt: number,
-) => Steering | null
+export type Drive = (world: World, index: number, dt: number) => Steering | null
 
 const WALK = WALK_SPEED * MOVEMENT.walkFactor
 
@@ -104,7 +100,9 @@ const pursuitSpeed = (
   sprint: boolean,
   sprintMultiplier = 1,
 ): number =>
-  sprint ? speedTraitValue(world, index) * sprintMultiplier : jogSpeed(world, index)
+  sprint
+    ? speedTraitValue(world, index) * sprintMultiplier
+    : jogSpeed(world, index)
 
 // The latch normally implies `stamina === 0` while exhausted, but the explicit
 // `stamina > 0` guard also stops a zero-capacity glorp from sprinting forever.
@@ -174,7 +172,15 @@ const seekGrass: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
   const tile = nearestGrassTile(world.grass, world.x[index], world.y[index])
   if (!tile) return null
-  return steerToward(world, index, tile.x, tile.y, walkSpeed(world, index), false, dt)
+  return steerToward(
+    world,
+    index,
+    tile.x,
+    tile.y,
+    walkSpeed(world, index),
+    false,
+    dt,
+  )
 }
 
 /** Well-fed, off-cooldown hunters walk toward the nearest eligible mate. */

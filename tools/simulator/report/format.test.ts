@@ -21,7 +21,13 @@ describe('number formatting', () => {
 
 describe('table', () => {
   it('pads columns and right-aligns numeric ones', () => {
-    const text = table(['name', 'n'], [['alpha', '5'], ['b', '120']])
+    const text = table(
+      ['name', 'n'],
+      [
+        ['alpha', '5'],
+        ['b', '120'],
+      ],
+    )
     const lines = text.split('\n')
     expect(lines[0]).toBe('| name  |   n |')
     expect(lines[2]).toBe('| alpha |   5 |')
@@ -33,6 +39,8 @@ describe('table', () => {
 describe('flagLines', () => {
   it('prefixes severity icons and handles the empty case', () => {
     expect(flagLines([])).toBe('- none')
-    expect(flagLines([{ level: 'crash', code: 'x', message: 'boom' }])).toBe('- ✖ boom')
+    expect(flagLines([{ level: 'crash', code: 'x', message: 'boom' }])).toBe(
+      '- ✖ boom',
+    )
   })
 })

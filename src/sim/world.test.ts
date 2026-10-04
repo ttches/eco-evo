@@ -62,9 +62,7 @@ describe('createWorld', () => {
     expect(Array.from(first.type)).toEqual(Array.from(second.type))
     expect(Array.from(first.speed)).toEqual(Array.from(second.speed))
     expect(Array.from(first.endurance)).toEqual(Array.from(second.endurance))
-    expect(Array.from(first.fertility)).toEqual(
-      Array.from(second.fertility),
-    )
+    expect(Array.from(first.fertility)).toEqual(Array.from(second.fertility))
     expect(Array.from(first.wanderSeed)).toEqual(Array.from(second.wanderSeed))
     expect(Array.from(first.grass.values)).toEqual(
       Array.from(second.grass.values),

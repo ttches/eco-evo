@@ -64,9 +64,9 @@ describe('lineage births', () => {
     applyGestation(world, GESTATION_SECONDS)
 
     const child = readLineage(world.lineage, world.id[2])
-    expect([child?.parentA, child?.parentB].sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual(
-      [world.id[0], world.id[1]].sort((a, b) => a - b),
-    )
+    expect(
+      [child?.parentA, child?.parentB].sort((a, b) => (a ?? 0) - (b ?? 0)),
+    ).toEqual([world.id[0], world.id[1]].sort((a, b) => a - b))
     expect(child?.generation).toBe(1)
   })
 })

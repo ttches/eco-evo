@@ -10,7 +10,11 @@
  * sd) so different traits and outcomes are comparable.
  */
 import { TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
-import { buildKey, type Individual, type IndividualTable } from './individuals.ts'
+import {
+  buildKey,
+  type Individual,
+  type IndividualTable,
+} from './individuals.ts'
 import type { TypeName } from './types.ts'
 import { mean, ridgeSlopes, sd, spearman } from './stats.ts'
 
@@ -63,9 +67,15 @@ export type SelectionReport = {
 export const LOW_N = 40
 
 const metric = (row: Individual, outcome: Outcome): number =>
-  outcome === 'lifespan' ? row.age : outcome === 'offspring' ? row.offspring : row.kills
+  outcome === 'lifespan'
+    ? row.age
+    : outcome === 'offspring'
+      ? row.offspring
+      : row.kills
 
-const verdictOf = (effect: Partial<Record<Outcome, number | null>>): TraitVerdict => {
+const verdictOf = (
+  effect: Partial<Record<Outcome, number | null>>,
+): TraitVerdict => {
   const values = Object.values(effect).filter(
     (value): value is number => typeof value === 'number',
   )
@@ -86,9 +96,15 @@ export const analyzeSelection = (
   type: TypeName,
 ): SelectionReport => {
   const rows = table.rows.filter((row) => row.type === type && row.eligible)
-  const outcomes: Outcome[] = type === 'hunter' ? ['lifespan', 'offspring', 'kills'] : ['lifespan', 'offspring']
+  const outcomes: Outcome[] =
+    type === 'hunter'
+      ? ['lifespan', 'offspring', 'kills']
+      : ['lifespan', 'offspring']
   const series = Object.fromEntries(
-    outcomes.map((outcome) => [outcome, rows.map((row) => metric(row, outcome))]),
+    outcomes.map((outcome) => [
+      outcome,
+      rows.map((row) => metric(row, outcome)),
+    ]),
   ) as Record<Outcome, number[]>
   const slopes = Object.fromEntries(
     outcomes.map((outcome) => [
@@ -107,7 +123,8 @@ export const analyzeSelection = (
     const slopeBy: TraitSelection['slope'] = {}
     const effectBy: TraitSelection['effect'] = {}
     for (const outcome of outcomes) {
-      spearmanBy[outcome] = levels.length < 5 ? null : spearman(levels, series[outcome])
+      spearmanBy[outcome] =
+        levels.length < 5 ? null : spearman(levels, series[outcome])
       const slope = slopes[outcome]?.[traitIndex] ?? null
       slopeBy[outcome] = slope
       const outcomeSd = sd(series[outcome])

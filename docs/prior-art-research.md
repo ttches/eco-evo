@@ -10,15 +10,17 @@ individuals, and hundreds-to-thousands of agents in a zoomable world.
 ## 1. Closest matches (read these first)
 
 ### The Bibites — Léo Caussan
+
 - https://www.thebibites.com/ · https://thebibites.itch.io/the-bibites · genes: https://thebibites.fandom.com/wiki/Genes
 - Unity/C#, 2D, hundreds-to-low-thousands of agents.
 - **Closest genetics match.** Genes include Diet, Size Ratio, Metabolism Speed, View
-  Radius/Angle, color, organ sizes, plus *heritable* mutation genes. Mutation = Poisson count
+  Radius/Angle, color, organ sizes, plus _heritable_ mutation genes. Mutation = Poisson count
   of events, each applying a log-normal relative change `new = old * (1+var)^N(0,1)` plus a
   small absolute Gaussian term. Neural-net brains, energy-conserving metabolism, eggs from
   "similar-enough" parents, color derived from genes.
 
 ### Biosim4 — David Randall Miller
+
 - https://github.com/davidrmiller/biosim4 (3.4k★) · talk: https://www.youtube.com/watch?v=N3tRFayqVtk
 - C++/OpenCV + OpenMP, ~thousands of agents on a dense 2D grid.
 - **Closest engineering match.** Haploid genome compiles to a neural-net "brain" at birth.
@@ -27,6 +29,7 @@ individuals, and hundreds-to-thousands of agents in a zoomable world.
 - Nice-UI fork: https://github.com/ilyabrilev/biosim4
 
 ### Species: ALRE
+
 - https://store.steampowered.com/app/774541/
 - Unity/C#, desktop, hundreds. **Speciation reference** — emergent natural selection and
   real-time splitting into species via reproductive isolation. Maps to "similar-enough"
@@ -36,19 +39,19 @@ individuals, and hundreds-to-thousands of agents in a zoomable world.
 
 ## 2. Artificial life / evolution simulators
 
-| Project | URL | Stack | Scale | Notes |
-|---|---|---|---|---|
-| ALIEN | https://github.com/chrxh/alien | C++/CUDA | 10⁵–10⁶ | GPU physics, open-ended evolution |
-| Lenia | https://github.com/Chakazul/Lenia | Python/JS | millions of cells | continuous CA; JAX accel: https://github.com/maxencefaldor/cax |
-| Particle Life | https://github.com/tom-mohr/particle-life-app | Java | 10³–10⁴ | N×N attraction matrix, uniform spatial grid |
-| Polyworld | https://github.com/polyworld/polyworld | C++/Qt/OpenGL | hundreds | genome→body+brain+mutation rate, Hebbian learning |
-| Karl Sims | https://www.karlsims.com/evolved-virtual-creatures.html | CM-5 | hundreds | graph genotype→morphology+control |
-| Tierra | http://tomray.me/tierra/ | C VM | thousands | self-replicating code, host–parasite co-evolution |
-| Avida | https://github.com/devosoft/avida | C++ | thousands | instruction genomes, research platform |
-| rust_scriptbots | https://github.com/Dicklesworthstone/rust_scriptbots | Rust | many | deterministic ALife, GPU UI, DuckDB analytics |
-| Anima-Engine | https://github.com/DuongNAD/Anima-Engine | Rust/Tauri | GPU | real-time GPU-accelerated evolution |
-| formicarium | https://github.com/gliderkite/formicarium | Rust | many | ant-colony zero-player sim |
-| carykh JES | https://github.com/carykh/jes | Java/JS/Python | 10²–10³ | soft-body evolution sandbox |
+| Project         | URL                                                     | Stack          | Scale             | Notes                                                          |
+| --------------- | ------------------------------------------------------- | -------------- | ----------------- | -------------------------------------------------------------- |
+| ALIEN           | https://github.com/chrxh/alien                          | C++/CUDA       | 10⁵–10⁶           | GPU physics, open-ended evolution                              |
+| Lenia           | https://github.com/Chakazul/Lenia                       | Python/JS      | millions of cells | continuous CA; JAX accel: https://github.com/maxencefaldor/cax |
+| Particle Life   | https://github.com/tom-mohr/particle-life-app           | Java           | 10³–10⁴           | N×N attraction matrix, uniform spatial grid                    |
+| Polyworld       | https://github.com/polyworld/polyworld                  | C++/Qt/OpenGL  | hundreds          | genome→body+brain+mutation rate, Hebbian learning              |
+| Karl Sims       | https://www.karlsims.com/evolved-virtual-creatures.html | CM-5           | hundreds          | graph genotype→morphology+control                              |
+| Tierra          | http://tomray.me/tierra/                                | C VM           | thousands         | self-replicating code, host–parasite co-evolution              |
+| Avida           | https://github.com/devosoft/avida                       | C++            | thousands         | instruction genomes, research platform                         |
+| rust_scriptbots | https://github.com/Dicklesworthstone/rust_scriptbots    | Rust           | many              | deterministic ALife, GPU UI, DuckDB analytics                  |
+| Anima-Engine    | https://github.com/DuongNAD/Anima-Engine                | Rust/Tauri     | GPU               | real-time GPU-accelerated evolution                            |
+| formicarium     | https://github.com/gliderkite/formicarium               | Rust           | many              | ant-colony zero-player sim                                     |
+| carykh JES      | https://github.com/carykh/jes                           | Java/JS/Python | 10²–10³           | soft-body evolution sandbox                                    |
 
 ## 3. Biology / ecology simulations
 
@@ -58,8 +61,8 @@ individuals, and hundreds-to-thousands of agents in a zoomable world.
   the infinite-grass variant oscillates. Directly mirrors eco-evo's design.
 - **Mesa** — https://github.com/mesa/mesa (Python ABM framework, WolfSheep example).
 - **Lotka–Volterra** — https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations
-  Baseline predator-prey cycles. Key concepts: *paradox of enrichment* (richer environment can
-  destabilize) and the *atto-fox problem* (continuous models under-predict extinction in small
+  Baseline predator-prey cycles. Key concepts: _paradox of enrichment_ (richer environment can
+  destabilize) and the _atto-fox problem_ (continuous models under-predict extinction in small
   populations — a reason to use discrete agents).
 - **Ecopath with Ecosim** — https://ecopath.org/ (trophic mass-balance / food webs).
 - **Madingley Model** — https://madingley.github.io/ (general ecosystem model, cohorts).
@@ -80,6 +83,7 @@ individuals, and hundreds-to-thousands of agents in a zoomable world.
 ## 5. Genetics-focused simulations
 
 Mendelian inheritance is under-served by big ALife sims (most use haploid genomes). References:
+
 - **punnett-square** — https://github.com/smmariquit/punnett-square (React + TS + Vite).
 - **genetix** — https://github.com/Mohan-I/genetix (TS statistical inheritance).
 - **ABO Population Simulation** — https://github.com/bobbyybg/ABO-Population-Simulation
@@ -121,6 +125,7 @@ inheritance and occasional dominance surprises.
 ## 7. Patterns to borrow for eco-evo
 
 **Agent / energy**
+
 - Every glorp has an **energy reserve**; movement, attacking, reproduction, and idle
   metabolism drain it; eating replenishes; zero = death. This produces carrying capacity
   naturally (NetLogo, Bibites, Species ALRE).
@@ -130,6 +135,7 @@ inheritance and occasional dominance surprises.
   carrying-capacity knob.
 
 **Genetics**
+
 - Diploid, multi-locus, polygenic traits; phenotype = Σ allele effects + dominance + noise;
   cache phenotype at birth.
 - Make **mutation rate itself heritable** (Bibites): Poisson mutation count + log-normal
@@ -140,39 +146,42 @@ inheritance and occasional dominance surprises.
   omnivory evolves smoothly.
 
 **Ecology / macro-evolution**
+
 - Track lineage genetic distance → label species, optionally block interbreeding.
 - Watch for extinction cascades (predators overshoot prey) and evolutionary stagnation
   (Tierra/Avida plateau). Mitigate with spatial refugia, mutation variance, seasons.
 
 **Performance**
+
 - Dense uniform grid or spatial hash; SoA typed arrays; double-buffered ticks; Web Workers for
   sim; instanced rendering + LOD by zoom; fixed timestep; seeded RNG; object pools for
   births/deaths.
 
 **Presentation (watch-only "content")**
+
 - Population graphs, trait-distribution histograms, clade coloring, and speciation events are
   the things the player watches (PhET / Bibites style).
 
 ## 8. Quick-reference table
 
-| Project | URL | Stack | Scale | Genetics/evolution | Perf trick |
-|---|---|---|---|---|---|
-| Biosim4 | github.com/davidrmiller/biosim4 | C++/OpenMP | ~thousands | haploid genome→NN, generational | dense grid, OpenMP, double-buffer |
-| ALIEN | github.com/chrxh/alien | C++/CUDA | 10⁵–10⁶ | agent-based | GPU compute |
-| Lenia / cax | github.com/Chakazul/Lenia | Python/JS/JAX | millions | continuous CA | vectorized/GPU |
-| Particle Life | github.com/tom-mohr/particle-life-app | Java | 10³–10⁴ | attraction matrix | uniform spatial grid |
-| Polyworld | github.com/polyworld/polyworld | C++/OpenGL | hundreds | genome→body+brain | plane+vision |
-| Karl Sims | karlsims.com/evolved-virtual-creatures.html | CM-5 | hundreds | graph genotype→morphology | massively parallel HW |
-| Tierra | tomray.me/tierra | C VM | thousands | self-replicating code | custom VM |
-| Avida | github.com/devosoft/avida | C++ | thousands | instruction genomes | grid, research tooling |
-| The Bibites | thebibites.itch.io/the-bibites | Unity/C# | 10²–10³ | Mendelian-ish, Poisson+Gaussian mutation | real-time 2D energy systems |
-| Species ALRE | store.steampowered.com/app/774541 | Unity/C# | 10²–10³ | speciation, natural selection | real-time |
-| Thrive | github.com/Revolutionary-Games/Thrive | C#/Godot | player | organelle genome | engine |
-| carykh JES | github.com/carykh/jes | Java/JS | 10²–10³ | GA + physics bodies | browser |
-| NetLogo Wolf-Sheep | ccl.northwestern.edu/netlogo/models/WolfSheepPredation | NetLogo | 10²–10³ | energy budgets, grass regrowth | ABM reference |
-| bitECS | github.com/NateTheGreatt/bitECS | TS | — | — | typed arrays, SoA |
-| frame-budget | github.com/jdseo921/frame-budget | C#/Unity | 10⁴ | — | spatial hash + GPU instancing, 5.95 ms |
-| Primordial Particle System | github.com/curtis-aln/Primordial-Particle-System | C++/SFML | 10⁶ | particle ALife | spatial hash + multithread |
+| Project                    | URL                                                    | Stack         | Scale      | Genetics/evolution                       | Perf trick                             |
+| -------------------------- | ------------------------------------------------------ | ------------- | ---------- | ---------------------------------------- | -------------------------------------- |
+| Biosim4                    | github.com/davidrmiller/biosim4                        | C++/OpenMP    | ~thousands | haploid genome→NN, generational          | dense grid, OpenMP, double-buffer      |
+| ALIEN                      | github.com/chrxh/alien                                 | C++/CUDA      | 10⁵–10⁶    | agent-based                              | GPU compute                            |
+| Lenia / cax                | github.com/Chakazul/Lenia                              | Python/JS/JAX | millions   | continuous CA                            | vectorized/GPU                         |
+| Particle Life              | github.com/tom-mohr/particle-life-app                  | Java          | 10³–10⁴    | attraction matrix                        | uniform spatial grid                   |
+| Polyworld                  | github.com/polyworld/polyworld                         | C++/OpenGL    | hundreds   | genome→body+brain                        | plane+vision                           |
+| Karl Sims                  | karlsims.com/evolved-virtual-creatures.html            | CM-5          | hundreds   | graph genotype→morphology                | massively parallel HW                  |
+| Tierra                     | tomray.me/tierra                                       | C VM          | thousands  | self-replicating code                    | custom VM                              |
+| Avida                      | github.com/devosoft/avida                              | C++           | thousands  | instruction genomes                      | grid, research tooling                 |
+| The Bibites                | thebibites.itch.io/the-bibites                         | Unity/C#      | 10²–10³    | Mendelian-ish, Poisson+Gaussian mutation | real-time 2D energy systems            |
+| Species ALRE               | store.steampowered.com/app/774541                      | Unity/C#      | 10²–10³    | speciation, natural selection            | real-time                              |
+| Thrive                     | github.com/Revolutionary-Games/Thrive                  | C#/Godot      | player     | organelle genome                         | engine                                 |
+| carykh JES                 | github.com/carykh/jes                                  | Java/JS       | 10²–10³    | GA + physics bodies                      | browser                                |
+| NetLogo Wolf-Sheep         | ccl.northwestern.edu/netlogo/models/WolfSheepPredation | NetLogo       | 10²–10³    | energy budgets, grass regrowth           | ABM reference                          |
+| bitECS                     | github.com/NateTheGreatt/bitECS                        | TS            | —          | —                                        | typed arrays, SoA                      |
+| frame-budget               | github.com/jdseo921/frame-budget                       | C#/Unity      | 10⁴        | —                                        | spatial hash + GPU instancing, 5.95 ms |
+| Primordial Particle System | github.com/curtis-aln/Primordial-Particle-System       | C++/SFML      | 10⁶        | particle ALife                           | spatial hash + multithread             |
 
 **Bottom line:** The Bibites is the closest gameplay/genetics match; Biosim4 is the closest
 engineering match for grid+parallel agents; Species ALRE is the speciation reference; NetLogo

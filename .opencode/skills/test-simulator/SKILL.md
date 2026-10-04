@@ -29,29 +29,29 @@ npm run test:simulator -- --seeds 1,2,3,4 --seconds 600 --jobs 4 --out runs/swee
 
 ## Options
 
-| Flag | Meaning | Default |
-|---|---|---|
-| `--seed <n>` | single seed | `0x00c0ffee` |
-| `--seeds <a,b,c>` | explicit seed list | – |
-| `--runs <n>` | n consecutive seeds from `--seed` | – |
-| `--seconds <n>` | simulated seconds per run | `600` |
-| `--prey <n>` / `--hunters <n>` | starting population | `120` / `10` |
-| `--sample <s>` | time-series sampling interval | `2` |
-| `--warmup <s>` | start-up period excluded from "settled" population stats (clamped to 25% of the run) | `120` |
-| `--epochs <n>` | equal time slices for epoch tables and birth cohorts | `5` |
-| `--settle <s>` | ignore births in the last N s for selection stats | `60` |
-| `--floor-prey <n>` / `--floor-hunter <n>` | near-crash floor (post-warmup) | 15% / 40% of start |
-| `--stop-on <mode>` | `total` \| `prey` \| `hunter` \| `either` \| `none` | `total` |
-| `--check-every <steps>` | extinction check interval | `1` |
-| `--jobs <n>` | parallel worker processes | cpus-1 |
-| `--out <dir>` / `--label <name>` | output directory / suffix for the default one | `runs/<timestamp>` |
-| `--config <file>` / `--set KEY=VALUE` | config overlays / overrides (repeatable) | game config |
-| `--baseline <path>` | run or sweep directory (or `sweep.json`) to compare against | – |
-| `--no-csv` | skip `lineage.csv` / `timeseries.csv` | – |
-| `--quiet` | suppress the printed report | – |
+| Flag                                      | Meaning                                                                              | Default            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ | ------------------ |
+| `--seed <n>`                              | single seed                                                                          | `0x00c0ffee`       |
+| `--seeds <a,b,c>`                         | explicit seed list                                                                   | –                  |
+| `--runs <n>`                              | n consecutive seeds from `--seed`                                                    | –                  |
+| `--seconds <n>`                           | simulated seconds per run                                                            | `600`              |
+| `--prey <n>` / `--hunters <n>`            | starting population                                                                  | `120` / `10`       |
+| `--sample <s>`                            | time-series sampling interval                                                        | `2`                |
+| `--warmup <s>`                            | start-up period excluded from "settled" population stats (clamped to 25% of the run) | `120`              |
+| `--epochs <n>`                            | equal time slices for epoch tables and birth cohorts                                 | `5`                |
+| `--settle <s>`                            | ignore births in the last N s for selection stats                                    | `60`               |
+| `--floor-prey <n>` / `--floor-hunter <n>` | near-crash floor (post-warmup)                                                       | 15% / 40% of start |
+| `--stop-on <mode>`                        | `total` \| `prey` \| `hunter` \| `either` \| `none`                                  | `total`            |
+| `--check-every <steps>`                   | extinction check interval                                                            | `1`                |
+| `--jobs <n>`                              | parallel worker processes                                                            | cpus-1             |
+| `--out <dir>` / `--label <name>`          | output directory / suffix for the default one                                        | `runs/<timestamp>` |
+| `--config <file>` / `--set KEY=VALUE`     | config overlays / overrides (repeatable)                                             | game config        |
+| `--baseline <path>`                       | run or sweep directory (or `sweep.json`) to compare against                          | –                  |
+| `--no-csv`                                | skip `lineage.csv` / `timeseries.csv`                                                | –                  |
+| `--quiet`                                 | suppress the printed report                                                          | –                  |
 
 Use `--stop-on none` when studying dynamics: the default `total` only stops when
-*everything* is dead, so a hunter extinction runs on (which is what you want for
+_everything_ is dead, so a hunter extinction runs on (which is what you want for
 crash analysis). `either` ends a run the instant prey or hunters hit 0.
 
 ## Config overlays and `--set`

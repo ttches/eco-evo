@@ -11,13 +11,19 @@ import { createWorld, step } from '@/sim/world'
 import { countAlive, sampleWorld, type SampleRow } from './analysis/sampling.ts'
 import { analyzeWorld, defaultFloors } from './analyze.ts'
 import {
-    writeLineageCsv,
+  writeLineageCsv,
   writePoolingData,
   writeReports,
   writeSummaryJson,
   writeTimeseriesCsv,
 } from './artifacts.ts'
-import type { Job, RunConfig, RunSettings, RunSummary, StopOn } from './types.ts'
+import type {
+  Job,
+  RunConfig,
+  RunSettings,
+  RunSummary,
+  StopOn,
+} from './types.ts'
 
 const parseEnv = <T>(name: string, fallback: T): T => {
   const raw = process.env[name]

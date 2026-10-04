@@ -124,7 +124,8 @@ const defaultArgs = (): Args => ({
 
 const parseNumber = (flag: string, raw: string): number => {
   const value = Number(raw)
-  if (!Number.isFinite(value)) throw new Error(`Invalid number for ${flag}: ${raw}`)
+  if (!Number.isFinite(value))
+    throw new Error(`Invalid number for ${flag}: ${raw}`)
   return value
 }
 
@@ -135,8 +136,10 @@ const parseStopOn = (raw: string): StopOn => {
   return raw as StopOn
 }
 
-const isKeyOf = <T extends object>(table: T, key: string): key is Extract<keyof T, string> =>
-  Object.hasOwn(table, key)
+const isKeyOf = <T extends object>(
+  table: T,
+  key: string,
+): key is Extract<keyof T, string> => Object.hasOwn(table, key)
 
 /** Clamp values that would make a run meaningless, rather than failing late. */
 const normalize = (args: Args): Args => ({
@@ -158,9 +161,11 @@ export const parseArgs = (argv: string[]): Args => {
       return value
     }
 
-    if (isKeyOf(NUMBER_FLAGS, flag)) fields[NUMBER_FLAGS[flag]] = parseNumber(flag, next())
+    if (isKeyOf(NUMBER_FLAGS, flag))
+      fields[NUMBER_FLAGS[flag]] = parseNumber(flag, next())
     else if (isKeyOf(STRING_FLAGS, flag)) fields[STRING_FLAGS[flag]] = next()
-    else if (isKeyOf(LIST_FLAGS, flag)) (fields[LIST_FLAGS[flag]] as string[]).push(next())
+    else if (isKeyOf(LIST_FLAGS, flag))
+      (fields[LIST_FLAGS[flag]] as string[]).push(next())
     else if (isKeyOf(BOOLEAN_FLAGS, flag)) fields[BOOLEAN_FLAGS[flag]] = true
     else if (flag === '--seeds') {
       args.seeds = next()
@@ -205,7 +210,9 @@ export const buildOverrides = (pairs: string[]): Record<string, unknown> => {
     }
     for (const part of parts) {
       if (!IDENTIFIER.test(part)) {
-        throw new Error(`Invalid --set key "${key}": "${part}" is not an identifier`)
+        throw new Error(
+          `Invalid --set key "${key}": "${part}" is not an identifier`,
+        )
       }
     }
     overrides[key] = parseValue(rest.join('='))
@@ -222,7 +229,11 @@ export const timestamp = (now = new Date()): string => {
   )
 }
 
-export const buildJobs = (args: Args, seeds: number[], baseOut: string): Job[] => {
+export const buildJobs = (
+  args: Args,
+  seeds: number[],
+  baseOut: string,
+): Job[] => {
   const single = seeds.length === 1
   return seeds.map((seed) => ({
     seed,

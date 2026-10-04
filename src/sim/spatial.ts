@@ -32,7 +32,11 @@ export const createSpatialGrid = (): SpatialGrid => {
 }
 
 /** Column or row of a world coordinate, clamped onto the grid. */
-export const cellCoord = (value: number, cellSize: number, limit: number): number => {
+export const cellCoord = (
+  value: number,
+  cellSize: number,
+  limit: number,
+): number => {
   const cell = Math.floor(value / cellSize)
   return cell < 0 ? 0 : cell >= limit ? limit - 1 : cell
 }

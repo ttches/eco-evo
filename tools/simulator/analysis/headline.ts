@@ -16,7 +16,8 @@ const runMetrics = (analysis: RunAnalysis, endedAt: number): Headline => {
     'run.endedAt': endedAt,
     'run.crashed': health.status === 'CRASH' ? 1 : 0,
     'run.nearCrash': health.status === 'NEAR-CRASH' ? 1 : 0,
-    'run.flags.warn': health.flags.filter((flag) => flag.level === 'warn').length,
+    'run.flags.warn': health.flags.filter((flag) => flag.level === 'warn')
+      .length,
     'lineage.maxGeneration': lineage.maxGeneration,
     'lineage.generationTime': round(lineage.generationTimeMean, 2),
   }
@@ -96,7 +97,10 @@ const selectionMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
   return h
 }
 
-export const buildHeadline = (analysis: RunAnalysis, endedAt: number): Headline => ({
+export const buildHeadline = (
+  analysis: RunAnalysis,
+  endedAt: number,
+): Headline => ({
   ...runMetrics(analysis, endedAt),
   ...predationMetrics(analysis),
   ...Object.assign(

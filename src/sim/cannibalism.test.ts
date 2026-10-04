@@ -107,7 +107,8 @@ describe('hunter cannibalism', () => {
     // descending. Swap-removing index 0 before index 3 shifts a survivor into
     // the removed slot; a naive pass then removes the wrong glorp.
     const world = createWorld(4, 31)
-    for (let index = 0; index < 4; index += 1) world.type[index] = GLORP_TYPE.hunter
+    for (let index = 0; index < 4; index += 1)
+      world.type[index] = GLORP_TYPE.hunter
     world.x[0] = 100
     world.y[0] = 100
     world.x[1] = 100
@@ -130,7 +131,10 @@ describe('hunter cannibalism', () => {
     // Glorps 1 and 2 survive; 0 and 3 were eaten. A wrong removal order would
     // leave a survivor marked eaten and silently evict another glorp.
     expect(world.count).toBe(2)
-    const liveIds = Array.from({ length: world.count }, (_, index) => world.id[index])
+    const liveIds = Array.from(
+      { length: world.count },
+      (_, index) => world.id[index],
+    )
     expect(liveIds.sort((a, b) => a - b)).toEqual([1, 2])
     expect(world.lineage.deathCause[0]).toBe(DEATH_CAUSE.eaten)
     expect(world.lineage.deathCause[3]).toBe(DEATH_CAUSE.eaten)

@@ -37,7 +37,10 @@ export const writeReports = (
   summary: RunSummary,
   samples: SampleRow[],
 ): void => {
-  writeFileSync(path.join(dir, 'report.md'), `${formatReport(summary, samples)}\n`)
+  writeFileSync(
+    path.join(dir, 'report.md'),
+    `${formatReport(summary, samples)}\n`,
+  )
   writeFileSync(path.join(dir, 'report.html'), renderRunHtml(summary, samples))
 }
 
@@ -68,8 +71,18 @@ export const writePoolingData = (
 export const writeLineageCsv = (file: string, world: World): void => {
   const log = world.lineage
   const header = [
-    'id', 'type', 'parentA', 'parentB', 'generation', 'bornAt', 'diedAt',
-    'alive', 'deathCause', 'killer', ...TRAIT_KEYS, 'mutations',
+    'id',
+    'type',
+    'parentA',
+    'parentB',
+    'generation',
+    'bornAt',
+    'diedAt',
+    'alive',
+    'deathCause',
+    'killer',
+    ...TRAIT_KEYS,
+    'mutations',
   ].join(',')
   const rows = [header]
   for (let id = 0; id < log.size; id += 1) {
@@ -97,10 +110,19 @@ export const writeLineageCsv = (file: string, world: World): void => {
 /** Sampled live-population metrics over sim time, traits split by type. */
 export const writeTimeseriesCsv = (file: string, rows: SampleRow[]): void => {
   const header = [
-    'time', 'alivePrey', 'aliveHunter', 'aliveTotal', 'everBorn',
-    'preyFed', 'hunterFed', 'hunterPregnant',
-    'meanGenerationPrey', 'meanGenerationHunter',
-    'sprintDutyCycle', 'exhaustedFraction', 'grassMean',
+    'time',
+    'alivePrey',
+    'aliveHunter',
+    'aliveTotal',
+    'everBorn',
+    'preyFed',
+    'hunterFed',
+    'hunterPregnant',
+    'meanGenerationPrey',
+    'meanGenerationHunter',
+    'sprintDutyCycle',
+    'exhaustedFraction',
+    'grassMean',
     ...TYPE_NAMES.flatMap((type) => TRAIT_KEYS.map((key) => `${type}_${key}`)),
   ].join(',')
   const body = rows.map((row) =>
@@ -118,7 +140,9 @@ export const writeTimeseriesCsv = (file: string, rows: SampleRow[]): void => {
       row.sprintDutyCycle.toFixed(4),
       row.exhaustedFraction.toFixed(4),
       row.grassMean.toFixed(6),
-      ...TYPE_NAMES.flatMap((type) => TRAIT_KEYS.map((key) => row.traits[type][key].toFixed(3))),
+      ...TYPE_NAMES.flatMap((type) =>
+        TRAIT_KEYS.map((key) => row.traits[type][key].toFixed(3)),
+      ),
     ].join(','),
   )
   writeFileSync(file, `${[header, ...body].join('\n')}\n`)

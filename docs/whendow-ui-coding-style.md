@@ -22,24 +22,25 @@ not adopt its styled-components styling — eco-evo uses **CSS Modules** (see §
 
 ## 2. Tech stack
 
-| Area | Choice | Version |
-|---|---|---|
-| Framework | React + ReactDOM | `^19.2.8` |
-| Router | `react-router-dom` | `^7.18.3` |
-| Server state | `@tanstack/react-query` | `^5.56.2` |
-| Styling | `styled-components` | `^6.1.12` |
-| Class utils | `classnames` | `^2.5.1` |
-| Build | Vite + `@vitejs/plugin-react-swc` | `^8.2.2` |
-| Language | TypeScript | `^6.0.3` |
-| Unit tests | Vitest + Testing Library (jsdom) | `^4.1.11` |
-| Visual/component tests | Playwright CT | `1.61.0` |
-| Lint | ESLint flat config + typescript-eslint | `^10.9.1` |
-| Package manager | Yarn 4 (Berry), `nodeLinker: node-modules` | `yarn@4.6.0` |
+| Area                   | Choice                                     | Version      |
+| ---------------------- | ------------------------------------------ | ------------ |
+| Framework              | React + ReactDOM                           | `^19.2.8`    |
+| Router                 | `react-router-dom`                         | `^7.18.3`    |
+| Server state           | `@tanstack/react-query`                    | `^5.56.2`    |
+| Styling                | `styled-components`                        | `^6.1.12`    |
+| Class utils            | `classnames`                               | `^2.5.1`     |
+| Build                  | Vite + `@vitejs/plugin-react-swc`          | `^8.2.2`     |
+| Language               | TypeScript                                 | `^6.0.3`     |
+| Unit tests             | Vitest + Testing Library (jsdom)           | `^4.1.11`    |
+| Visual/component tests | Playwright CT                              | `1.61.0`     |
+| Lint                   | ESLint flat config + typescript-eslint     | `^10.9.1`    |
+| Package manager        | Yarn 4 (Berry), `nodeLinker: node-modules` | `yarn@4.6.0` |
 
 Notable: **no Prettier / EditorConfig / Biome / Stylelint**. Formatting is manual and
 therefore inconsistent (see §5). Declared but unused: `graphql`, `graphql-request`.
 
 ### Scripts
+
 ```json
 "dev": "vite dev --mode dev --port 8000",
 "build": "vite build",
@@ -50,8 +51,10 @@ therefore inconsistent (see §5). Declared but unused: `graphql`, `graphql-reque
 ```
 
 ### TypeScript
+
 Root `tsconfig.json` uses project references (`tsconfig.app.json`, `tsconfig.node.json`).
 The app config is **strict, no path aliases**:
+
 ```json
 "target": "ES2020",
 "lib": ["ES2020", "DOM", "DOM.Iterable"],
@@ -67,11 +70,14 @@ The app config is **strict, no path aliases**:
 "noUnusedParameters": true,
 "noFallthroughCasesInSwitch": true
 ```
+
 No `baseUrl`/`paths` — **100% relative imports**, no barrel files.
 
 ### ESLint (`eslint.config.js`)
+
 Flat config with `js.configs.recommended` + `tseslint.configs.recommended`, `react-hooks`,
 `react-refresh`. Key rules:
+
 ```js
 "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
 "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
@@ -110,7 +116,9 @@ src/
 ## 4. Coding style & conventions
 
 ### 4.1 Functions — `const` arrow everywhere
+
 The only `function` declaration is the Vite scaffold `App` in `App.tsx:9`. Everything else:
+
 ```tsx
 const Meeting = () => { ... };                 // src/Components/Meeting.tsx:19
 export const formatDate = (date: string) => {  // src/utilities/dates.ts:1
@@ -120,7 +128,9 @@ const AnimatedBackground = () => (             // src/Components/AnimatedBackgro
   <Scene aria-hidden="true"> ... </Scene>
 );
 ```
+
 Naming:
+
 - Components/types/styled components: `PascalCase`.
 - Functions/variables/hooks: `camelCase`; hooks prefixed `use`.
 - Module constants: `SCREAMING_SNAKE_CASE` (`HEARTS_PER_WORD`, `LANE_COUNT`,
@@ -129,28 +139,32 @@ Naming:
 - Handlers: `handleX`; derived getters: `getX`; callback props: `onX`.
 
 ### 4.2 Types — `type` only, never `interface`
+
 There are **zero `interface` declarations** in the codebase. No `I` prefix.
+
 ```ts
 export type Meeting = {
-  createdAt: string;
-  endDate: string;
-  id: string;
-  name: string;
-  owner: string;
-  startDate: string;
-  winningDates: string[];
-};                                    // src/api/queries/getMeetingById.ts:7
+  createdAt: string
+  endDate: string
+  id: string
+  name: string
+  owner: string
+  startDate: string
+  winningDates: string[]
+} // src/api/queries/getMeetingById.ts:7
 
 type SetAvailabilityProps = {
-  availabilities: MeetingAvailability[];
-  endDate: string;
-  onCancel?: () => void;
-  onSuccess: (availability: string[]) => void;
-  startDate: string;
-  theme?: IndicatorType;
-};                                    // src/Components/SetAvailability.tsx:11
+  availabilities: MeetingAvailability[]
+  endDate: string
+  onCancel?: () => void
+  onSuccess: (availability: string[]) => void
+  startDate: string
+  theme?: IndicatorType
+} // src/Components/SetAvailability.tsx:11
 ```
+
 Rules:
+
 - Props types are named `<ComponentName>Props`, declared immediately above the component.
 - Types are **co-located**, no central `types.ts`.
 - **Domain types are exported from the API module** that fetches them and imported by UI
@@ -159,6 +173,7 @@ Rules:
 - `import type` used selectively.
 
 ### 4.3 React components
+
 - Function components, arrow form, **no `React.FC`**, no explicit return types.
 - Props destructured in the parameter list.
 - **Default export as a separate statement at the bottom:**
@@ -171,29 +186,36 @@ Rules:
 - File name `PascalCase` matching the default export.
 
 ### 4.4 Data layer — the strongest common pattern to copy
+
 `src/api/gql.ts` is a hand-rolled generic fetch wrapper (not `graphql-request`):
+
 ```ts
-const API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = import.meta.env.VITE_API_BASE
 const createGraphqlClient = (url: string) => {
-  const request = async <T>(query: string, variables: { [key: string]: unknown } = {}): Promise<T> => {
+  const request = async <T>(
+    query: string,
+    variables: { [key: string]: unknown } = {},
+  ): Promise<T> => {
     const res = await fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables: { ...variables } }),
-    });
-    return await res.json();
-  };
-  return { request };
-};
-const client = createGraphqlClient(`${API_BASE}/graphql/`);
-const { request } = client;
-export { request };
+    })
+    return await res.json()
+  }
+  return { request }
+}
+const client = createGraphqlClient(`${API_BASE}/graphql/`)
+const { request } = client
+export { request }
 ```
+
 Every query module follows the same template — `query` string -> domain type -> response
 type -> **exported query-key constant** -> default-exported hook:
+
 ```ts
-export const GET_MEETING_BY_ID_QUERY_KEY = "GET_MEETING_BY_ID";
+export const GET_MEETING_BY_ID_QUERY_KEY = 'GET_MEETING_BY_ID'
 
 const useGetMeetingById = (input: GetMeetingByIdInput) =>
   useQuery({
@@ -204,35 +226,39 @@ const useGetMeetingById = (input: GetMeetingByIdInput) =>
       startDate: formatDate(data.data.meetingById.startDate),
       endDate: formatDate(data.data.meetingById.endDate),
     }),
-  });
-export default useGetMeetingById;
+  })
+export default useGetMeetingById
 ```
+
 Mutations wrap `useMutation` and invalidate query keys in `onSuccess`; query-key constants are
 shared across query and mutation files purely for cache invalidation.
 
 ### 4.5 State & hooks
+
 - **Server state: React Query only.** No Redux/Zustand/Context.
 - **Local UI state: `useState`**, often an enum mode (`CalendarMode`, `CreateMeetingSteps`).
 - Derived booleans via `Boolean(...)`.
 - `useModal` returns a component plus controls — a house pattern:
   ```tsx
   const useModal = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const Modal = ({ children }: ModalProps) => (isOpen ? <Overlay>{children}</Overlay> : null);
-    return { Modal, closeModal, openModal, isOpen };
-  };
+    const [isOpen, setIsOpen] = useState(false)
+    const Modal = ({ children }: ModalProps) =>
+      isOpen ? <Overlay>{children}</Overlay> : null
+    return { Modal, closeModal, openModal, isOpen }
+  }
   ```
 - Error handling is minimal/ad hoc; no global error boundary or toast. Mutations expose
   `isPending`/`isLoading` to disable buttons.
 
 ### 4.6 Styling
+
 - **styled-components v6 exclusively**; no CSS Modules, Tailwind, or Sass.
 - One sibling `<Name>.styles.ts` per component, **named exports**, hardcoded hex colors.
 - Variants via **transient props** (`$` prefix) so props don't leak to the DOM:
   ```ts
   export const CountBarFill = styled.div<{ $percentage: number }>`
     width: ${({ $percentage }) => $percentage}%;
-  `;
+  `
   ```
 - Uses `keyframes`, the `css` helper, component extension (`styled(CausticLayer)`), inline
   media queries, and class-based state combined with `classnames`.
@@ -243,6 +269,7 @@ shared across query and mutation files purely for cache invalidation.
   `#0d7b7b`, `#551665`, `#e8e2f4`). A `palette.md` exists but is largely unreflected in code.
 
 ### 4.7 Imports & formatting
+
 - Relative imports only, no aliases, no barrels.
 - Import order **not enforced and inconsistent** (some files put local imports before
   libraries).
@@ -251,6 +278,7 @@ shared across query and mutation files purely for cache invalidation.
 - Trailing commas inconsistent.
 
 ### 4.8 Testing
+
 - Vitest `*.test.ts(x)` co-located; Playwright CT `*.spec.tsx` co-located.
 - Shared helpers under `src/test/`: `renderWithClient.tsx` (wraps UI in a QueryClientProvider
   with retries off), `setup.ts` (jest-dom + RTL cleanup), `calendarDates.ts` fixtures.
@@ -260,6 +288,7 @@ shared across query and mutation files purely for cache invalidation.
 ## 5. House-style summary to emulate
 
 **Do:**
+
 - `const` arrow functions everywhere; default-export components at the bottom; named exports
   for styles, types, constants.
 - `type` aliases only (no `interface`, no `I` prefix); `<Component>Props` co-located; domain
@@ -272,6 +301,7 @@ shared across query and mutation files purely for cache invalidation.
 - Relative imports, no barrels.
 
 **Don't copy:**
+
 - **styled-components** — eco-evo uses **CSS Modules** instead (see below).
 - Unenforced formatting (no Prettier). If eco-evo wants consistency, add Prettier + import
   sorting rather than mimicking the drift.
@@ -287,6 +317,7 @@ whendow.ui styles components with **styled-components v6** (see §4.6). eco-evo 
 use styled-components. Per notes.md, eco-evo uses **CSS Modules**.
 
 Why CSS Modules fits eco-evo:
+
 - Zero runtime dependency — styles compile to static CSS; no CSS-in-JS runtime cost, which
   matters for a heavy simulation running at 60 Hz.
 - Natively supported by Vite with no config: name files `*.module.css` and
@@ -296,6 +327,7 @@ Why CSS Modules fits eco-evo:
   need styling.
 
 Suggested eco-evo conventions (mirroring whendow.ui's co-location, minus styled-components):
+
 - One sibling `<Component>.module.css` per component.
 - Reference styles as `styles.root`, `styles.title`, etc.
 - Conditional classes via `classnames` (same library whendow.ui uses).

@@ -18,13 +18,16 @@ export type LineageStats = {
 }
 
 /** Exact extinction time: the last death of a type that has no living members. */
-export const extinctionTimes = (world: World): Record<TypeName, number | null> => {
+export const extinctionTimes = (
+  world: World,
+): Record<TypeName, number | null> => {
   const log = world.lineage
   const alive = countAlive(world)
   const last: Record<TypeName, number> = { prey: 0, hunter: 0 }
   for (let id = 0; id < log.size; id += 1) {
     if (log.deathCause[id] === DEATH_CAUSE.alive) continue
-    const type: TypeName = log.type[id] === GLORP_TYPE.hunter ? 'hunter' : 'prey'
+    const type: TypeName =
+      log.type[id] === GLORP_TYPE.hunter ? 'hunter' : 'prey'
     if (log.diedAt[id] > last[type]) last[type] = log.diedAt[id]
   }
   return {
@@ -74,7 +77,9 @@ export const lineageStats = (
     maxGeneration,
     meanGenerationDead: deadCount === 0 ? 0 : generationSumDead / deadCount,
     generationTimeMean:
-      generationTimeCount === 0 ? null : generationTimeSum / generationTimeCount,
+      generationTimeCount === 0
+        ? null
+        : generationTimeSum / generationTimeCount,
     offspringPerParentMean:
       parents.length === 0
         ? 0
@@ -85,4 +90,3 @@ export const lineageStats = (
     },
   }
 }
-

@@ -59,7 +59,8 @@ describe('nearestOfType on the grid', () => {
     for (let trial = 0; trial < 20; trial += 1) {
       const world = createWorld(200, trial + 1)
       for (let index = 0; index < world.count; index += 1) {
-        world.type[index] = random.unit() < 0.7 ? GLORP_TYPE.prey : GLORP_TYPE.hunter
+        world.type[index] =
+          random.unit() < 0.7 ? GLORP_TYPE.prey : GLORP_TYPE.hunter
         // Snap some positions to a coarse lattice so exact distance ties occur.
         if (random.unit() < 0.3) {
           world.x[index] = Math.round(world.x[index] / 40) * 40

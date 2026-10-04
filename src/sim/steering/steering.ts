@@ -24,7 +24,11 @@ export const steerWander = (
     magnitude < 1e-4
       ? seed * TAU
       : Math.atan2(vy, vx) + (seed - 0.5) * WANDER_TURN_RATE * dt
-  return { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed, sprint: false }
+  return {
+    x: Math.cos(angle) * speed,
+    y: Math.sin(angle) * speed,
+    sprint: false,
+  }
 }
 
 /** Head along a direction vector; wanders instead if it has no length. */

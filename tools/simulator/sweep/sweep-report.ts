@@ -1,20 +1,31 @@
 /** The multi-seed report: verdict, per-seed table, flag rollup, metrics, pooled analysis. */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { concatTables, parseTable, type IndividualTable } from '../analysis/individuals.ts'
+import {
+  concatTables,
+  parseTable,
+  type IndividualTable,
+} from '../analysis/individuals.ts'
 import { analyzeIndividuals } from '../analyze.ts'
 import { renderSweepHtml, type PopulationFile } from '../charts/sweep-charts.ts'
 import { flagIcon, table } from '../report/format.ts'
 import { deathsSection, predationSection } from '../report/mortality.ts'
 import { individualSections } from '../report/traits.ts'
 import type { RunSummary } from '../types.ts'
-import type { Aggregate, MetricStats, SweepFile, SweepRun } from './aggregate.ts'
+import type {
+  Aggregate,
+  MetricStats,
+  SweepFile,
+  SweepRun,
+} from './aggregate.ts'
 import { formatValue, METRICS, type MetricDef } from './metrics.ts'
 
 export type PoolInput = { dir: string; summary: RunSummary }
 
-const readJsonIfPresent = <T>(file: string, parse: (text: string) => T): T | null =>
-  existsSync(file) ? parse(readFileSync(file, 'utf8')) : null
+const readJsonIfPresent = <T>(
+  file: string,
+  parse: (text: string) => T,
+): T | null => (existsSync(file) ? parse(readFileSync(file, 'utf8')) : null)
 
 // -------------------------------------------------------------- metric tables
 
@@ -38,7 +49,10 @@ const metricTables = (aggregate: Aggregate): string => {
       [
         `#### ${group}`,
         '',
-        table(['metric', 'mean ±sd [min..max]'], defs.map((def) => [def.label, statsCell(aggregate[def.key], def)])),
+        table(
+          ['metric', 'mean ±sd [min..max]'],
+          defs.map((def) => [def.label, statsCell(aggregate[def.key], def)]),
+        ),
       ].join('\n'),
     )
     .join('\n\n')
@@ -52,14 +66,26 @@ const seedTable = (runs: SweepRun[]): string => {
     return v === null || v === undefined ? '-' : v.toFixed(0)
   }
   const triple = (run: SweepRun, type: string): string =>
-    ['min', 'mean', 'max'].map((stat) => value(run, `${type}.pop.${stat}`)).join('/')
+    ['min', 'mean', 'max']
+      .map((stat) => value(run, `${type}.pop.${stat}`))
+      .join('/')
   const extinct = (run: SweepRun): string =>
     (['prey', 'hunter'] as const)
       .filter((type) => run.headline[`${type}.extinct`])
       .map((type) => `${type} ${value(run, `${type}.extinctAt`)}s`)
       .join(', ') || '-'
   return table(
-    ['seed', 'status', 'ended', 'prey min/mean/max', 'hunter min/mean/max', 'extinct@', 'kills', 'prey life', 'gen'],
+    [
+      'seed',
+      'status',
+      'ended',
+      'prey min/mean/max',
+      'hunter min/mean/max',
+      'extinct@',
+      'kills',
+      'prey life',
+      'gen',
+    ],
     runs.map((run) => [
       String(run.seed),
       run.status,
@@ -76,7 +102,11 @@ const seedTable = (runs: SweepRun[]): string => {
 
 // ---------------------------------------------------------------- flag rollup
 
-type FlagEntry = { level: 'crash' | 'warn' | 'info'; message: string; seeds: number[] }
+type FlagEntry = {
+  level: 'crash' | 'warn' | 'info'
+  message: string
+  seeds: number[]
+}
 
 const SEVERITY = { crash: 0, warn: 1, info: 2 } as const
 
@@ -84,13 +114,21 @@ const flagRollup = (summaries: RunSummary[]): string => {
   const byCode = new Map<string, FlagEntry>()
   for (const { run, analysis } of summaries) {
     for (const flag of analysis.health.flags) {
-      const entry = byCode.get(flag.code) ?? { level: flag.level, message: flag.message, seeds: [] }
+      const entry = byCode.get(flag.code) ?? {
+        level: flag.level,
+        message: flag.message,
+        seeds: [],
+      }
       entry.seeds.push(run.seed)
       byCode.set(flag.code, entry)
     }
   }
   const lines = [...byCode]
-    .sort(([, a], [, b]) => SEVERITY[a.level] - SEVERITY[b.level] || b.seeds.length - a.seeds.length)
+    .sort(
+      ([, a], [, b]) =>
+        SEVERITY[a.level] - SEVERITY[b.level] ||
+        b.seeds.length - a.seeds.length,
+    )
     .map(
       ([code, entry]) =>
         `- ${flagIcon(entry.level)} ${code}: ${entry.seeds.length}/${summaries.length} seeds (${entry.seeds.join(',')}). e.g. ${entry.message}`,
@@ -101,7 +139,8 @@ const flagRollup = (summaries: RunSummary[]): string => {
 // --------------------------------------------------------------------- pooled
 
 const pooledSection = (tables: IndividualTable[]): string => {
-  if (tables.length === 0) return '(no individuals.json found: pooled selection analysis skipped)'
+  if (tables.length === 0)
+    return '(no individuals.json found: pooled selection analysis skipped)'
   const pooled = analyzeIndividuals(concatTables(tables))
   const individuals = tables.reduce((sum, t) => sum + t.rows.length, 0)
   return [
@@ -127,10 +166,17 @@ const statusSummary = (sweep: SweepFile): string =>
     .map(([status, count]) => `${count} ${status}`)
     .join(', ')
 
-const sweepMarkdown = (sweep: SweepFile, summaries: RunSummary[], tables: IndividualTable[]): string => {
+const sweepMarkdown = (
+  sweep: SweepFile,
+  summaries: RunSummary[],
+  tables: IndividualTable[],
+): string => {
   const first = summaries[0].run
   const config = sweep.configLayers.join(' + ') || 'game default'
-  const overrides = Object.keys(sweep.overrides).length > 0 ? ` + ${JSON.stringify(sweep.overrides)}` : ''
+  const overrides =
+    Object.keys(sweep.overrides).length > 0
+      ? ` + ${JSON.stringify(sweep.overrides)}`
+      : ''
   return [
     `# eco-evo sweep report: ${summaries.length} seeds`,
     '',
@@ -163,11 +209,16 @@ export const formatSweepReport = (
 ): { markdown: string; html: string } => {
   const summaries = inputs.map((input) => input.summary)
   const tables = inputs
-    .map((input) => readJsonIfPresent(path.join(input.dir, 'individuals.json'), parseTable))
+    .map((input) =>
+      readJsonIfPresent(path.join(input.dir, 'individuals.json'), parseTable),
+    )
     .filter((t): t is IndividualTable => t !== null)
   const populations = inputs
     .map((input) =>
-      readJsonIfPresent(path.join(input.dir, 'population.json'), (text) => JSON.parse(text) as PopulationFile),
+      readJsonIfPresent(
+        path.join(input.dir, 'population.json'),
+        (text) => JSON.parse(text) as PopulationFile,
+      ),
     )
     .filter((p): p is PopulationFile => p !== null)
 
@@ -182,7 +233,11 @@ export const formatSweepReport = (
   }
 }
 
-export const writeSweepReport = (baseOut: string, markdown: string, html: string): void => {
+export const writeSweepReport = (
+  baseOut: string,
+  markdown: string,
+  html: string,
+): void => {
   writeFileSync(path.join(baseOut, 'report.md'), `${markdown}\n`)
   writeFileSync(path.join(baseOut, 'report.html'), html)
 }

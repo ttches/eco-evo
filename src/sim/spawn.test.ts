@@ -8,12 +8,7 @@ import {
   TRAIT_BUDGET,
 } from '@/sim/config'
 import { seedPopulation, spawnGlorp, spawnRandom } from '@/sim/spawn'
-import {
-  TRAIT_KEYS,
-  TRAIT_MAX,
-  TRAIT_MIN,
-  traitValue,
-} from '@/sim/traits'
+import { TRAIT_KEYS, TRAIT_MAX, TRAIT_MIN, traitValue } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 

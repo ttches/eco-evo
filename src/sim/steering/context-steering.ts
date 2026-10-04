@@ -50,11 +50,7 @@ export const steerSampled = (
   const y = world.y[index]
 
   if (
-    insideArena(
-      world,
-      x + directionX * lookahead,
-      y + directionY * lookahead,
-    )
+    insideArena(world, x + directionX * lookahead, y + directionY * lookahead)
   ) {
     return { x: directionX * speed, y: directionY * speed, sprint }
   }
@@ -64,7 +60,9 @@ export const steerSampled = (
   let bestDot = -Infinity
   let found = false
   for (const heading of CANDIDATE_HEADINGS) {
-    if (!insideArena(world, x + heading.x * lookahead, y + heading.y * lookahead)) {
+    if (
+      !insideArena(world, x + heading.x * lookahead, y + heading.y * lookahead)
+    ) {
       continue
     }
     const dot = heading.x * directionX + heading.y * directionY

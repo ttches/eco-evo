@@ -10,7 +10,11 @@
  * it grows with sample size.
  */
 import { TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
-import { buildKey, type Individual, type IndividualTable } from './individuals.ts'
+import {
+  buildKey,
+  type Individual,
+  type IndividualTable,
+} from './individuals.ts'
 import type { TypeName } from './types.ts'
 import { entropy, mean, sd } from './stats.ts'
 
@@ -55,7 +59,8 @@ export const DIVERSITY_TREND_THRESHOLD = 0.15
 
 const distance = (a: number[], b: number[]): number => {
   let total = 0
-  for (let index = 0; index < a.length; index += 1) total += Math.abs(a[index] - b[index])
+  for (let index = 0; index < a.length; index += 1)
+    total += Math.abs(a[index] - b[index])
   return total / 2
 }
 
@@ -77,7 +82,10 @@ const summarize = (
   let pairSum = 0
   for (let i = 0; i < builds.length; i += 1) {
     for (let j = i + 1; j < builds.length; j += 1) {
-      pairSum += builds[i][1].n * builds[j][1].n * distance(builds[i][1].traits, builds[j][1].traits)
+      pairSum +=
+        builds[i][1].n *
+        builds[j][1].n *
+        distance(builds[i][1].traits, builds[j][1].traits)
     }
   }
   const pairs = (n * (n - 1)) / 2
@@ -121,19 +129,28 @@ export const analyzeDiversity = (
     const cohort = all.filter((row) => !row.founder && row.epoch === epoch)
     if (cohort.length === 0) continue
     const bound = epochBounds[epoch]
-    const label = bound ? `born ${bound.from.toFixed(0)}-${bound.to.toFixed(0)}s` : `epoch ${epoch}`
+    const label = bound
+      ? `born ${bound.from.toFixed(0)}-${bound.to.toFixed(0)}s`
+      : `epoch ${epoch}`
     rows.push(summarize(label, epoch, cohort, keys))
   }
   const alive = all.filter((row) => row.alive)
   if (alive.length > 0) rows.push(summarize('alive at end', -2, alive, keys))
 
-  const first = rows.find((row) => row.epoch === -1) ?? rows.find((row) => row.epoch >= 0)
+  const first =
+    rows.find((row) => row.epoch === -1) ?? rows.find((row) => row.epoch >= 0)
   const lastEpochRow = [...rows].reverse().find((row) => row.epoch >= 0)
   const traitSdChange: Record<string, number | null> = {}
   const traitMeanShift: Record<string, number> = {}
   for (const key of keys) {
-    traitSdChange[key] = first && lastEpochRow ? change(first.traitSd[key], lastEpochRow.traitSd[key]) : null
-    traitMeanShift[key] = first && lastEpochRow ? lastEpochRow.traitMean[key] - first.traitMean[key] : 0
+    traitSdChange[key] =
+      first && lastEpochRow
+        ? change(first.traitSd[key], lastEpochRow.traitSd[key])
+        : null
+    traitMeanShift[key] =
+      first && lastEpochRow
+        ? lastEpochRow.traitMean[key] - first.traitMean[key]
+        : 0
   }
   const distanceChange =
     first && lastEpochRow && first !== lastEpochRow
@@ -149,7 +166,10 @@ export const analyzeDiversity = (
           : 'stable'
   }
 
-  const finalCohort = alive.length > 0 ? alive : all.filter((row) => row.epoch === table.epochs - 1)
+  const finalCohort =
+    alive.length > 0
+      ? alive
+      : all.filter((row) => row.epoch === table.epochs - 1)
   const levelShares: Record<string, number[]> = {}
   const extremeShare: Record<string, { low: number; high: number }> = {}
   keys.forEach((key, index) => {
@@ -168,7 +188,10 @@ export const analyzeDiversity = (
     rows,
     trend: {
       distanceChange,
-      meanTraitSdChange: first && lastEpochRow ? change(first.meanTraitSd, lastEpochRow.meanTraitSd) : null,
+      meanTraitSdChange:
+        first && lastEpochRow
+          ? change(first.meanTraitSd, lastEpochRow.meanTraitSd)
+          : null,
       traitSdChange,
       traitMeanShift,
       verdict,
