@@ -123,6 +123,8 @@ export const writeTimeseriesCsv = (file: string, rows: SampleRow[]): void => {
     'sprintDutyCycle',
     'exhaustedFraction',
     'grassMean',
+    'preyMutatedShare',
+    'hunterMutatedShare',
     ...TYPE_NAMES.flatMap((type) => TRAIT_KEYS.map((key) => `${type}_${key}`)),
   ].join(',')
   const body = rows.map((row) =>
@@ -140,6 +142,8 @@ export const writeTimeseriesCsv = (file: string, rows: SampleRow[]): void => {
       row.sprintDutyCycle.toFixed(4),
       row.exhaustedFraction.toFixed(4),
       row.grassMean.toFixed(6),
+      row.mutations.prey.share.toFixed(4),
+      row.mutations.hunter.share.toFixed(4),
       ...TYPE_NAMES.flatMap((type) =>
         TRAIT_KEYS.map((key) => row.traits[type][key].toFixed(3)),
       ),

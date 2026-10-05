@@ -63,3 +63,5 @@ can eat corpse of prey for 10hp
 
 Mutation changes
 mutations that come from a pregnancy or a clone will have a chance to be enabled: false, like a recessive gene
+
+all gen 0 glorps start with same stats?

@@ -19,6 +19,7 @@ import { assessHealth, type Health } from './analysis/health.ts'
 import { buildHeadline, type Headline } from './analysis/headline.ts'
 import { buildTable, type IndividualTable } from './analysis/individuals.ts'
 import { checkIntegrity, type IntegrityReport } from './analysis/integrity.ts'
+import { analyzeMutations, type MutationReport } from './analysis/mutations.ts'
 import {
   extinctionTimes,
   lineageStats,
@@ -85,6 +86,7 @@ export type IndividualAnalysis = {
   performers: Record<TypeName, PerformerReport>
   diversity: Record<TypeName, DiversityReport>
   builds: Record<TypeName, BuildTables>
+  mutations: Record<TypeName, MutationReport>
 }
 
 export type RunAnalysis = IndividualAnalysis & {
@@ -128,6 +130,7 @@ export const analyzeIndividuals = (
     frequent: topBuilds(table, type, 6),
     best: topBuilds(table, type, 6, 5, 'offspring'),
   })),
+  mutations: perType((type) => analyzeMutations(table, type)),
 })
 
 const resolveOptions = (

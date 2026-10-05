@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
   ENDURANCE,
@@ -311,5 +311,29 @@ describe('mutations over a running world', () => {
     for (let id = 0; id < world.lineage.size; id += 1) {
       expect(world.lineage.mutations[id] & ~MUTATION_MASK_ALL).toBe(0)
     }
+  })
+})
+
+describe('MUTATIONS_ENABLED', () => {
+  it('rolls no mutations at all when disabled', async () => {
+    vi.resetModules()
+    vi.doMock('@/sim/config', async () => {
+      const actual =
+        await vi.importActual<typeof import('@/sim/config')>('@/sim/config')
+      return { ...actual, MUTATIONS_ENABLED: false }
+    })
+    const mutations = await import('@/sim/mutations')
+    const random = new XorShift32(1234)
+    for (let i = 0; i < 5000; i += 1) {
+      expect(mutations.rollSpawnMutations(random, GLORP_TYPE.prey)).toBe(0)
+      expect(
+        mutations.rollBirthMutations(random, [COLD], GLORP_TYPE.hunter),
+      ).toBe(0)
+      expect(
+        mutations.inheritMutations(random, [COLD], GLORP_TYPE.hunter),
+      ).toBe(0)
+    }
+    vi.doUnmock('@/sim/config')
+    vi.resetModules()
   })
 })

@@ -2,6 +2,7 @@
  * The curated metric list shown in sweep summaries and baseline comparisons.
  * Every key refers to an entry of a run's flat `analysis.headline`.
  */
+import { MUTATIONS, MUTATION_KEYS } from '@/sim/mutations'
 import { TRAIT_KEYS } from '@/sim/traits'
 import { TYPE_NAMES } from '../analysis/types.ts'
 
@@ -171,6 +172,37 @@ export const METRICS: MetricDef[] = [
       })),
     ),
   ),
+  ...TYPE_NAMES.flatMap((type) => {
+    const group = `Mutations: ${type}`
+    const entries: MetricDef[] = [
+      {
+        group,
+        label: 'mutated share',
+        key: `${type}.mut.share`,
+        percent: true,
+      },
+      { group, label: 'mean mutations', key: `${type}.mut.meanCount` },
+    ]
+    for (const key of MUTATION_KEYS) {
+      const name = MUTATIONS[key].name
+      entries.push({
+        group,
+        label: `${name} share`,
+        key: `${type}.mut.${key}.share`,
+        percent: true,
+      })
+      const outcomes =
+        type === 'hunter' ? ['offspring', 'kills'] : ['offspring']
+      for (const outcome of outcomes) {
+        entries.push({
+          group,
+          label: `${name} -> ${outcome}`,
+          key: `${type}.mut.${key}.${outcome}`,
+        })
+      }
+    }
+    return entries
+  }),
 ]
 
 export const formatValue = (def: MetricDef, value: number | null): string => {

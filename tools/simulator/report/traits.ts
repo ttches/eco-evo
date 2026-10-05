@@ -17,6 +17,7 @@ import {
 import { TYPE_NAMES } from '../analysis/types.ts'
 import type { BuildTables, IndividualAnalysis } from '../analyze.ts'
 import { capitalize, num, pct, signed, signedPct, table } from './format.ts'
+import { mutationsSection } from './mutations.ts'
 
 const OUTCOME_HEADER: Record<Outcome, string> = {
   lifespan: 'life',
@@ -293,5 +294,9 @@ export const individualSections = (analysis: IndividualAnalysis): string =>
       performersSection(analysis.performers[type]),
       '',
       buildsSection(analysis.diversity[type], analysis.builds[type]),
+      '',
+      '#### Mutations',
+      '',
+      mutationsSection(analysis.mutations[type]),
     ].join('\n'),
   ).join('\n\n')

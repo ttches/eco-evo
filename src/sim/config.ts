@@ -57,7 +57,7 @@ export const ENDURANCE = {
    * glorp at `TRAIT_MAX` burns hunger 20% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
-  drainFactorAtMax: 0.8,
+  drainFactorAtMax: 0.85,
 } as const
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
@@ -150,6 +150,13 @@ export const MUTATION_INHERIT_CHANCE = 0.25
 
 /** Most mutations a single glorp can hold; further rolls are discarded. */
 export const MAX_MUTATIONS = 1
+
+/**
+ * Master switch for the mutation system. When false no glorp ever rolls or
+ * inherits a mutation, whatever the chances above. The headless simulator uses
+ * it to turn the whole system off cleanly (`--set MUTATIONS_ENABLED=false`).
+ */
+export const MUTATIONS_ENABLED = true
 
 /**
  * Cold blooded mutation effect levers. Kept here (not in the registry) so the

@@ -1,5 +1,11 @@
 /** The per-run HTML report: populations, energy, grass and trait drift. */
+import {
+  MUTATIONS,
+  MUTATION_KEYS,
+  mutationAllowedForType,
+} from '@/sim/mutations'
 import { TRAIT_KEYS } from '@/sim/traits'
+import { GLORP_TYPE } from '@/sim/types'
 import { countOf, type SampleRow } from '../analysis/sampling.ts'
 import { TYPE_NAMES } from '../analysis/types.ts'
 import { capitalize, flagIcon } from '../report/format.ts'
@@ -28,6 +34,43 @@ const traitChart = (
       color: SLOT[index % SLOT.length],
       points: series(alive, (row) => row.traits[type][key]),
     })),
+  }
+}
+
+const mutationChart = (
+  type: (typeof TYPE_NAMES)[number],
+  samples: SampleRow[],
+  warmup: number,
+): ChartSpec => {
+  const alive = samples.filter((row) => countOf(row, type) > 0)
+  const glorpType = type === 'hunter' ? GLORP_TYPE.hunter : GLORP_TYPE.prey
+  const keys = MUTATION_KEYS.filter((key) =>
+    mutationAllowedForType(key, glorpType),
+  )
+  const share = (
+    row: SampleRow,
+    key: (typeof MUTATION_KEYS)[number],
+  ): number =>
+    row.mutations[type].n === 0
+      ? 0
+      : row.mutations[type].counts[key] / row.mutations[type].n
+  return {
+    title: `${capitalize(type)} mutation prevalence (living)`,
+    subtitle: 'Share of living glorps carrying each mutation',
+    warmup,
+    series: [
+      {
+        name: 'any',
+        color: SLOT[3],
+        width: 2,
+        points: series(alive, (row) => row.mutations[type].share),
+      },
+      ...keys.map((key, index) => ({
+        name: MUTATIONS[key].name,
+        color: SLOT[index % SLOT.length],
+        points: series(alive, (row) => share(row, key)),
+      })),
+    ],
   }
 }
 
@@ -92,6 +135,7 @@ const runCharts = (summary: RunSummary, samples: SampleRow[]): ChartSpec[] => {
       legend: false,
     },
     ...TYPE_NAMES.map((type) => traitChart(type, samples, warmup)),
+    ...TYPE_NAMES.map((type) => mutationChart(type, samples, warmup)),
   ]
 }
 

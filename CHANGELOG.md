@@ -8,6 +8,12 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 
 ### Gameplay
 
+- Fertility's cooldown curve is flattened: level 0 now reproduces every 20s
+  instead of 40s (level 7 is still 8s). The old curve made a fertility point
+  worth 4.6s of cooldown, so populations fixated on it and dumped speed,
+  endurance and agility; the new 1.7s/point keeps fertility useful without
+  dominating, and the typical build reproduces slower because it no longer
+  dumps the other traits.
 - New heritable `agility` trait. A prey whose agility exceeds its attacker's
   can dodge a catch, with the chance rising 25% per level of advantage (capped
   at 75%). A dodge jukes the prey perpendicular to its heading and makes it

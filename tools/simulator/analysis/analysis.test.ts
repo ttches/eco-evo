@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MUTATIONS, MUTATION_KEYS, type MutationKey } from '@/sim/mutations'
 import { TRAIT_KEYS } from '@/sim/traits'
 import { spawnGlorp } from '@/sim/spawn'
 import { GLORP_TYPE } from '@/sim/types'
@@ -17,6 +18,7 @@ import {
   type IndividualTable,
 } from './individuals.ts'
 import { checkIntegrity } from './integrity.ts'
+import { analyzeMutations } from './mutations.ts'
 import { analyzeSelection } from './selection.ts'
 import { gini, pearson, ridgeSlopes, spearman } from './stats.ts'
 import { aggregateHeadlines } from '../sweep/aggregate.ts'
@@ -70,6 +72,16 @@ describe('stats', () => {
   })
 })
 
+const zeroMutations = () => ({
+  n: 0,
+  mutated: 0,
+  share: 0,
+  counts: Object.fromEntries(MUTATION_KEYS.map((key) => [key, 0])) as Record<
+    MutationKey,
+    number
+  >,
+})
+
 const sample = (time: number, prey: number, hunter: number): SampleRow => ({
   time,
   alivePrey: prey,
@@ -92,6 +104,7 @@ const sample = (time: number, prey: number, hunter: number): SampleRow => ({
       TRAIT_KEYS.map((k) => [k, 4]),
     ) as SampleRow['traits']['hunter'],
   },
+  mutations: { prey: zeroMutations(), hunter: zeroMutations() },
 })
 
 const options = (extinctAt: {
@@ -171,6 +184,7 @@ const person = (over: Partial<Individual>): Individual => ({
   eligible: true,
   epoch: 0,
   traits: [4, 4, 4, 4],
+  mutations: 0,
   ...over,
 })
 
@@ -244,6 +258,50 @@ describe('selection and diversity', () => {
   })
 })
 
+describe('mutation analysis', () => {
+  it('reports prevalence and a positive carrier effect', () => {
+    const rows: Individual[] = []
+    for (let i = 0; i < 100; i += 1) {
+      const carrier = i % 2 === 0
+      rows.push(
+        person({
+          id: i,
+          mutations: carrier ? MUTATIONS.coldBlooded.bit : 0,
+          offspring: carrier ? 4 : 1,
+          age: carrier ? 120 : 60,
+        }),
+      )
+    }
+    const report = analyzeMutations(tableOf(rows), 'prey')
+    expect(report.mutated).toBe(50)
+    expect(report.mutatedShare).toBeCloseTo(0.5, 6)
+    expect(report.meanCount).toBeCloseTo(0.5, 6)
+    const cold = report.keys.find((key) => key.key === 'coldBlooded')!
+    expect(cold.count).toBe(50)
+    expect(cold.share).toBeCloseTo(0.5, 6)
+    expect(cold.outcomes.offspring!.effect!).toBeGreaterThan(0.25)
+    const stoat = report.keys.find((key) => key.key === 'stoat')!
+    expect(stoat.count).toBe(0)
+    expect(stoat.outcomes.offspring!.effect).toBeNull()
+  })
+
+  it('counts carriers per birth cohort', () => {
+    const rows: Individual[] = [
+      person({ id: 0, epoch: 0, mutations: MUTATIONS.coldBlooded.bit }),
+      person({ id: 1, epoch: 0 }),
+      person({ id: 2, epoch: 1, mutations: MUTATIONS.coldBlooded.bit }),
+      person({ id: 3, epoch: 1 }),
+    ]
+    const report = analyzeMutations(tableOf(rows), 'prey')
+    expect(report.byEpoch.map((row) => row.label)).toEqual([
+      'epoch 0',
+      'epoch 1',
+    ])
+    expect(report.byEpoch[0].mutatedShare).toBeCloseTo(0.5, 6)
+    expect(report.byEpoch[1].counts.coldBlooded).toBe(1)
+  })
+})
+
 describe('individual table', () => {
   it('builds offspring and kills from the lineage and round-trips through JSON', () => {
     const world = createWorld(0, 9)
@@ -251,9 +309,11 @@ describe('individual table', () => {
     const hunter = spawnGlorp(world, GLORP_TYPE.hunter, 110, 100)
     world.time = 5
     recordDeath(world, prey, DEATH_CAUSE.eaten, hunter)
+    world.lineage.mutations[world.id[prey]] = MUTATIONS.stoat.bit
     const table = buildTable(world, { epochs: 2, settleSeconds: 1, seed: 9 })
     expect(table.rows[hunter].kills).toBe(1)
     expect(table.rows[prey].cause).toBe('eaten')
+    expect(table.rows[prey].mutations).toBe(MUTATIONS.stoat.bit)
     const back = parseTable(serializeTable(concatTables([table])))
     expect(back.rows).toEqual(table.rows)
   })

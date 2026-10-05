@@ -22,6 +22,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const srcDir = path.join(root, 'src')
 const realConfig = path.join(srcDir, 'sim', 'config.ts')
+const realTraits = path.join(srcDir, 'sim', 'traits.ts')
+const engineMath = path.join(srcDir, 'engine', 'math.ts')
 
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
 
@@ -39,6 +41,18 @@ const layers = readJsonEnv('SIM_CONFIG_LAYERS', []).map((file) =>
   path.isAbsolute(file) ? file : path.resolve(root, file),
 )
 const rawOverrides = readJsonEnv('SIM_CONFIG_OVERRIDES', {})
+
+/**
+ * `--set TRAITS.<key>={...}` targets the trait specs (`@/sim/traits`); every
+ * other key targets `@/sim/config`. The two live in different modules
+ * (`traits.ts` imports nothing from config), so they are virtualized apart.
+ */
+const traitOverrides = {}
+const configOverrides = {}
+for (const [key, value] of Object.entries(rawOverrides)) {
+  if (key === 'TRAITS' || key.startsWith('TRAITS.')) traitOverrides[key] = value
+  else configOverrides[key] = value
+}
 
 const assertValidOverrides = (overrides) => {
   for (const key of Object.keys(overrides)) {
@@ -79,7 +93,13 @@ const propagateDerivedConstants = (overrides) => {
   const numeric = new Map()
   const expressions = new Map()
   const expressionDeps = new Map()
-  const declaration = /export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g
+  // Match one declaration per line. The value may not cross a newline, so a
+  // semicolon-less file (this project uses no semicolons in code) cannot drag
+  // an unrelated identifier from a following comment into a dependency set.
+  // Only single-line values are inspected; a multi-line object literal is
+  // ignored here (its overrides still merge through the nested path below).
+  const declaration =
+    /^\s*export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*(.+?)\s*(?:\/\/.*)?$/gm
   let match
   while ((match = declaration.exec(source))) {
     const name = match[1]
@@ -151,7 +171,8 @@ const propagateDerivedConstants = (overrides) => {
   return { overrides: resolved, warnings }
 }
 
-const { overrides, warnings } = propagateDerivedConstants(rawOverrides)
+const { overrides: configResolved, warnings } =
+  propagateDerivedConstants(configOverrides)
 for (const warning of warnings) {
   console.error(`simulator: config override may be incomplete: ${warning}`)
 }
@@ -187,7 +208,7 @@ const baseFor = (parentURL) => {
 const splitOverrides = () => {
   const scalars = {}
   const nested = {}
-  for (const [key, value] of Object.entries(overrides)) {
+  for (const [key, value] of Object.entries(configResolved)) {
     if (key.includes('.')) {
       const [head, ...rest] = key.split('.')
       nested[head] ??= {}
@@ -197,6 +218,47 @@ const splitOverrides = () => {
     }
   }
   return { scalars, nested }
+}
+
+/**
+ * Build the generated module that virtualizes `@/sim/traits`. It re-exports the
+ * real module, then re-declares `TRAITS` (spread over the real specs) and
+ * rebuilds `traitValue`/`scaleTrait` from the new specs, so every importer —
+ * including `config.ts`'s `STAMINA.referenceMax` — sees the override.
+ */
+const buildVirtualTraits = () => {
+  const base = JSON.stringify(toUrl(realTraits))
+  let bare = null
+  const nested = {}
+  for (const [key, value] of Object.entries(traitOverrides)) {
+    if (key === 'TRAITS') bare = value
+    else nested[key.slice('TRAITS.'.length)] = value
+  }
+  const spread = bare ? `${JSON.stringify(bare)},` : ''
+  return [
+    `export * from ${base};`,
+    `import { TRAITS as __base_TRAITS } from ${base};`,
+    `import { lerp } from ${JSON.stringify(toUrl(engineMath))};`,
+    `export const TRAITS = { ...__base_TRAITS, ${spread}...${JSON.stringify(nested)} };`,
+    'const __TRAIT_KEYS = Object.keys(TRAITS);',
+    'const __TRAIT_MIN = 0;',
+    'const __TRAIT_MAX = 7;',
+    'const __VALUES = Object.fromEntries(__TRAIT_KEYS.map((key) => {',
+    '  const { atMin, atMax } = TRAITS[key];',
+    '  const table = new Float64Array(__TRAIT_MAX + 1);',
+    '  for (let level = __TRAIT_MIN; level <= __TRAIT_MAX; level += 1) {',
+    '    table[level] = atMin + ((atMax - atMin) * (level - __TRAIT_MIN)) / (__TRAIT_MAX - __TRAIT_MIN);',
+    '  }',
+    '  return [key, table];',
+    '}));',
+    'export const traitValue = (key, level) => __VALUES[key][level];',
+    'export const scaleTrait = (key, level, atWorst, atBest) => {',
+    '  const { atMin, atMax } = TRAITS[key];',
+    '  const t = (traitValue(key, level) - atMin) / (atMax - atMin);',
+    '  return lerp(atWorst, atBest, t);',
+    '};',
+    '',
+  ].join('\n')
 }
 
 /** Build the generated module that composes layers plus overrides. */
@@ -222,6 +284,8 @@ const buildVirtualConfig = () => {
 }
 
 const VIRTUAL_CONFIG = 'virtual:sim-config'
+const VIRTUAL_TRAITS = 'virtual:sim-traits'
+const hasTraitOverrides = Object.keys(traitOverrides).length > 0
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -229,10 +293,18 @@ registerHooks({
       return { url: baseFor(context.parentURL), shortCircuit: true }
     }
     if (specifier === '@/sim/config') {
-      if (layers.length === 0 && Object.keys(overrides).length === 0) {
+      if (
+        layers.length === 0 &&
+        Object.keys(configResolved).length === 0
+      ) {
         return { url: toUrl(realConfig), shortCircuit: true }
       }
       return { url: VIRTUAL_CONFIG, shortCircuit: true }
+    }
+    if (specifier === '@/sim/traits') {
+      return hasTraitOverrides
+        ? { url: VIRTUAL_TRAITS, shortCircuit: true }
+        : { url: toUrl(realTraits), shortCircuit: true }
     }
     if (specifier.startsWith('@/')) {
       return {
@@ -248,6 +320,13 @@ registerHooks({
       return {
         format: 'module',
         source: buildVirtualConfig(),
+        shortCircuit: true,
+      }
+    }
+    if (url === VIRTUAL_TRAITS) {
+      return {
+        format: 'module',
+        source: buildVirtualTraits(),
         shortCircuit: true,
       }
     }

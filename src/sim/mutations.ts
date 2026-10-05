@@ -4,6 +4,7 @@ import {
   MAX_MUTATIONS,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
+  MUTATIONS_ENABLED,
   STOAT,
 } from '@/sim/config'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
@@ -108,6 +109,7 @@ export const inheritMutations = (
   parentMasks: readonly number[],
   type: GlorpType,
 ): number => {
+  if (!MUTATIONS_ENABLED) return 0
   let mask = 0
   for (const parent of parentMasks) {
     for (const key of MUTATION_KEYS) {
@@ -133,6 +135,7 @@ export const rollBirthMutations = (
   type: GlorpType,
   birthChance = MUTATION_BIRTH_CHANCE,
 ): number => {
+  if (!MUTATIONS_ENABLED) return 0
   const mask = inheritMutations(random, parentMasks, type)
   if (mask !== 0) return mask
   return random.unit() < birthChance ? addRandomMutation(random, 0, type) : 0
@@ -143,7 +146,9 @@ export const rollSpawnMutations = (
   random: XorShift32,
   type: GlorpType,
 ): number =>
-  random.unit() < MUTATION_BIRTH_CHANCE ? addRandomMutation(random, 0, type) : 0
+  MUTATIONS_ENABLED && random.unit() < MUTATION_BIRTH_CHANCE
+    ? addRandomMutation(random, 0, type)
+    : 0
 
 /** Multiplier a mask applies to hunger drain. */
 export const mutationDrainMultiplier = (mask: number): number => {

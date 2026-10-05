@@ -44,6 +44,8 @@ export type Individual = {
   epoch: number
   /** Trait levels in `TRAIT_KEYS` order. */
   traits: number[]
+  /** Mutation bitmask as rolled or inherited at birth (see `@/sim/mutations`). */
+  mutations: number
 }
 
 export type IndividualTable = {
@@ -126,6 +128,7 @@ export const buildTable = (
       eligible: founder || log.bornAt[id] <= endedAt - settleSeconds,
       epoch: founder ? -1 : epochOf(log.bornAt[id], endedAt, epochs),
       traits: TRAIT_KEYS.map((key) => log.traits[key][id]),
+      mutations: log.mutations[id],
     })
   }
   return { traitKeys: TRAIT_KEYS, epochs, runs: [{ seed, endedAt }], rows }
@@ -164,7 +167,13 @@ const COLUMNS = [
   'cannibalKills',
   'eligible',
   'epoch',
+  'mutations',
 ] as const
+
+/** Values for columns absent from older `individuals.json` files. */
+const COLUMN_DEFAULTS: Partial<Record<(typeof COLUMNS)[number], number>> = {
+  mutations: 0,
+}
 
 /** Compact columnar-ish JSON: a header plus one array per row. */
 export const serializeTable = (table: IndividualTable): string =>
@@ -199,6 +208,11 @@ export const parseTable = (text: string): IndividualTable => {
           ? value === 1
           : value
     })
+    for (const column of COLUMNS) {
+      if (!(column in row) && COLUMN_DEFAULTS[column] !== undefined) {
+        row[column] = COLUMN_DEFAULTS[column]
+      }
+    }
     row.traits = values.slice(raw.columns.length) as number[]
     return row as Individual
   })

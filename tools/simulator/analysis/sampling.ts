@@ -1,4 +1,10 @@
 /** Sampling the live world into time-series rows, split by glorp type. */
+import {
+  MUTATIONS,
+  MUTATION_KEYS,
+  hasMutation,
+  type MutationKey,
+} from '@/sim/mutations'
 import { TRAIT_KEYS, type TraitKey } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import type { World } from '@/sim/world'
@@ -6,6 +12,18 @@ import { perType, type TypeCounts, type TypeName } from './types.ts'
 
 /** Mean trait level of one type's living glorps (0 when none are alive). */
 export type TraitMeans = Record<TraitKey, number>
+
+/** How many living glorps of a type carry each mutation. */
+export type MutationPrevalence = {
+  /** Living glorps of this type counted. */
+  n: number
+  /** Living glorps carrying at least one mutation. */
+  mutated: number
+  /** Share of living glorps carrying at least one mutation (0..1). */
+  share: number
+  /** Living carriers per mutation key. */
+  counts: Record<MutationKey, number>
+}
 
 export type SampleRow = {
   time: number
@@ -22,10 +40,21 @@ export type SampleRow = {
   exhaustedFraction: number
   grassMean: number
   traits: Record<TypeName, TraitMeans>
+  mutations: Record<TypeName, MutationPrevalence>
 }
 
 const zeroTraits = (): TraitMeans =>
   Object.fromEntries(TRAIT_KEYS.map((key) => [key, 0])) as TraitMeans
+
+const zeroMutations = (): MutationPrevalence => ({
+  n: 0,
+  mutated: 0,
+  share: 0,
+  counts: Object.fromEntries(MUTATION_KEYS.map((key) => [key, 0])) as Record<
+    MutationKey,
+    number
+  >,
+})
 
 const typeOf = (world: World, index: number): TypeName =>
   world.type[index] === GLORP_TYPE.hunter ? 'hunter' : 'prey'
@@ -51,6 +80,7 @@ export const sampleWorld = (world: World): SampleRow => {
   const fed = { prey: 0, hunter: 0 }
   const generation = { prey: 0, hunter: 0 }
   const traitSums = perType(zeroTraits)
+  const mutationPrevalence = perType(zeroMutations)
   let pregnant = 0
   let sprinting = 0
   let exhausted = 0
@@ -64,6 +94,14 @@ export const sampleWorld = (world: World): SampleRow => {
     sprinting += world.sprinting[index]
     exhausted += world.exhausted[index]
     for (const key of TRAIT_KEYS) traitSums[type][key] += world[key][index]
+    const mask = world.mutations[index]
+    mutationPrevalence[type].n += 1
+    if (mask !== 0) mutationPrevalence[type].mutated += 1
+    for (const key of MUTATION_KEYS) {
+      if (hasMutation(mask, MUTATIONS[key].bit)) {
+        mutationPrevalence[type].counts[key] += 1
+      }
+    }
   }
 
   const average = (sum: number, type: TypeName): number =>
@@ -73,6 +111,14 @@ export const sampleWorld = (world: World): SampleRow => {
     for (const key of TRAIT_KEYS)
       means[key] = average(traitSums[type][key], type)
     return means
+  })
+
+  const mutations = perType((type) => {
+    const prevalence = mutationPrevalence[type]
+    return {
+      ...prevalence,
+      share: prevalence.n === 0 ? 0 : prevalence.mutated / prevalence.n,
+    }
   })
 
   return {
@@ -90,6 +136,7 @@ export const sampleWorld = (world: World): SampleRow => {
     exhaustedFraction: world.count === 0 ? 0 : exhausted / world.count,
     grassMean: meanGrass(world),
     traits,
+    mutations,
   }
 }
 

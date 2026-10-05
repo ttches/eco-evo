@@ -5,9 +5,9 @@
  */
 import { TRAIT_KEYS } from '@/sim/traits'
 import type { RunAnalysis } from '../analyze.ts'
+import { outcomesFor } from './selection.ts'
 import { round } from './stats.ts'
 import { TYPE_NAMES, type TypeName } from './types.ts'
-
 export type Headline = Record<string, number | null>
 
 const runMetrics = (analysis: RunAnalysis, endedAt: number): Headline => {
@@ -97,6 +97,25 @@ const selectionMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
   return h
 }
 
+const mutationMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
+  const report = analysis.mutations[type]
+  const h: Headline = {
+    [`${type}.mut.share`]: round(report.mutatedShare, 4),
+    [`${type}.mut.meanCount`]: round(report.meanCount, 3),
+  }
+  const outcomes = outcomesFor(type)
+  for (const carrier of report.keys) {
+    h[`${type}.mut.${carrier.key}.share`] = round(carrier.share, 4)
+    for (const outcome of outcomes) {
+      h[`${type}.mut.${carrier.key}.${outcome}`] = round(
+        carrier.outcomes[outcome]?.effect ?? null,
+        3,
+      )
+    }
+  }
+  return h
+}
+
 export const buildHeadline = (
   analysis: RunAnalysis,
   endedAt: number,
@@ -110,6 +129,7 @@ export const buildHeadline = (
       ...mortalityMetrics(analysis, type),
       ...buildMetrics(analysis, type),
       ...selectionMetrics(analysis, type),
+      ...mutationMetrics(analysis, type),
     })),
   ),
 })

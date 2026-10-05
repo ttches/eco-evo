@@ -20,6 +20,20 @@ import { mean, ridgeSlopes, sd, spearman } from './stats.ts'
 
 export type Outcome = 'lifespan' | 'offspring' | 'kills'
 
+/** Outcomes that apply to a type: prey never kill, so they have no `kills`. */
+export const outcomesFor = (type: TypeName): Outcome[] =>
+  type === 'hunter'
+    ? ['lifespan', 'offspring', 'kills']
+    : ['lifespan', 'offspring']
+
+/** The numeric downstream outcome a row is judged on. */
+export const outcomeMetric = (row: Individual, outcome: Outcome): number =>
+  outcome === 'lifespan'
+    ? row.age
+    : outcome === 'offspring'
+      ? row.offspring
+      : row.kills
+
 export type LevelRow = {
   level: number
   n: number
@@ -66,13 +80,6 @@ export type SelectionReport = {
 /** Below this many individuals the per-trait verdicts are flagged as noisy. */
 export const LOW_N = 40
 
-const metric = (row: Individual, outcome: Outcome): number =>
-  outcome === 'lifespan'
-    ? row.age
-    : outcome === 'offspring'
-      ? row.offspring
-      : row.kills
-
 const verdictOf = (
   effect: Partial<Record<Outcome, number | null>>,
 ): TraitVerdict => {
@@ -96,14 +103,11 @@ export const analyzeSelection = (
   type: TypeName,
 ): SelectionReport => {
   const rows = table.rows.filter((row) => row.type === type && row.eligible)
-  const outcomes: Outcome[] =
-    type === 'hunter'
-      ? ['lifespan', 'offspring', 'kills']
-      : ['lifespan', 'offspring']
+  const outcomes = outcomesFor(type)
   const series = Object.fromEntries(
     outcomes.map((outcome) => [
       outcome,
-      rows.map((row) => metric(row, outcome)),
+      rows.map((row) => outcomeMetric(row, outcome)),
     ]),
   ) as Record<Outcome, number[]>
   const slopes = Object.fromEntries(

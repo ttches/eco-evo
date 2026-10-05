@@ -81,7 +81,7 @@ export const formatReport = (
       analysis.lineage.timeToFirstKill,
     ),
     '',
-    '## Traits, selection, performers, builds',
+    '## Traits, selection, performers, builds, mutations',
     '',
     individualSections(analysis),
     '',
