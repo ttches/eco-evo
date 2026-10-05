@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
+import { GlorpAuraLayer } from '@/render/glorp-aura-layer'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { GLORP_HOLO_STILL_TIME } from '@/render/glorp-holo'
 import { GlorpLayer } from '@/render/glorp-layer'
@@ -18,6 +19,7 @@ export class Renderer {
   private readonly grass = new GrassLayer()
   private readonly glorps = new GlorpLayer()
   private readonly glorpDetail = new GlorpDetailLayer()
+  private readonly glorpAura = new GlorpAuraLayer()
   private readonly hearts = new HeartLayer()
   private readonly selection = new SelectionRing()
   /** Wall clock for the animated sheen, so it keeps moving between sim steps. */
@@ -45,6 +47,7 @@ export class Renderer {
     this.scene.add(
       this.ground.mesh,
       this.grass.mesh,
+      ...this.glorpAura.meshes,
       this.glorps.mesh,
       this.glorpDetail.mesh,
       this.hearts.mesh,
@@ -75,6 +78,7 @@ export class Renderer {
       : (performance.now() - this.startedAt) / 1000
     this.glorps.update(world, bounds, camera.zoom)
     this.glorpDetail.update(world, bounds, camera.zoom, time)
+    this.glorpAura.update(world, bounds, camera.zoom, time)
     this.hearts.update(world, bounds, camera.zoom)
     this.selection.update(world, selectedIndex)
 
@@ -86,6 +90,7 @@ export class Renderer {
     this.grass.dispose()
     this.glorps.dispose()
     this.glorpDetail.dispose()
+    this.glorpAura.dispose()
     this.hearts.dispose()
     this.selection.dispose()
     this.renderer.dispose()

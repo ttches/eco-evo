@@ -21,6 +21,13 @@ const DODGE_FLASH_MIX = 0.65
 /** A writable numeric-index sink: a typed column or a plain tuple. */
 type ColorSink = { [index: number]: number }
 
+/** The glorp's type, clamped to the two known kinds. */
+export const glorpTypeAt = (
+  world: RenderableWorld,
+  index: number,
+): GlorpType =>
+  world.type[index] === GLORP_TYPE.hunter ? GLORP_TYPE.hunter : GLORP_TYPE.prey
+
 /** Write a glorp's color into `sink` at `offset`, allocating nothing. */
 const glorpColorInto = (
   sink: ColorSink,
@@ -76,14 +83,10 @@ export const writeGlorpColor = (
   target: Float32Array,
   targetIndex: number,
 ): void => {
-  const type =
-    world.type[source] === GLORP_TYPE.hunter
-      ? GLORP_TYPE.hunter
-      : GLORP_TYPE.prey
   glorpColorInto(
     target,
     targetIndex * 3,
-    type,
+    glorpTypeAt(world, source),
     world.fed[source],
     world.pregnant[source] > 0,
     world.dodgeTimer[source] > 0,

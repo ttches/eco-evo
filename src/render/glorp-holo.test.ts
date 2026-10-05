@@ -24,4 +24,13 @@ describe('glorpHoloIndex', () => {
     const branches = GLORP_HOLO_GLSL.match(/holo < /g) ?? []
     expect(branches.length).toBe(GLORP_HOLO_VARIANTS.length)
   })
+
+  it('numbers its thresholds in variant order', () => {
+    const thresholds = [...GLORP_HOLO_GLSL.matchAll(/holo < ([\d.]+)\)/g)].map(
+      (match) => Number(match[1]),
+    )
+    expect(thresholds).toEqual(
+      GLORP_HOLO_VARIANTS.map((_variant, index) => index + 0.5),
+    )
+  })
 })

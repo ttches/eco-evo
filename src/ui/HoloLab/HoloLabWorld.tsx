@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { glorpAuraIndex, type GlorpAuraVariant } from '@/render/glorp-aura'
+import { GlorpAuraLayer } from '@/render/glorp-aura-layer'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import {
   GLORP_HOLO_LABELS,
@@ -7,48 +9,107 @@ import {
   GLORP_HOLO_STILL_TIME,
   GLORP_HOLO_VARIANTS,
   glorpHoloIndex,
+  type GlorpHoloVariant,
 } from '@/render/glorp-holo'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
+import { MUTATION_LOOKS } from '@/render/mutation-looks'
 import { WORLD_BACKGROUND } from '@/render/palette'
 import { GLORP_RADIUS } from '@/sim/config'
-import { GLORP_TYPE } from '@/sim/types'
+import { MUTATIONS, MUTATION_KEYS, type MutationKey } from '@/sim/mutations'
+import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 import styles from './HoloLab.module.css'
 
+/** Which gallery the world tab is showing. */
+export type WorldMode = 'mutations' | 'variants'
+
 /** World-space layout of the sample grid. */
-const COLUMN_SPACING = 34
-const ROW_SPACING = 42
+const COLUMN_SPACING = 40
+const ROW_SPACING = 52
 const MARGIN = 24
 
 /** How many screen pixels one `.35x` detail pixel is blown up to. */
 const MAGNIFY = GLORP_HOLO_PREVIEW_SCALE
 const ZOOM = DETAIL_MIN_ZOOM * MAGNIFY
 
-/** Same silhouette/color pairs in every row, mutated and control. */
-const SAMPLES = [
-  { id: 7, type: GLORP_TYPE.prey, fed: 85, mutated: false },
-  { id: 7, type: GLORP_TYPE.prey, fed: 85, mutated: true },
-  { id: 19, type: GLORP_TYPE.prey, fed: 35, mutated: true },
-  { id: 42, type: GLORP_TYPE.hunter, fed: 100, mutated: false },
-  { id: 42, type: GLORP_TYPE.hunter, fed: 100, mutated: true },
-  { id: 91, type: GLORP_TYPE.hunter, fed: 45, mutated: true },
-] as const
+type Sample = {
+  id: number
+  type: GlorpType
+  fed: number
+  mutated: boolean
+}
 
-const COLUMNS = SAMPLES.length
-const ROWS = GLORP_HOLO_VARIANTS.length
-const CONTENT_WIDTH = (COLUMNS - 1) * COLUMN_SPACING + 2 * MARGIN
-const CONTENT_HEIGHT = (ROWS - 1) * ROW_SPACING + 2 * MARGIN
+/** One previewed row: a body sheen, an optional aura, and its sample columns. */
+type LabRow = {
+  label: string
+  body: GlorpHoloVariant
+  aura: GlorpAuraVariant | null
+  samples: readonly Sample[]
+}
 
-/** Vertical centre of a row's samples, in canvas pixels. */
-const rowTop = (row: number): number =>
-  Math.round((row * ROW_SPACING + MARGIN) * ZOOM)
+const PREY = GLORP_TYPE.prey
+const HUNTER = GLORP_TYPE.hunter
+
+/** Silhouette/color pairs for the all-variants gallery, controls included. */
+const VARIANT_SAMPLES: readonly Sample[] = [
+  { id: 7, type: PREY, fed: 85, mutated: false },
+  { id: 7, type: PREY, fed: 85, mutated: true },
+  { id: 19, type: PREY, fed: 35, mutated: true },
+  { id: 42, type: HUNTER, fed: 100, mutated: false },
+  { id: 42, type: HUNTER, fed: 100, mutated: true },
+  { id: 91, type: HUNTER, fed: 45, mutated: true },
+]
+
+/** Bright and fed samples of one type, always mutated, for the mutation rows. */
+const PREY_SAMPLES: readonly Sample[] = [
+  { id: 7, type: PREY, fed: 85, mutated: true },
+  { id: 19, type: PREY, fed: 35, mutated: true },
+]
+const HUNTER_SAMPLES: readonly Sample[] = [
+  { id: 42, type: HUNTER, fed: 100, mutated: true },
+  { id: 91, type: HUNTER, fed: 45, mutated: true },
+]
+/** Cross-type mutation: show both so the type-aware hue shift is visible. */
+const BOTH_SAMPLES: readonly Sample[] = [
+  { id: 7, type: PREY, fed: 85, mutated: true },
+  { id: 42, type: HUNTER, fed: 100, mutated: true },
+]
+
+/** The samples suited to a mutation's allowed type. */
+const samplesFor = (key: MutationKey): readonly Sample[] => {
+  const exclusive = MUTATIONS[key].exclusive
+  if (exclusive === HUNTER) return HUNTER_SAMPLES
+  if (exclusive === PREY) return PREY_SAMPLES
+  return BOTH_SAMPLES
+}
+
+/** Every existing sheen as its own row. */
+const VARIANT_ROWS: readonly LabRow[] = GLORP_HOLO_VARIANTS.map((body) => ({
+  label: GLORP_HOLO_LABELS[body],
+  body,
+  aura: null,
+  samples: VARIANT_SAMPLES,
+}))
+
+/** Every mutation's candidate looks, grouped in declaration order. */
+const MUTATION_ROWS: readonly LabRow[] = MUTATION_KEYS.flatMap((key) => {
+  const samples = samplesFor(key)
+  return MUTATION_LOOKS[key].candidates.map((candidate) => ({
+    label: `${MUTATIONS[key].name} · ${candidate.name}`,
+    body: candidate.body,
+    aura: candidate.aura ?? null,
+    samples,
+  }))
+})
 
 /**
- * The whole sample grid as one renderable world, laid out row-major so a glorp's
- * row is `floor(index / COLUMNS)`. Every row previews one `glorpHolo` variant.
+ * The whole sample grid as one renderable world, laid out row-major so a
+ * glorp's row is `floor(index / columns)`. Every row in a mode shares the same
+ * column count.
  */
-const makeWorld = (): RenderableWorld => {
-  const count = ROWS * COLUMNS
+const makeWorld = (rows: readonly LabRow[]): RenderableWorld => {
+  const columnCount = rows[0].samples.length
+  const count = rows.length * columnCount
   const world = {
     count,
     x: new Float32Array(count),
@@ -62,10 +123,10 @@ const makeWorld = (): RenderableWorld => {
     mutations: new Uint32Array(count),
     grass: {} as never,
   }
-  for (let row = 0; row < ROWS; row += 1) {
-    for (let column = 0; column < COLUMNS; column += 1) {
-      const index = row * COLUMNS + column
-      const sample = SAMPLES[column]
+  for (let row = 0; row < rows.length; row += 1) {
+    for (let column = 0; column < columnCount; column += 1) {
+      const index = row * columnCount + column
+      const sample = rows[row].samples[column]
       world.x[index] = column * COLUMN_SPACING + MARGIN
       world.y[index] = row * ROW_SPACING + MARGIN
       world.id[index] = sample.id
@@ -80,18 +141,33 @@ const makeWorld = (): RenderableWorld => {
 const prefersReducedMotion = (): boolean =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/** Vertical centre of a row's samples, in canvas pixels. */
+const rowTop = (row: number): number =>
+  Math.round((row * ROW_SPACING + MARGIN) * ZOOM)
+
 /**
- * World-render tab of the lab: draws the production `GlorpDetailLayer` at the
- * `.35x` detail look, magnified with nearest-neighbour pixels so the designs are
- * readable. Each row overrides the sheen picker with one `glorpHolo` variant, so
- * the pixel grid, outline and sheen shown match the live game exactly.
+ * World-render gallery: draws the production `GlorpDetailLayer` (and the aura
+ * layer) at the `.35x` detail look, magnified with nearest-neighbour pixels so
+ * the designs are readable. In `mutations` mode each row previews one candidate
+ * for a mutation on type-appropriate samples; in `variants` mode every sheen
+ * branch is shown on its own.
  */
-const HoloLabWorld = () => {
+const HoloLabWorld = ({ mode }: { mode: WorldMode }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  /** Pending context release, cancelled when StrictMode remounts us. */
+  const releaseRef = useRef<(() => void) | null>(null)
+
+  const rows = mode === 'mutations' ? MUTATION_ROWS : VARIANT_ROWS
+  const columnCount = rows[0].samples.length
+  const contentWidth = (columnCount - 1) * COLUMN_SPACING + 2 * MARGIN
+  const contentHeight = (rows.length - 1) * ROW_SPACING + 2 * MARGIN
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    // StrictMode remounts on the same canvas; cancel any pending context loss
+    // from the previous pass so the context stays usable.
+    releaseRef.current = null
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -101,8 +177,8 @@ const HoloLabWorld = () => {
     THREE.ColorManagement.enabled = false
     renderer.setPixelRatio(1)
     renderer.setSize(
-      Math.round(CONTENT_WIDTH * ZOOM),
-      Math.round(CONTENT_HEIGHT * ZOOM),
+      Math.round(contentWidth * ZOOM),
+      Math.round(contentHeight * ZOOM),
       false,
     )
     renderer.setClearColor(WORLD_BACKGROUND, 1)
@@ -110,9 +186,9 @@ const HoloLabWorld = () => {
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(
       0,
-      CONTENT_WIDTH,
+      contentWidth,
       0,
-      CONTENT_HEIGHT,
+      contentHeight,
       -10,
       10,
     )
@@ -120,14 +196,20 @@ const HoloLabWorld = () => {
     const bounds = {
       left: 0,
       top: 0,
-      right: CONTENT_WIDTH,
-      bottom: CONTENT_HEIGHT,
+      right: contentWidth,
+      bottom: contentHeight,
     }
-    const world = makeWorld()
+    const world = makeWorld(rows)
+    const rowOf = (index: number): number => Math.floor(index / columnCount)
+
     const layer = new GlorpDetailLayer((_world, index) =>
-      glorpHoloIndex(GLORP_HOLO_VARIANTS[Math.floor(index / COLUMNS)]),
+      glorpHoloIndex(rows[rowOf(index)].body),
     )
-    scene.add(layer.mesh)
+    const auraLayer = new GlorpAuraLayer((_world, index) => {
+      const aura = rows[rowOf(index)].aura
+      return aura ? glorpAuraIndex(aura) : -1
+    })
+    scene.add(layer.mesh, ...auraLayer.meshes)
 
     const still = prefersReducedMotion()
     const start = performance.now()
@@ -138,6 +220,7 @@ const HoloLabWorld = () => {
         ? GLORP_HOLO_STILL_TIME
         : (performance.now() - start) / 1000
       layer.update(world, bounds, DETAIL_MIN_ZOOM, time)
+      auraLayer.update(world, bounds, DETAIL_MIN_ZOOM, time)
       renderer.render(scene, camera)
       frame = requestAnimationFrame(draw)
     }
@@ -146,26 +229,32 @@ const HoloLabWorld = () => {
     return () => {
       cancelAnimationFrame(frame)
       layer.dispose()
-      // Drop the context explicitly; rapidly flipping tabs would otherwise
-      // exhaust the browser's live WebGL context limit before GC runs.
-      renderer.forceContextLoss()
+      auraLayer.dispose()
       renderer.dispose()
+      // Free the context so rapidly flipping tabs cannot exhaust the browser's
+      // live WebGL context limit. Deferred: StrictMode immediately remounts on
+      // the same canvas, and losing the context here would make it unusable.
+      const release = () => renderer.forceContextLoss()
+      releaseRef.current = release
+      queueMicrotask(() => {
+        if (releaseRef.current === release) release()
+      })
     }
-  }, [])
+  }, [mode, rows, columnCount, contentWidth, contentHeight])
 
   return (
     <div className={styles.worldStage}>
       <div
         className={styles.worldLabels}
-        style={{ height: Math.round(CONTENT_HEIGHT * ZOOM) }}
+        style={{ height: Math.round(contentHeight * ZOOM) }}
       >
-        {GLORP_HOLO_VARIANTS.map((variant, row) => (
+        {rows.map((row, index) => (
           <span
-            key={variant}
+            key={row.label}
             className={styles.worldLabel}
-            style={{ top: rowTop(row) }}
+            style={{ top: rowTop(index) }}
           >
-            {GLORP_HOLO_LABELS[variant]}
+            {row.label}
           </span>
         ))}
       </div>

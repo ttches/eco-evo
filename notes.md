@@ -20,6 +20,23 @@ A simulation game that users mostly **watch** without interacting with directly.
   pixel-art). No complex procedural bodies needed.
 - Reference docs live in `docs/`.
 
+### Mutation sheen color rule
+
+Eventually every mutation gets a unique sheen. The **dominant surface** follows
+one rule so a glorp's type is always readable, while accents stay free:
+
+- **Prey** dominate between **yellow and blue** (through green/cyan).
+- **Predators** dominate between **orange and purple** (through magenta/red).
+- **Accents are free** — sparkles, rim glints, eye glow and secondary bands may
+  use any hue, including the opposite arc; only the dominant surface is bound to
+  the type range.
+
+Every dominant sheen is anchored to the glorp's type tint, so a predator never
+reads green overall. The rule lives in `src/render/holo-palette.ts`
+(`typeHue` for dominant, `flareHue` / `accentHue` for accents) and is
+interpolated into the sheen shader. Candidate looks are previewed at `?holo`
+(World Shader → By Mutation).
+
 ## Gameplay
 
 - Creatures called **glorps**.

@@ -67,3 +67,10 @@ mutations that come from a pregnancy or a clone will have a chance to be enabled
 all gen 0 glorps start with same stats?
 
 mutations:
+
+mutation appearances:
+green shimmer beatle
+anna's hummingbird
+teal or moltant ore vein through dark glorp
+fire glimmer
+Fish scales

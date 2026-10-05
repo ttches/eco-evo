@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { ViewBounds } from '@/engine/camera'
 import { CAMERA } from '@/engine/config'
 import { TAU, hashUnit } from '@/engine/math'
-import { writeGlorpColor } from '@/render/appearance'
+import { glorpTypeAt, writeGlorpColor } from '@/render/appearance'
 import {
   GLORP_BLOB_AMPLITUDE,
   GLORP_BLOB_SEGMENTS,
@@ -12,16 +12,12 @@ import {
   outlineWidth,
   pixelSize,
 } from '@/render/glorp-detail'
-import {
-  GLORP_HOLO_SPEED,
-  GLORP_HOLO_STRENGTH,
-  glorpHoloIndex,
-  holoForType,
-} from '@/render/glorp-holo'
+import { GLORP_HOLO_SPEED, GLORP_HOLO_STRENGTH } from '@/render/glorp-holo'
 import { GLORP_HOLO_GLSL } from '@/render/glorp-holo-shader'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
+import { holoIndexForMutations } from '@/render/mutation-looks'
 import { MAX_GLORPS } from '@/sim/config'
-import { GLORP_TYPE, type GlorpType } from '@/sim/types'
+import { GLORP_TYPE } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
 /** Coverage disc sized once from the worst-case snap at the detail threshold. */
@@ -30,24 +26,23 @@ const SHAPE_RADIUS = glorpShapeRadius()
 /** Chooses the sheen branch for the mutated glorp at `index`. */
 export type GlorpHoloPicker = (world: RenderableWorld, index: number) => number
 
-const typeOf = (world: RenderableWorld, index: number): GlorpType =>
-  world.type[index] === GLORP_TYPE.hunter ? GLORP_TYPE.hunter : GLORP_TYPE.prey
-
-/** The game look: prey shimmer green, hunters shimmer orange. */
-const holoByType: GlorpHoloPicker = (world, index) =>
-  glorpHoloIndex(holoForType(typeOf(world, index)))
+/** The game look: each mutation wears its own sheen, picked from the mask. */
+const holoByMutation: GlorpHoloPicker = (world, index) =>
+  holoIndexForMutations(world.mutations[index], glorpTypeAt(world, index))
 
 const vertexShader = /* glsl */ `
   attribute vec3 aColor;
   attribute float aSeed;
   attribute float aMutated;
   attribute float aHolo;
+  attribute float aWarm;
 
   varying vec2 vLocal;
   varying vec3 vColor;
   varying float vSeed;
   varying float vMutated;
   varying float vHolo;
+  varying float vWarm;
 
   void main() {
     // The unit disc, so the fragment stage can shade by distance from center.
@@ -56,6 +51,7 @@ const vertexShader = /* glsl */ `
     vSeed = aSeed;
     vMutated = aMutated;
     vHolo = aHolo;
+    vWarm = aWarm;
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
   }
 `
@@ -66,6 +62,7 @@ const fragmentShader = /* glsl */ `
   varying float vSeed;
   varying float vMutated;
   varying float vHolo;
+  varying float vWarm;
 
   uniform float uOutlineWidth;
   uniform float uOutlineShade;
@@ -88,7 +85,7 @@ const fragmentShader = /* glsl */ `
 
     vec3 body = vColor;
     if (vMutated > 0.5) {
-      body = glorpHolo(vColor, p, boundary, r, vHolo, vSeed, uTime * uSpeed, uStrength);
+      body = glorpHolo(vColor, p, boundary, r, vHolo, vSeed, uTime * uSpeed, uStrength, vWarm);
     }
 
     vec3 outline = vColor * uOutlineShade;
@@ -112,13 +109,15 @@ export class GlorpDetailLayer {
   private readonly seeds = new Float32Array(MAX_GLORPS)
   private readonly mutated = new Float32Array(MAX_GLORPS)
   private readonly holos = new Float32Array(MAX_GLORPS)
+  private readonly warms = new Float32Array(MAX_GLORPS)
   private readonly colorAttr: THREE.InstancedBufferAttribute
   private readonly seedAttr: THREE.InstancedBufferAttribute
   private readonly mutatedAttr: THREE.InstancedBufferAttribute
   private readonly holoAttr: THREE.InstancedBufferAttribute
+  private readonly warmAttr: THREE.InstancedBufferAttribute
   private readonly matrix = new THREE.Matrix4()
 
-  public constructor(pickHolo: GlorpHoloPicker = holoByType) {
+  public constructor(pickHolo: GlorpHoloPicker = holoByMutation) {
     this.pickHolo = pickHolo
     this.geometry = new THREE.CircleGeometry(SHAPE_RADIUS, GLORP_BLOB_SEGMENTS)
 
@@ -126,11 +125,13 @@ export class GlorpDetailLayer {
     this.seedAttr = new THREE.InstancedBufferAttribute(this.seeds, 1)
     this.mutatedAttr = new THREE.InstancedBufferAttribute(this.mutated, 1)
     this.holoAttr = new THREE.InstancedBufferAttribute(this.holos, 1)
+    this.warmAttr = new THREE.InstancedBufferAttribute(this.warms, 1)
     for (const attribute of [
       this.colorAttr,
       this.seedAttr,
       this.mutatedAttr,
       this.holoAttr,
+      this.warmAttr,
     ]) {
       attribute.setUsage(THREE.DynamicDrawUsage)
     }
@@ -138,6 +139,7 @@ export class GlorpDetailLayer {
     this.geometry.setAttribute('aSeed', this.seedAttr)
     this.geometry.setAttribute('aMutated', this.mutatedAttr)
     this.geometry.setAttribute('aHolo', this.holoAttr)
+    this.geometry.setAttribute('aWarm', this.warmAttr)
 
     this.material = new THREE.ShaderMaterial({
       vertexShader,
@@ -153,6 +155,9 @@ export class GlorpDetailLayer {
       },
       toneMapped: false,
       side: THREE.DoubleSide,
+      // Transparent so the aura layer (order 1) draws under it (order 2); the
+      // body itself is opaque (alpha 1) and writes no depth.
+      transparent: true,
       depthTest: false,
       depthWrite: false,
     })
@@ -164,8 +169,8 @@ export class GlorpDetailLayer {
     )
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
     this.mesh.frustumCulled = false
-    // Same opaque layer as the flat disc; the two never draw at the same zoom.
-    // The selection ring is transparent, so it always overlays.
+    // Transparent body draws after the aura (order 1); hearts and the
+    // selection ring sit above it.
     this.mesh.renderOrder = 2
   }
 
@@ -210,6 +215,7 @@ export class GlorpDetailLayer {
       this.seeds[visible] = hashUnit(world.id[index]) * TAU
       this.mutated[visible] = world.mutations[index] !== 0 ? 1 : 0
       this.holos[visible] = this.pickHolo(world, index)
+      this.warms[visible] = world.type[index] === GLORP_TYPE.hunter ? 1 : 0
       visible += 1
     }
 
@@ -219,6 +225,7 @@ export class GlorpDetailLayer {
     this.seedAttr.needsUpdate = true
     this.mutatedAttr.needsUpdate = true
     this.holoAttr.needsUpdate = true
+    this.warmAttr.needsUpdate = true
   }
 
   public dispose(): void {

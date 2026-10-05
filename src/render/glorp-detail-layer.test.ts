@@ -4,6 +4,7 @@ import { outlineWidth, pixelSize } from '@/render/glorp-detail'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { glorpHoloIndex } from '@/render/glorp-holo'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
+import { MUTATIONS } from '@/sim/mutations'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
@@ -73,15 +74,25 @@ describe('GlorpDetailLayer', () => {
     layer.dispose()
   })
 
-  it('picks the type sheen by default', () => {
+  it('picks the mutation sheen by default', () => {
     const layer = new GlorpDetailLayer()
     const holo = layer.mesh.geometry.getAttribute('aHolo')
 
-    layer.update(makeWorld(1, GLORP_TYPE.prey), BOUNDS, DETAIL_MIN_ZOOM, 0)
-    expect(holo.getX(0)).toBe(glorpHoloIndex('disco-green'))
+    layer.update(
+      makeWorld(MUTATIONS.jumper.bit, GLORP_TYPE.prey),
+      BOUNDS,
+      DETAIL_MIN_ZOOM,
+      0,
+    )
+    expect(holo.getX(0)).toBe(glorpHoloIndex('beetle-shell'))
 
-    layer.update(makeWorld(1, GLORP_TYPE.hunter), BOUNDS, DETAIL_MIN_ZOOM, 0)
-    expect(holo.getX(0)).toBe(glorpHoloIndex('disco-orange'))
+    layer.update(
+      makeWorld(MUTATIONS.stoat.bit, GLORP_TYPE.hunter),
+      BOUNDS,
+      DETAIL_MIN_ZOOM,
+      0,
+    )
+    expect(holo.getX(0)).toBe(glorpHoloIndex('beetle-shell'))
     layer.dispose()
   })
 
@@ -90,6 +101,18 @@ describe('GlorpDetailLayer', () => {
     layer.update(makeWorld(1), BOUNDS, DETAIL_MIN_ZOOM, 0)
     const holo = layer.mesh.geometry.getAttribute('aHolo')
     expect(holo.getX(0)).toBe(glorpHoloIndex('beam'))
+    layer.dispose()
+  })
+
+  it('uploads type warmth separately from the tinted body color', () => {
+    const layer = new GlorpDetailLayer()
+    const warm = layer.mesh.geometry.getAttribute('aWarm')
+
+    layer.update(makeWorld(0, GLORP_TYPE.prey), BOUNDS, DETAIL_MIN_ZOOM, 0)
+    expect(warm.getX(0)).toBe(0)
+
+    layer.update(makeWorld(0, GLORP_TYPE.hunter), BOUNDS, DETAIL_MIN_ZOOM, 0)
+    expect(warm.getX(0)).toBe(1)
     layer.dispose()
   })
 })
