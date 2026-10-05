@@ -1,14 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 import { XorShift32 } from '@/engine/math'
 import {
+  CAMOUFLAGE,
   ENDURANCE,
   GESTATION_SECONDS,
+  HUNTER_SIGHT,
   MATE_RANGE,
   MAX_MUTATIONS,
   METABOLISM,
+  MOVEMENT,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
   MUTATION_PREGNANCY_BIRTH_CHANCE,
+  PREY_FLEE,
 } from '@/sim/config'
 import { applyMetabolism } from '@/sim/lifecycle'
 import { readLineage } from '@/sim/lineage'
@@ -32,13 +36,15 @@ import {
   applyReproduction,
 } from '@/sim/reproduction'
 import { rebuildSpatialGrid } from '@/sim/spatial'
-import { TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
+import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 import { GLORP_TYPE } from '@/sim/types'
 import { computeSteering } from '@/sim/behavior'
 import { createWorld, step } from '@/sim/world'
 
 const COLD = MUTATIONS.coldBlooded.bit
 const STOAT = MUTATIONS.stoat.bit
+const CAMO = MUTATIONS.camouflage.bit
+const STEALTH = MUTATIONS.stealth.bit
 
 describe('mutation registry', () => {
   it('gives every mutation a unique power-of-two bit', () => {
@@ -294,6 +300,108 @@ describe('stoat in the simulation', () => {
     // stoat glorp burns three times the endurance-adjusted base rate.
     const base = METABOLISM * ENDURANCE.drainFactorAtMax
     expect(world.fed[1] - world.fed[0]).toBeCloseTo(base * 2)
+  })
+})
+
+describe('camouflage in the simulation', () => {
+  const halfSight = HUNTER_SIGHT * CAMOUFLAGE.visionMultiplier
+
+  /**
+   * One hungry hunter at x=200 looking west at a prey within `distance`. The
+   * hunter's wander seed points east, so chasing (west) is unmistakable from the
+   * fallback wander.
+   */
+  const setupSightedPrey = (distance: number, camouflaged: boolean) => {
+    const world = createWorld(2, 30)
+    world.mutations.fill(0)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.prey
+    world.x[0] = 200
+    world.y[0] = 100
+    world.x[1] = 200 - distance
+    world.y[1] = 100
+    world.fed[0] = 0
+    world.fed[1] = 100
+    world.wanderSeed[0] = 0
+    if (camouflaged) world.mutations[1] = CAMO
+    rebuildSpatialGrid(world)
+    return world
+  }
+
+  it('still chases a camouflaged prey inside half the sight range', () => {
+    const world = setupSightedPrey(halfSight - 20, true)
+    expect(computeSteering(world, 0, 1 / 60).x).toBeLessThan(0)
+  })
+
+  it('loses a camouflaged prey beyond half the sight range', () => {
+    const world = setupSightedPrey(halfSight + 20, true)
+    expect(computeSteering(world, 0, 1 / 60).x).toBeGreaterThan(0)
+  })
+
+  it('chases a non-camouflaged prey anywhere in sight', () => {
+    const world = setupSightedPrey(halfSight + 20, false)
+    expect(computeSteering(world, 0, 1 / 60).x).toBeLessThan(0)
+  })
+})
+
+describe('stealth in the simulation', () => {
+  const setupStalker = (stealth: boolean) => {
+    const world = createWorld(2, 31)
+    world.mutations.fill(0)
+    world.type[0] = GLORP_TYPE.hunter
+    world.type[1] = GLORP_TYPE.prey
+    world.x[0] = 100
+    world.y[0] = 100
+    world.x[1] = 180
+    world.y[1] = 100
+    world.fed[0] = 0
+    world.fed[1] = 100
+    world.stamina[0] = traitValue('endurance', world.endurance[0])
+    if (stealth) world.mutations[0] = STEALTH
+    rebuildSpatialGrid(world)
+    return world
+  }
+
+  it('cannot sprint, capping its chase at the jog speed', () => {
+    const sprinting = computeSteering(setupStalker(false), 0, 1 / 60)
+    const stalking = computeSteering(setupStalker(true), 0, 1 / 60)
+
+    expect(sprinting.sprint).toBe(true)
+    expect(stalking.sprint).toBe(false)
+
+    const world = setupStalker(true)
+    const expectedJog =
+      traitValue('speed', world.speed[0]) *
+      scaleTrait(
+        'endurance',
+        world.endurance[0],
+        MOVEMENT.jogFactorMin,
+        MOVEMENT.jogFactorMax,
+      )
+    expect(Math.hypot(stalking.x, stalking.y)).toBeCloseTo(expectedJog, 5)
+  })
+
+  it('lets prey ignore it instead of fleeing', () => {
+    const fleeSteering = (stealth: boolean) => {
+      const world = createWorld(2, 32)
+      world.mutations.fill(0)
+      world.type[0] = GLORP_TYPE.hunter
+      world.type[1] = GLORP_TYPE.prey
+      world.x[0] = 200
+      world.y[0] = 100
+      // Prey sits west of the hunter, well inside PREY_FLEE, and wanders east.
+      world.x[1] = 200 - PREY_FLEE / 2
+      world.y[1] = 100
+      world.fed[0] = 0
+      world.fed[1] = 100
+      world.wanderSeed[1] = 0
+      if (stealth) world.mutations[0] = STEALTH
+      rebuildSpatialGrid(world)
+      return computeSteering(world, 1, 1 / 60)
+    }
+
+    expect(fleeSteering(false).x).toBeLessThan(0)
+    expect(fleeSteering(true).x).toBeGreaterThan(0)
   })
 })
 

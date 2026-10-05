@@ -12,7 +12,6 @@ import {
   DODGE_CHANCE_PER_LEVEL,
   DODGE_DURATION,
   DODGE_ENABLED,
-  DODGE_SPEED,
   FED_MAX,
   HUNTER_KILL_FED,
   MAX_GLORPS,
@@ -21,6 +20,7 @@ import {
 } from '@/sim/config'
 import { consumeGrass } from '@/sim/grass'
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
+import { mutationDodgeSpeed } from '@/sim/mutations'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { removeGlorp } from '@/sim/store'
@@ -140,12 +140,16 @@ const triggerDodge = (world: World, hunter: number, prey: number): void => {
     }
   }
 
+  const dodgeSpeed = mutationDodgeSpeed(
+    world.mutations[prey],
+    world.agility[prey],
+  )
   world.dodgeDirX[prey] = directionX
   world.dodgeDirY[prey] = directionY
   world.dodgeTimer[prey] = DODGE_DURATION
 
-  world.vx[prey] = directionX * DODGE_SPEED
-  world.vy[prey] = directionY * DODGE_SPEED
+  world.vx[prey] = directionX * dodgeSpeed
+  world.vy[prey] = directionY * dodgeSpeed
 
   world.dodges += 1
 }

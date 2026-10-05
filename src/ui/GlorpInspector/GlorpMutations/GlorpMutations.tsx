@@ -61,10 +61,59 @@ const StoatIcon = () => (
   </svg>
 )
 
+/** Coiled spring under an up arrow, reading as a longer jump. */
+const JumperIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M7 21c0-2 10-2 10-4s-10-2-10-4 10-2 10-4" />
+    <path d="M12 7V3m0 0-3 3m3-3 3 3" />
+  </svg>
+)
+
+/** Eye with a slash through it, reading as hidden from sight. */
+const CamouflageIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+    <circle cx="12" cy="12" r="2.5" />
+    <path d="m4 4 16 16" />
+  </svg>
+)
+
+/** Sheet ghost, reading as silent and unseen. */
+const StealthIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 21V11a7 7 0 0 1 14 0v10l-2.33-1.8-2.34 1.8-2.33-1.8L9.67 21 7.33 19.2 5 21Z" />
+    <path d="M9.5 11h.01M14.5 11h.01" />
+  </svg>
+)
+
 /** Icon for each mutation, in registry order. Every mutation must have an entry. */
 const MUTATION_ICONS = {
   coldBlooded: <ColdBloodedIcon />,
   stoat: <StoatIcon />,
+  jumper: <JumperIcon />,
+  camouflage: <CamouflageIcon />,
+  stealth: <StealthIcon />,
 } satisfies Record<MutationKey, ReactNode>
 
 /** The mutations a glorp holds, as a row of icons with hover descriptions. */

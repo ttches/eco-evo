@@ -1,5 +1,4 @@
 import {
-  DODGE_SPEED,
   HUNGER,
   HUNTER_SIGHT,
   HUNTER_SPRINT_MULTIPLIER,
@@ -14,7 +13,14 @@ import {
 } from '@/sim/config'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
-import { mutationSpeedFactor, mutationWalkFactor } from '@/sim/mutations'
+import {
+  camouflageSightFactor,
+  mutationCanSprint,
+  mutationDodgeSpeed,
+  mutationScaresPrey,
+  mutationSpeedFactor,
+  mutationWalkFactor,
+} from '@/sim/mutations'
 import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
@@ -106,8 +112,23 @@ const pursuitSpeed = (
 
 // The latch normally implies `stamina === 0` while exhausted, but the explicit
 // `stamina > 0` guard also stops a zero-capacity glorp from sprinting forever.
+// Stealth hunters can never sprint, capping pursuit at the jog tier.
 const canSprint = (world: World, index: number): boolean =>
-  world.exhausted[index] === 0 && world.stamina[index] > 0
+  mutationCanSprint(world.mutations[index]) &&
+  world.exhausted[index] === 0 &&
+  world.stamina[index] > 0
+
+/** Whether `target` lies within `range` of `observer`, by squared distance. */
+const withinSight = (
+  world: World,
+  observer: number,
+  target: number,
+  range: number,
+): boolean => {
+  const deltaX = world.x[target] - world.x[observer]
+  const deltaY = world.y[target] - world.y[observer]
+  return deltaX * deltaX + deltaY * deltaY <= range * range
+}
 
 /**
  * Hungry hunters sprint at prey in sight, jogging once exhausted. The search
@@ -121,8 +142,14 @@ const chasePrey: Drive = (world, index, dt) => {
     index,
     GLORP_TYPE.prey,
     HUNTER_SIGHT,
-    // A dodging prey is untargetable, so the search skips it entirely.
-    (candidate) => world.dodgeTimer[candidate] <= 0,
+    (candidate) => {
+      // A dodging prey is untargetable, so the search skips it entirely.
+      if (world.dodgeTimer[candidate] > 0) return false
+      // Camouflaged prey are only spotted within a fraction of that range.
+      const sight = camouflageSightFactor(world.mutations[candidate])
+      if (sight === 1) return true
+      return withinSight(world, index, candidate, HUNTER_SIGHT * sight)
+    },
   )
   if (prey < 0) return null
   const sprint = canSprint(world, index)
@@ -137,7 +164,7 @@ const chasePrey: Drive = (world, index, dt) => {
   )
 }
 
-/** A dodging prey commits to its escape dart at the fixed dart speed. */
+/** A dodging prey commits to its escape dart at its own dart speed. */
 const dodge: Drive = (world, index, dt) => {
   if (world.dodgeTimer[index] <= 0) return null
   return steerSampled(
@@ -145,7 +172,7 @@ const dodge: Drive = (world, index, dt) => {
     index,
     world.dodgeDirX[index],
     world.dodgeDirY[index],
-    DODGE_SPEED,
+    mutationDodgeSpeed(world.mutations[index], world.agility[index]),
     true,
     dt,
   )
@@ -153,7 +180,14 @@ const dodge: Drive = (world, index, dt) => {
 
 /** Prey run from the nearest hunter, sprinting while fresh and jogging after. */
 const fleeHunters: Drive = (world, index, dt) => {
-  const hunter = nearestOfType(world, index, GLORP_TYPE.hunter, PREY_FLEE)
+  // Prey do not react to a stealth hunter; they still dodge one at contact.
+  const hunter = nearestOfType(
+    world,
+    index,
+    GLORP_TYPE.hunter,
+    PREY_FLEE,
+    (candidate) => mutationScaresPrey(world.mutations[candidate]),
+  )
   if (hunter < 0) return null
   const sprint = canSprint(world, index)
   return steerFlee(

@@ -11,6 +11,7 @@ import {
   PREGNANT_SPEED_FACTOR_MIN,
 } from '@/sim/config'
 import { computeSteering } from '@/sim/behavior'
+import { MUTATIONS } from '@/sim/mutations'
 import { applyEating, dodgeChance, tickDodges } from '@/sim/predation'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { TRAIT_KEYS } from '@/sim/traits'
@@ -239,6 +240,45 @@ describe('dodge dart steering', () => {
     expect(Math.hypot(steering.x, steering.y)).not.toBeCloseTo(
       DODGE_SPEED * PREGNANT_SPEED_FACTOR_MIN,
     )
+  })
+})
+
+describe('jumper mutation', () => {
+  /** Distance a prey travels during its forced dart, with or without jumper. */
+  const dartDistance = (agility: number, jumper: boolean): number => {
+    const world = setupHunt(0, agility)
+    world.mutations.fill(0)
+    if (jumper) world.mutations[1] = MUTATIONS.jumper.bit
+    const roll = rollUnit(world, 0)
+    applyEating(world, 0.1)
+    // Let any later catch attempt fail so only this dart is measured.
+    roll.mockReturnValue(0.99)
+    const startX = world.x[1]
+    const startY = world.y[1]
+    while (world.dodgeTimer[1] > 0) step(world, DT)
+    return Math.hypot(world.x[1] - startX, world.y[1] - startY)
+  }
+
+  it('extends the dart by 4 world units per agility point', () => {
+    expect(dartDistance(3, true)).toBeCloseTo(DODGE_DISTANCE + 12, 0)
+    expect(dartDistance(7, true)).toBeCloseTo(DODGE_DISTANCE + 28, 0)
+  })
+
+  it('leaves a non-jumper dart at the base distance', () => {
+    expect(dartDistance(5, false)).toBeCloseTo(DODGE_DISTANCE, 0)
+    expect(dartDistance(7, false)).toBeCloseTo(DODGE_DISTANCE, 0)
+  })
+})
+
+describe('stealth mutation at contact', () => {
+  it('does not stop a prey from dodging its hunter', () => {
+    const world = setupHunt(4, 5)
+    world.mutations[0] = MUTATIONS.stealth.bit
+    rollUnit(world, 0)
+    applyEating(world, 0.1)
+
+    expect(world.count).toBe(2)
+    expect(world.dodges).toBe(1)
   })
 })
 

@@ -1,10 +1,15 @@
 import type { XorShift32 } from '@/engine/math'
 import {
+  CAMOUFLAGE,
   COLD_BLOODED,
+  DODGE_DURATION,
+  DODGE_SPEED,
+  JUMPER,
   MAX_MUTATIONS,
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
   MUTATIONS_ENABLED,
+  STEALTH,
   STOAT,
 } from '@/sim/config'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
@@ -43,6 +48,35 @@ export const MUTATIONS = {
     speedMultiplier: STOAT.speedMultiplier,
     /** Multiplier on hunger drain. */
     hungerDrain: STOAT.hungerDrain,
+  },
+  jumper: {
+    bit: 1 << 2,
+    name: 'Jumper',
+    description: `Dodges ${JUMPER.dodgeDistancePerAgility} world units further per agility point. Prey only.`,
+    exclusive: GLORP_TYPE.prey,
+    /** World units added to a dodge per point of `agility`. */
+    dodgeDistancePerAgility: JUMPER.dodgeDistancePerAgility,
+  },
+  camouflage: {
+    bit: 1 << 3,
+    name: 'Camouflage',
+    description: `Predators only spot them for pursuit within ${Math.round(
+      CAMOUFLAGE.visionMultiplier * 100,
+    )}% of their sight range. Prey only.`,
+    exclusive: GLORP_TYPE.prey,
+    /** Multiplier on a predator's pursuit sight range against this prey. */
+    visionMultiplier: CAMOUFLAGE.visionMultiplier,
+  },
+  stealth: {
+    bit: 1 << 4,
+    name: 'Stealth',
+    description:
+      'Cannot sprint, so its top speed is its jog. Prey do not flee from it, but still dodge. Predators only.',
+    exclusive: GLORP_TYPE.hunter,
+    /** Whether it may still sprint despite being stealthy. */
+    canSprint: STEALTH.canSprint,
+    /** Whether prey flee from it despite its stealth. */
+    preyFlee: STEALTH.preyFlee,
   },
 } as const
 
@@ -181,3 +215,38 @@ export const mutationSpeedFactor = (mask: number): number => {
  */
 export const mutationWalkFactor = (mask: number): number =>
   hasMutation(mask, MUTATIONS.stoat.bit) ? MUTATIONS.stoat.speedMultiplier : 1
+
+/** True when the glorp's mask carries the stealthy mutation. */
+export const isStealth = (mask: number): boolean =>
+  hasMutation(mask, MUTATIONS.stealth.bit)
+
+/**
+ * Whether a mask permits sprinting. Stealth normally forbids it; the registry
+ * value is a lever so the headless simulator can sweep the restriction off.
+ */
+export const mutationCanSprint = (mask: number): boolean =>
+  isStealth(mask) ? MUTATIONS.stealth.canSprint : true
+
+/**
+ * Whether prey flee from a glorp. A stealthy hunter normally goes unnoticed; the
+ * registry value is a lever so the simulator can sweep that half too.
+ */
+export const mutationScaresPrey = (mask: number): boolean =>
+  isStealth(mask) ? MUTATIONS.stealth.preyFlee : true
+
+/** Fraction of a predator's pursuit range a camouflaged prey is spotted within. */
+export const camouflageSightFactor = (mask: number): number =>
+  hasMutation(mask, MUTATIONS.camouflage.bit)
+    ? MUTATIONS.camouflage.visionMultiplier
+    : 1
+
+/**
+ * Escape-dart speed for the glorp. Most glorps cover the base dart over
+ * `DODGE_DURATION`; a jumper adds its agility bonus on top, so the dart lasts
+ * the same time but reaches further.
+ */
+export const mutationDodgeSpeed = (mask: number, agility: number): number =>
+  hasMutation(mask, MUTATIONS.jumper.bit)
+    ? DODGE_SPEED +
+      (agility * MUTATIONS.jumper.dodgeDistancePerAgility) / DODGE_DURATION
+    : DODGE_SPEED

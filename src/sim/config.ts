@@ -183,6 +183,40 @@ export const STOAT = {
   hungerDrain: 3,
 } as const
 
+/**
+ * Jumper mutation effect levers. Prey only: each point of `agility` stretches
+ * the prey's fixed dodge dart by this many world units, so an agile jumper
+ * escapes further over the same `DODGE_DURATION`. Kept here so the headless
+ * simulator can sweep it with `--set JUMPER.dodgeDistancePerAgility=...`.
+ */
+export const JUMPER = {
+  /** World units added to a dodge's distance per point of prey agility. */
+  dodgeDistancePerAgility: 4,
+} as const
+
+/**
+ * Camouflage mutation effect levers. Prey only: cut the range a predator sees a
+ * camouflaged prey at for pursuit, as a fraction of `HUNTER_SIGHT`. Contact and
+ * the catch are unaffected, so a camouflaged prey still dodges as normal.
+ */
+export const CAMOUFLAGE = {
+  /** Multiplier on a predator's pursuit sight range against this prey. */
+  visionMultiplier: 0.5,
+} as const
+
+/**
+ * Stealth mutation effect levers. Predators only: a stealth hunter cannot
+ * sprint (pursuit is capped at its jog) and prey do not flee from it, though
+ * they still dodge at contact. Both halves are levered so the headless
+ * simulator can sweep them apart.
+ */
+export const STEALTH = {
+  /** Whether a stealth predator may sprint. */
+  canSprint: false,
+  /** Whether prey run from a stealth predator at all. */
+  preyFlee: false,
+} as const
+
 // ---------------------------------------------------------------------------
 // Movement & stamina
 // ---------------------------------------------------------------------------
@@ -327,8 +361,9 @@ export const DODGE_CHANCE_MAX = 0.9
 export const DODGE_DURATION = 0.3
 
 /**
- * Fixed distance, in world units, a dodge carries the prey over its dart. The
- * escape is independent of the `speed` trait, so speed gets no second payoff.
+ * Base distance, in world units, a dodge carries the prey over its dart. The
+ * escape is independent of the `speed` trait, so speed gets no second payoff;
+ * the jumper mutation is the only thing that stretches it (see `JUMPER`).
  */
 export const DODGE_DISTANCE = 44
 
