@@ -7,11 +7,24 @@ Vite, vitest, oxlint). The world "detail glorp" is a procedural sprite drawn by
 `GlorpDetailLayer` from shared GLSL (`glorp-holo-shader.ts`), with a per-mutation
 look registry (`mutation-looks.ts`), a colour rule (`holo-palette.ts`), and an
 aura layer (`glorp-aura*.ts`). The HoloLab (`src/ui/HoloLab/*`, reached at
-`?holo`) previews the looks. The sprite's pixel-snap resolution is now fixed to
-the `DETAIL_SPRITE_ZOOM` grid, so a glorp keeps one sprite look at every zoom.
+`?holo`) previews the looks. The detail glorp's **mutation flare** is snapped to
+a fixed `DETAIL_SPRITE_ZOOM` grid, while the **body silhouette and outline**
+scale with camera zoom (zooming in sharpens the body but preserves the authored
+flare). Avatars that reuse this look must therefore pin an explicit authoring
+zoom; see Step 0.
 
 An independent code review produced findings. This task covers a subset and opens
 with a design decision.
+
+## Recently completed (build on the current API)
+
+The body/flare split above landed: `detailSpriteMetrics` is now
+`{ pixel, shapeRadius }` (fixed flare grid + coverage disc), `detailBodyMetrics(
+radius, zoom )` returns the zoom-dependent `{ pixel, outline }`, and
+`GlorpDetailLayer` feeds `uBodyPixel`/`uOutlineWidth` per frame while
+`uFlarePixel` stays fixed. The shared `glorpSnap` cell parameter was renamed
+`cellSize`, and `emberGlow` now takes an explicit `r`. Follow-up tasks should
+assume this split rather than the old single fixed grid.
 
 ## Step 0 — DECIDE BEFORE CODING (confirm with the user, then wait)
 
@@ -33,11 +46,15 @@ are drawn. So before coding, assess and report:
 - The SVG alternative: crisp at any size, CSS-only, already has CSS holo
   variants; but it is a SECOND art system that has already drifted from the world
   shader (the silhouette harmonics are duplicated).
+- Which zoom an avatar raster is authored at: the flare is fixed to
+  `DETAIL_SPRITE_ZOOM`, but the body no longer has a single look — decide between
+  the exact HoloLab sprite (coarse authored body) and a finer body.
 
 Decision outcomes:
+
 - **Sprite (preferred if performant):** scope a follow-up to build a sprite-avatar
   generator/cache and retire the SVG path. Keep the world `GlorpDetailLayer` as the
-  single source of the look.
+  single source of the look, rendered at the chosen authoring zoom.
 - **SVG:** keep it and do the SVG-parity task below so it cannot drift again.
 
 Do not start the cleanup tasks until this is answered.
@@ -71,8 +88,10 @@ consistent with the aura layer's cull margin.
 ## Task 9 — trim a misleading shader header
 
 `glorp-holo-shader.ts`'s header claims "Every hue is routed through `typeHue`…",
-contradicted by the legacy / `disco` / violet-accent branches. Reword to "dominant
-surfaces via `typeHue`; accents free."
+contradicted by the legacy / `disco` / violet-accent branches. Reword just that
+sentence to "dominant surfaces via `typeHue`; accents free." Leave the trailing
+paragraph that the body/flare split already rewrote (flare grid vs body
+silhouette) intact.
 
 ## SVG-avatar parity (only if Step 0 keeps SVG)
 

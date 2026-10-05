@@ -1,6 +1,6 @@
 import type { ShaderMaterial } from 'three'
 import { describe, expect, it } from 'vitest'
-import { detailSpriteMetrics } from '@/render/glorp-detail'
+import { detailBodyMetrics, detailSpriteMetrics } from '@/render/glorp-detail'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { glorpHoloIndex } from '@/render/glorp-holo'
 import { DETAIL_SPRITE_ZOOM, DETAIL_MIN_ZOOM } from '@/render/lod'
@@ -44,18 +44,25 @@ describe('GlorpDetailLayer', () => {
     layer.dispose()
   })
 
-  it('fixes the sprite grid regardless of camera zoom', () => {
-    const expected = detailSpriteMetrics(12, DETAIL_SPRITE_ZOOM)
+  it('sharpens the body with zoom but keeps the flare grid fixed', () => {
+    const flare = detailSpriteMetrics(12, DETAIL_SPRITE_ZOOM)
     const layer = new GlorpDetailLayer()
     const material = layer.mesh.material as ShaderMaterial
 
     layer.update(makeWorld(), BOUNDS, DETAIL_MIN_ZOOM, 0)
-    expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(expected.outline)
-    expect(material.uniforms.uPixel.value).toBeCloseTo(expected.pixel)
+    const bodyAtThreshold = detailBodyMetrics(12, DETAIL_MIN_ZOOM)
+    expect(material.uniforms.uBodyPixel.value).toBeCloseTo(bodyAtThreshold.pixel)
+    expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(
+      bodyAtThreshold.outline,
+    )
+    expect(material.uniforms.uFlarePixel.value).toBeCloseTo(flare.pixel)
 
-    const pixelAtThreshold = material.uniforms.uPixel.value
+    const bodyAtMax = detailBodyMetrics(12, 4)
     layer.update(makeWorld(), BOUNDS, 4, 0)
-    expect(material.uniforms.uPixel.value).toBe(pixelAtThreshold)
+    expect(material.uniforms.uBodyPixel.value).toBeCloseTo(bodyAtMax.pixel)
+    expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(bodyAtMax.outline)
+    expect(material.uniforms.uFlarePixel.value).toBeCloseTo(flare.pixel)
+    expect(bodyAtMax.pixel).toBeLessThan(bodyAtThreshold.pixel)
     layer.dispose()
   })
 

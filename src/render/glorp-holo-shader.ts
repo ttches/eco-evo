@@ -15,8 +15,9 @@ import {
  * brushed titanium, nacre and ember. Every hue is routed through `typeHue`, so
  * prey stay yellow→blue and predators stay orange→purple (see `holo-palette`).
  *
- * The caller has already snapped `p` to the pixel grid and confirmed it is
- * inside `boundary`; this only shades the body.
+ * `p` is snapped to the fixed flare grid (the authored sprite look); the body
+ * silhouette arrives as `r`/`boundary`, so patterns follow the coarse grid
+ * while rims and glows follow the finer body edge.
  */
 export const GLORP_HOLO_GLSL = /* glsl */ `
   vec3 hsv2rgb(vec3 c) {
@@ -134,9 +135,10 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
     return mix(gold + gold * flake, vec3(0.10, 0.07, 0.02), crack * 0.8);
   }
 
-  // Near-black body with a glowing, pulsing ember crack.
-  vec3 emberGlow(vec2 p, float boundary, float warm, float time, float seed) {
-    float glow = smoothstep(0.0, 1.0, 1.0 - length(p) / boundary);
+  // Near-black body with a glowing, pulsing ember crack. r/boundary follow the
+  // body silhouette, so the glow hugs the edge even when p is coarser.
+  vec3 emberGlow(vec2 p, float r, float boundary, float warm, float time, float seed) {
+    float glow = smoothstep(0.0, 1.0, 1.0 - r / boundary);
     float pulse = 0.5 + 0.5 * sin(time * 3.0 + seed);
     float crack = 0.5 + 0.5 * sin(atan(p.y, p.x) * 7.0 + time * 2.0);
     vec3 hot = hsv2rgb(vec3(typeHue(0.9, warm), 0.9, 1.0));
@@ -292,8 +294,9 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
       sheen = dragonScale(p, warm, time, seed, sparkle);
       amount = 0.7 + 0.3 * sparkle;
     } else if (holo < 12.5) {
-      // Frosted Opal — interference with rim ice-crystal glitter.
-      float phase = r * 0.6 + 0.1 * sin(p.x * 5.0 + time) + seed * 0.1;
+      // Frosted Opal — interference with rim ice-crystal glitter. The band
+      // phase follows the flare grid (length(p)), not the finer body radius.
+      float phase = length(p) * 0.6 + 0.1 * sin(p.x * 5.0 + time) + seed * 0.1;
       vec3 opal = mix(vec3(0.8, 0.9, 1.0), thinFilmTyped(phase, warm), 0.6);
       float ice = foilFlakes(p, seed, time, 12.0) * smoothstep(0.3, 1.0, r / boundary);
       sheen = opal + vec3(ice);
@@ -399,7 +402,7 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
       amount = 0.92;
     } else if (holo < 25.5) {
       // Smoke & Ember — black slick body with an ember crack.
-      sheen = mix(vec3(0.03), emberGlow(p, boundary, warm, time, seed), 0.7);
+      sheen = mix(vec3(0.03), emberGlow(p, r, boundary, warm, time, seed), 0.7);
       amount = 0.9;
     } else if (holo < 26.5) {
       // Chromatic Veil — near-invisible, faint type-hued film.

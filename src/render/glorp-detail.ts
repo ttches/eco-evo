@@ -8,7 +8,7 @@ import { GLORP_RADIUS } from '@/sim/config'
  * the look lives in one place.
  */
 
-/** Width of the glorp outline, in sprite pixels (the snap grid below). */
+/** Width of the glorp outline, in render pixels. */
 export const GLORP_OUTLINE_PIXELS = 1.5
 
 /** How dark the outline is relative to the body color. */
@@ -24,13 +24,13 @@ export const GLORP_BLOB_AMPLITUDE = 0.12
 /**
  * The blob silhouette, shared by the production detail shader and the lab's
  * holo shader so both agree on exactly where a glorp's edge is. `vLocal` is the
- * unit-disc position and `pixel` the render-pixel size in local units.
+ * unit-disc position and `cellSize` the snap grid's cell size in local units
+ * (render-pixel sized for the body, sprite-pixel sized for the flare).
  */
 export const GLORP_SILHOUETTE_GLSL = /* glsl */ `
-  // Snap a local point to the render-pixel grid so the silhouette reads as
-  // pixel art.
-  vec2 glorpSnap(vec2 local, float pixel) {
-    return floor(local / pixel + 0.5) * pixel;
+  // Snap a local point to the cell grid so the silhouette reads as pixel art.
+  vec2 glorpSnap(vec2 local, float cellSize) {
+    return floor(local / cellSize + 0.5) * cellSize;
   }
 
   // Two harmonics give each glorp a stable, slightly lumpy outline. seed is
@@ -45,23 +45,23 @@ export const GLORP_SILHOUETTE_GLSL = /* glsl */ `
   }
 `
 
-/** Local units per sprite pixel for a glorp of `radius` at `spriteZoom`. */
-export const pixelSize = (radius: number, spriteZoom: number): number => {
-  const screenRadius = radius * spriteZoom
+/** Local units per render pixel for a glorp of `radius` at `zoom`. */
+export const pixelSize = (radius: number, zoom: number): number => {
+  const screenRadius = radius * zoom
   return screenRadius > 0 ? 1 / screenRadius : 0
 }
 
 /**
  * Width of the outline band in local units, so it stays a constant `pixels`
- * sprite-pixels wide whatever the zoom. Clamped to 1 so it can never exceed the
- * glorp.
+ * render-pixels wide on screen whatever the zoom. Clamped to 1 so it can never
+ * exceed the glorp.
  */
 export const outlineWidth = (
   radius: number,
-  spriteZoom: number,
+  zoom: number,
   pixels = GLORP_OUTLINE_PIXELS,
 ): number => {
-  const screenRadius = radius * spriteZoom
+  const screenRadius = radius * zoom
   if (screenRadius <= 0) return 0
   return clamp(pixels / screenRadius, 0, 1)
 }
@@ -69,14 +69,15 @@ export const outlineWidth = (
 /** Segments in the coverage disc; enough that it never clips the silhouette. */
 export const GLORP_BLOB_SEGMENTS = 32
 
-/** Furthest a sample can sit from the pixel it snaps to, in sprite pixels. */
+/** Furthest a sample can sit from the grid cell it snaps to, in cells. */
 export const GLORP_SNAP_OVERSHOOT = Math.SQRT1_2
 
 /**
  * Radius of the coverage disc the detail shader draws into: it must reach past
  * the lumpiest, pixel-snapped silhouette or it would clip it. The snap is worst
- * at the sprite zoom, so size the margin from there and account for the
- * polygon's inscribed radius.
+ * at the lowest detail zoom, so size the margin from there and account for the
+ * polygon's inscribed radius. The body grid only gets finer as the camera zooms
+ * in, so the sprite zoom stays the worst case.
  */
 export const glorpShapeRadius = (
   radius = GLORP_RADIUS,
@@ -88,15 +89,27 @@ export const glorpShapeRadius = (
   Math.cos(Math.PI / GLORP_BLOB_SEGMENTS)
 
 /**
- * The three coupled metrics of the glorp sprite, all derived from one sprite
- * zoom so they cannot drift: the snap grid, the outline width, and the coverage
- * disc radius. The layer computes this once and feeds the first two as uniforms.
+ * The fixed parts of the glorp sprite, derived from one sprite zoom so they
+ * cannot drift: the mutation flare's snap grid and the coverage disc radius.
+ * The body silhouette and outline are *not* here — they scale with the camera
+ * zoom (see `detailBodyMetrics`); only the flare keeps this authored grid.
  */
 export const detailSpriteMetrics = (
   radius = GLORP_RADIUS,
   spriteZoom = DETAIL_SPRITE_ZOOM,
-): { pixel: number; outline: number; shapeRadius: number } => ({
+): { pixel: number; shapeRadius: number } => ({
   pixel: pixelSize(radius, spriteZoom),
-  outline: outlineWidth(radius, spriteZoom),
   shapeRadius: glorpShapeRadius(radius, spriteZoom),
+})
+
+/**
+ * The zoom-dependent body metrics: the silhouette's snap grid and the outline.
+ * Both sharpen as the camera zooms in; the flare stays on the fixed sprite grid.
+ */
+export const detailBodyMetrics = (
+  radius = GLORP_RADIUS,
+  zoom = DETAIL_SPRITE_ZOOM,
+): { pixel: number; outline: number } => ({
+  pixel: pixelSize(radius, zoom),
+  outline: outlineWidth(radius, zoom),
 })

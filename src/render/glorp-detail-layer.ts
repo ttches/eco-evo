@@ -8,6 +8,7 @@ import {
   GLORP_BLOB_SEGMENTS,
   GLORP_OUTLINE_SHADE,
   GLORP_SILHOUETTE_GLSL,
+  detailBodyMetrics,
   detailSpriteMetrics,
 } from '@/render/glorp-detail'
 import { GLORP_HOLO_SPEED, GLORP_HOLO_STRENGTH } from '@/render/glorp-holo'
@@ -19,10 +20,15 @@ import { GLORP_TYPE } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
 /**
- * Sprite metrics, fixed once: the snap grid, outline, and coverage disc all
- * derive from the sprite zoom, so the glorp keeps one look at every camera zoom.
+ * Fixed sprite metrics: the mutation flare's snap grid and the coverage disc.
+ * The body silhouette and outline are recomputed each frame from the camera
+ * zoom (see `update`), so a glorp sharpens as you zoom in while the flare keeps
+ * the one authored sprite look the HoloLab previews.
  */
 const SPRITE = detailSpriteMetrics()
+
+/** Initial body metrics; `update` overwrites them from the live camera zoom. */
+const BODY = detailBodyMetrics()
 
 /** Chooses the sheen branch for the mutated glorp at `index`. */
 export type GlorpHoloPicker = (world: RenderableWorld, index: number) => number
@@ -67,7 +73,8 @@ const fragmentShader = /* glsl */ `
 
   uniform float uOutlineWidth;
   uniform float uOutlineShade;
-  uniform float uPixel;
+  uniform float uBodyPixel;
+  uniform float uFlarePixel;
   uniform float uBlobAmp;
   uniform float uTime;
   uniform float uSpeed;
@@ -77,20 +84,23 @@ const fragmentShader = /* glsl */ `
   ${GLORP_HOLO_GLSL}
 
   void main() {
-    // Snap the silhouette to the render-pixel grid (in the glorp's own frame)
-    // so it reads as pixel art.
-    vec2 p = glorpSnap(vLocal, uPixel);
-    float r = length(p);
-    float boundary = glorpBoundary(p, vSeed, uBlobAmp);
-    if (r > boundary) discard;
+    // Snap the body silhouette to the render-pixel grid (in the glorp's own
+    // frame) so it reads as pixel art; it sharpens as the camera zooms in.
+    vec2 pBody = glorpSnap(vLocal, uBodyPixel);
+    float rBody = length(pBody);
+    float boundaryBody = glorpBoundary(pBody, vSeed, uBlobAmp);
+    if (rBody > boundaryBody) discard;
 
     vec3 body = vColor;
     if (vMutated > 0.5) {
-      body = glorpHolo(vColor, p, boundary, r, vHolo, vSeed, uTime * uSpeed, uStrength, vWarm);
+      // Sample the sheen on the fixed sprite grid so the mutation flare keeps
+      // its authored 8-bit look at every zoom, overlaid on the finer body.
+      vec2 pFlare = glorpSnap(vLocal, uFlarePixel);
+      body = glorpHolo(vColor, pFlare, boundaryBody, rBody, vHolo, vSeed, uTime * uSpeed, uStrength, vWarm);
     }
 
     vec3 outline = vColor * uOutlineShade;
-    gl_FragColor = vec4(r > boundary - uOutlineWidth ? outline : body, 1.0);
+    gl_FragColor = vec4(rBody > boundaryBody - uOutlineWidth ? outline : body, 1.0);
   }
 `
 
@@ -149,9 +159,10 @@ export class GlorpDetailLayer {
       vertexShader,
       fragmentShader,
       uniforms: {
-        uOutlineWidth: { value: SPRITE.outline },
+        uOutlineWidth: { value: BODY.outline },
         uOutlineShade: { value: GLORP_OUTLINE_SHADE },
-        uPixel: { value: SPRITE.pixel },
+        uBodyPixel: { value: BODY.pixel },
+        uFlarePixel: { value: SPRITE.pixel },
         uBlobAmp: { value: GLORP_BLOB_AMPLITUDE },
         uTime: { value: 0 },
         uSpeed: { value: GLORP_HOLO_SPEED },
@@ -184,8 +195,6 @@ export class GlorpDetailLayer {
     zoom: number,
     time: number,
   ): void {
-    // Above the LOD threshold the sprite grid is fixed (see DETAIL_SPRITE_ZOOM),
-    // so only the sheen clock changes per frame.
     if (zoom < DETAIL_MIN_ZOOM) {
       this.mesh.count = 0
       return
@@ -193,7 +202,17 @@ export class GlorpDetailLayer {
 
     const count = Math.min(world.count, MAX_GLORPS)
     const radius = world.radius
+    // The body grid sharpens with the camera; only the flare stays fixed (see
+    // DETAIL_SPRITE_ZOOM). No screen size means no grid to snap to.
+    const body = detailBodyMetrics(radius, zoom)
+    if (body.pixel <= 0) {
+      this.mesh.count = 0
+      return
+    }
+
     const margin = radius + CAMERA.cullMargin
+    this.material.uniforms.uBodyPixel.value = body.pixel
+    this.material.uniforms.uOutlineWidth.value = body.outline
     this.material.uniforms.uTime.value = time
     let visible = 0
 

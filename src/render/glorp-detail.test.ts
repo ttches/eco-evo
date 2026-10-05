@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   GLORP_OUTLINE_PIXELS,
+  detailBodyMetrics,
   detailSpriteMetrics,
   glorpShapeRadius,
   outlineWidth,
@@ -9,12 +10,12 @@ import {
 import { DETAIL_SPRITE_ZOOM } from '@/render/lod'
 
 describe('outlineWidth', () => {
-  it('keeps the outline a constant width in sprite pixels', () => {
+  it('keeps the outline a constant width on screen', () => {
     const radius = 12
-    for (const spriteZoom of [0.35, 0.5, 1, 4]) {
-      expect(
-        outlineWidth(radius, spriteZoom) * radius * spriteZoom,
-      ).toBeCloseTo(GLORP_OUTLINE_PIXELS)
+    for (const zoom of [0.35, 0.5, 1, 4]) {
+      expect(outlineWidth(radius, zoom) * radius * zoom).toBeCloseTo(
+        GLORP_OUTLINE_PIXELS,
+      )
     }
   })
 
@@ -29,7 +30,7 @@ describe('outlineWidth', () => {
 })
 
 describe('pixelSize', () => {
-  it('is one sprite pixel in local units', () => {
+  it('is one render pixel in local units', () => {
     expect(pixelSize(12, 1)).toBeCloseTo(1 / 12)
     expect(pixelSize(12, 4)).toBeCloseTo(1 / 48)
   })
@@ -40,12 +41,21 @@ describe('pixelSize', () => {
   })
 })
 
+describe('detailBodyMetrics', () => {
+  it('scales the snap grid and outline with the camera zoom', () => {
+    const zoom = 4
+    const metrics = detailBodyMetrics(12, zoom)
+    expect(metrics.pixel).toBeCloseTo(pixelSize(12, zoom))
+    expect(metrics.outline).toBeCloseTo(outlineWidth(12, zoom))
+    expect(metrics.pixel).toBeCloseTo(1 / 48)
+  })
+})
+
 describe('detailSpriteMetrics', () => {
-  it('derives the grid, outline, and disc from one sprite zoom', () => {
+  it('derives the fixed flare grid and disc from the sprite zoom', () => {
     const spriteZoom = DETAIL_SPRITE_ZOOM
     const metrics = detailSpriteMetrics(12, spriteZoom)
     expect(metrics.pixel).toBeCloseTo(pixelSize(12, spriteZoom))
-    expect(metrics.outline).toBeCloseTo(outlineWidth(12, spriteZoom))
     expect(metrics.shapeRadius).toBeCloseTo(glorpShapeRadius(12, spriteZoom))
   })
 })
