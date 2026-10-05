@@ -10,21 +10,11 @@ import { MUTATIONS, MUTATION_KEYS } from '@/sim/mutations'
 import { GLORP_TYPE } from '@/sim/types'
 
 describe('MUTATION_LOOKS', () => {
-  it('gives every mutation at least three candidate designs', () => {
-    for (const key of MUTATION_KEYS) {
-      expect(MUTATION_LOOKS[key].candidates.length).toBeGreaterThanOrEqual(3)
-    }
-  })
-
   it('uses only defined body and aura variants', () => {
     for (const key of MUTATION_KEYS) {
       const look = MUTATION_LOOKS[key]
       expect(GLORP_HOLO_VARIANTS).toContain(look.body)
       if (look.aura) expect(AURA_VARIANTS).toContain(look.aura)
-      for (const candidate of look.candidates) {
-        expect(GLORP_HOLO_VARIANTS).toContain(candidate.body)
-        if (candidate.aura) expect(AURA_VARIANTS).toContain(candidate.aura)
-      }
     }
   })
 })

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   GLORP_OUTLINE_PIXELS,
+  GLORP_SILHOUETTE_GLSL,
   detailBodyMetrics,
   detailSpriteMetrics,
   glorpShapeRadius,
+  glorpWobble,
   outlineWidth,
   pixelSize,
 } from '@/render/glorp-detail'
@@ -57,5 +59,29 @@ describe('detailSpriteMetrics', () => {
     const metrics = detailSpriteMetrics(12, spriteZoom)
     expect(metrics.pixel).toBeCloseTo(pixelSize(12, spriteZoom))
     expect(metrics.shapeRadius).toBeCloseTo(glorpShapeRadius(12, spriteZoom))
+  })
+})
+
+describe('glorpWobble', () => {
+  it('matches the shared silhouette harmonics', () => {
+    expect(glorpWobble(0, 0)).toBeCloseTo(0)
+    expect(glorpWobble(Math.PI / 2, 0)).toBeCloseTo(-0.2)
+  })
+
+  it('never strays past the summed harmonic weights', () => {
+    for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+      for (const seed of [0, 1.7, 3.3]) {
+        expect(Math.abs(glorpWobble(angle, seed))).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+})
+
+describe('GLORP_SILHOUETTE_GLSL', () => {
+  it('generates its wobble from the shared harmonics', () => {
+    expect(GLORP_SILHOUETTE_GLSL).toContain('sin(angle * 3.0 + seed) * 0.6')
+    expect(GLORP_SILHOUETTE_GLSL).toContain(
+      'sin(angle * 5.0 + seed * (-1.3)) * 0.4',
+    )
   })
 })

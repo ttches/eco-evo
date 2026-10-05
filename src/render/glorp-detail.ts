@@ -22,6 +22,42 @@ export const GLORP_OUTLINE_SHADE = 0.2
 export const GLORP_BLOB_AMPLITUDE = 0.12
 
 /**
+ * One harmonic of the silhouette wobble. A term contributes
+ * `weight * sin(frequency * angle + phaseScale * seed)`; `angle` is the polar
+ * angle around the body and `seed` the glorp's phase.
+ */
+export type GlorpHarmonic = {
+  frequency: number
+  weight: number
+  phaseScale: number
+}
+
+/**
+ * The harmonics behind a glorp's lumpy outline, shared by the GLSL silhouette
+ * and the SVG avatar so the two cannot drift. Weights sum to 1, and
+ * `GLORP_BLOB_AMPLITUDE` scales their total.
+ */
+export const GLORP_SILHOUETTE_HARMONICS: readonly GlorpHarmonic[] = [
+  { frequency: 3, weight: 0.6, phaseScale: 1 },
+  { frequency: 5, weight: 0.4, phaseScale: -1.3 },
+]
+
+/** CPU twin of the GLSL wobble: the fraction a boundary strays from a circle. */
+export const glorpWobble = (angle: number, seed: number): number =>
+  GLORP_SILHOUETTE_HARMONICS.reduce(
+    (sum, { frequency, weight, phaseScale }) =>
+      sum + weight * Math.sin(frequency * angle + phaseScale * seed),
+    0,
+  )
+
+/** The wobble sum as GLSL, generated from the shared harmonics. */
+const silhouetteWobbleGlsl = (): string =>
+  GLORP_SILHOUETTE_HARMONICS.map(({ frequency, weight, phaseScale }) => {
+    const phase = phaseScale === 1 ? 'seed' : `seed * (${phaseScale})`
+    return `sin(angle * ${frequency}.0 + ${phase}) * ${weight}`
+  }).join('\n      + ')
+
+/**
  * The blob silhouette, shared by the production detail shader and the lab's
  * holo shader so both agree on exactly where a glorp's edge is. `vLocal` is the
  * unit-disc position and `cellSize` the snap grid's cell size in local units
@@ -33,13 +69,12 @@ export const GLORP_SILHOUETTE_GLSL = /* glsl */ `
     return floor(local / cellSize + 0.5) * cellSize;
   }
 
-  // Two harmonics give each glorp a stable, slightly lumpy outline. seed is
-  // the glorp's phase and amplitude its maximum stray from a circle.
+  // Harmonics give each glorp a stable, slightly lumpy outline. seed is the
+  // glorp's phase and amplitude its maximum stray from a circle.
   float glorpBoundary(vec2 p, float seed, float amplitude) {
     float angle = atan(p.y, p.x);
     float wobble = amplitude * (
-      sin(angle * 3.0 + seed) * 0.6 +
-      sin(angle * 5.0 - seed * 1.3) * 0.4
+      ${silhouetteWobbleGlsl()}
     );
     return 1.0 + wobble;
   }

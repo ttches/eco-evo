@@ -13,71 +13,21 @@ import {
 import type { GlorpType } from '@/sim/types'
 
 /**
- * One candidate look for a mutation, previewed side by side in the Holo Lab.
- * `body` is the world-sheen branch; `aura` adds a halo outside the silhouette.
- */
-export type MutationLookCandidate = {
-  name: string
-  body: GlorpHoloVariant
-  aura?: GlorpAuraVariant
-}
-
-/**
- * The look a mutation wears, plus its alternates for the lab. `body`/`aura` are
- * the wired winners; `candidates` keeps every explored design so the lab can
- * compare them and nothing is lost when a winner changes.
+ * The look a mutation wears in the world: `body` is the world-sheen branch;
+ * `aura` adds a halo outside the silhouette. The lab's alternate designs live
+ * in `src/ui/HoloLab/mutation-candidates.ts`.
  */
 export type MutationLook = {
   body: GlorpHoloVariant
   aura?: GlorpAuraVariant
-  candidates: readonly MutationLookCandidate[]
 }
 
 export const MUTATION_LOOKS: Record<MutationKey, MutationLook> = {
-  coldBlooded: {
-    body: 'abyssal-oil-slick',
-    candidates: [
-      { name: 'Abyssal Oil-Slick', body: 'abyssal-oil-slick' },
-      { name: 'Dragon Scales', body: 'dragon-scales' },
-      { name: 'Frosted Opal', body: 'frosted-opal' },
-      { name: 'Beetle Shell', body: 'beetle-shell' },
-    ],
-  },
-  stoat: {
-    body: 'beetle-shell',
-    candidates: [
-      { name: 'Beetle Shell', body: 'beetle-shell' },
-      { name: 'Slipstream Chrome', body: 'slipstream-chrome' },
-      { name: 'Ermine Foil', body: 'ermine-foil' },
-      { name: 'Peregrine Titanium', body: 'peregrine-titanium' },
-    ],
-  },
-  jumper: {
-    body: 'beetle-shell',
-    candidates: [
-      { name: 'Beetle Shell', body: 'beetle-shell' },
-      { name: 'Leapfrog Chrome', body: 'leapfrog-chrome' },
-      { name: 'Grasshopper Foil', body: 'grasshopper-foil' },
-      { name: 'Sahara Gold', body: 'sahara-gold' },
-    ],
-  },
-  camouflage: {
-    body: 'cuttlefish-hologram',
-    candidates: [
-      { name: 'Cuttlefish Hologram', body: 'cuttlefish-hologram' },
-      { name: 'Chameleon Prism', body: 'chameleon-prism' },
-      { name: 'Lichen Patina', body: 'lichen-patina' },
-    ],
-  },
-  stealth: {
-    body: 'predator-glint',
-    aura: 'smoke',
-    candidates: [
-      { name: 'Predator Glint', body: 'predator-glint', aura: 'smoke' },
-      { name: 'Smoke & Ember', body: 'smoke-and-ember', aura: 'ember' },
-      { name: 'Chromatic Veil', body: 'chromatic-veil', aura: 'chromatic' },
-    ],
-  },
+  coldBlooded: { body: 'abyssal-oil-slick' },
+  stoat: { body: 'beetle-shell' },
+  jumper: { body: 'beetle-shell' },
+  camouflage: { body: 'cuttlefish-hologram' },
+  stealth: { body: 'predator-glint', aura: 'smoke' },
 }
 
 /** The first mutation a glorp holds, respecting its type's exclusivity. */

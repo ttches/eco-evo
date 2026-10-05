@@ -4,6 +4,7 @@ import { glorpColor } from '@/render/appearance'
 import {
   GLORP_BLOB_AMPLITUDE,
   GLORP_OUTLINE_SHADE,
+  glorpWobble,
 } from '@/render/glorp-detail'
 import type { GlorpType } from '@/sim/types'
 import { DEFAULT_HOLO, type HoloVariant } from './holo'
@@ -34,10 +35,7 @@ const buildPath = (id: number): string => {
   const points: string[] = []
   for (let i = 0; i < SEGMENTS; i += 1) {
     const angle = (i / SEGMENTS) * TAU
-    const wobble =
-      GLORP_BLOB_AMPLITUDE *
-      (Math.sin(angle * 3 + seed) * 0.6 +
-        Math.sin(angle * 5 - seed * 1.3) * 0.4)
+    const wobble = GLORP_BLOB_AMPLITUDE * glorpWobble(angle, seed)
     const radius = BASE_RADIUS * (1 + wobble)
     const x = CENTER + Math.cos(angle) * radius
     const y = CENTER + Math.sin(angle) * radius

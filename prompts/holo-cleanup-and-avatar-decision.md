@@ -16,15 +16,21 @@ zoom; see Step 0.
 An independent code review produced findings. This task covers a subset and opens
 with a design decision.
 
-## Recently completed (build on the current API)
+## Status
 
-The body/flare split above landed: `detailSpriteMetrics` is now
-`{ pixel, shapeRadius }` (fixed flare grid + coverage disc), `detailBodyMetrics(
-radius, zoom )` returns the zoom-dependent `{ pixel, outline }`, and
-`GlorpDetailLayer` feeds `uBodyPixel`/`uOutlineWidth` per frame while
-`uFlarePixel` stays fixed. The shared `glorpSnap` cell parameter was renamed
-`cellSize`, and `emberGlow` now takes an explicit `r`. Follow-up tasks should
-assume this split rather than the old single fixed grid.
+Done — body/flare split: `detailSpriteMetrics` is now `{ pixel, shapeRadius }`,
+`detailBodyMetrics( radius, zoom )` returns the zoom-dependent `{ pixel, outline }`,
+and `GlorpDetailLayer` feeds `uBodyPixel`/`uOutlineWidth` per frame while
+`uFlarePixel` stays fixed. The shared `glorpSnap` cell parameter is `cellSize`,
+and `emberGlow` takes an explicit `r`.
+
+Done — follow-up pass: Step 0 resolved to **keep the SVG avatars**, so Tasks 1, 3,
+4, 9 and the SVG-avatar parity work are complete. The shared harmonic spec
+(`GLORP_SILHOUETTE_HARMONICS` / `glorpWobble`) now drives both the GLSL silhouette
+and `GlorpAvatar`.
+
+Split out — the shared instanced-layer scaffold is now its own task at
+`prompts/instanced-layer-scaffold.md`.
 
 ## Step 0 — DECIDE BEFORE CODING (confirm with the user, then wait)
 
@@ -59,7 +65,7 @@ Decision outcomes:
 
 Do not start the cleanup tasks until this is answered.
 
-## Task 1 — delete dead CPU helpers in `holo-palette.ts`
+## Task 1 (done) — delete dead CPU helpers in `holo-palette.ts`
 
 `typeHue`, `accentHue`, `flareHue`, `hueInWindow` are referenced only by
 `holo-palette.test.ts`; production inlines the four `*_HUE_*` constants into GLSL.
@@ -67,7 +73,7 @@ Keep the constants, delete the functions and their tests, and rewrite the header
 state the window rule is expressed in GLSL with these constants as its single
 source of truth.
 
-## Task 3 — move lab-only candidate data out of production
+## Task 3 (done) — move lab-only candidate data out of production
 
 `mutation-looks.ts` stores lab-only `candidates[]` whose `name` duplicates
 `GLORP_HOLO_LABELS`, and re-lists each wired winner as `candidates[0]` with nothing
@@ -78,14 +84,14 @@ Decision: keep production lean — reduce `mutation-looks.ts` to
 candidate groupings into the HoloLab and label rows via `GLORP_HOLO_LABELS[body]`
 (drop the duplicate `name`). Update `mutation-looks.test.ts` and `HoloLabWorld.tsx`.
 
-## Task 4 — fix the chromatic aura disc margin
+## Task 4 (done) — fix the chromatic aura disc margin
 
 `GLORP_AURA_SCALE = 1.8` exactly equals the ring's max radius, but the red fringe
 peaks at `t = radius + 0.05 = 1.85`, so it is clipped by the disc geometry. Size the
 disc from ring-max plus fringe (or add margin) and comment the relationship. Keep it
 consistent with the aura layer's cull margin.
 
-## Task 9 — trim a misleading shader header
+## Task 9 (done) — trim a misleading shader header
 
 `glorp-holo-shader.ts`'s header claims "Every hue is routed through `typeHue`…",
 contradicted by the legacy / `disco` / violet-accent branches. Reword just that
@@ -93,20 +99,17 @@ sentence to "dominant surfaces via `typeHue`; accents free." Leave the trailing
 paragraph that the body/flare split already rewrote (flare grid vs body
 silhouette) intact.
 
-## SVG-avatar parity (only if Step 0 keeps SVG)
+## SVG-avatar parity (done — Step 0 chose SVG)
 
-`GlorpAvatar.tsx` copies the silhouette harmonics from `glorp-detail.ts`. Export the
-harmonic spec (frequencies / weights / amplitude) as shared constants used by both
-the GLSL silhouette and the SVG path so they cannot drift.
+`GlorpAvatar.tsx` no longer copies the silhouette harmonics from
+`glorp-detail.ts`: `GLORP_SILHOUETTE_HARMONICS` is the shared spec, consumed by a
+CPU `glorpWobble` that the SVG path calls and by the GLSL `glorpBoundary`, so the
+two cannot drift.
 
-## Broader (queue after the above): shared instanced-layer scaffold
+## Broader — moved
 
-`GlorpLayer`, `GlorpDetailLayer`, `AuraPass`, and `HeartLayer` repeat the same
-typed-array + `InstancedBufferAttribute` + `DynamicDrawUsage` + matrix + AABB-cull +
-`count` / `needsUpdate` sequence, and the cull loop is copy-pasted. Extract a small
-`InstancedLayer` base or a `cullInto(bounds, margin)` helper; optionally fold in
-`addUpdateRange` partial uploads. Medium refactor — do it deliberately, not
-opportunistically.
+The shared instanced-layer scaffold now lives at
+`prompts/instanced-layer-scaffold.md`.
 
 ## Constraints
 

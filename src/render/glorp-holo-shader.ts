@@ -12,8 +12,9 @@ import {
  *
  * The material helpers below build the premium vocabulary — foil glitter,
  * chrome, thin-film opal, oil slick, beetle chitin, dragon scales, gold leaf,
- * brushed titanium, nacre and ember. Every hue is routed through `typeHue`, so
- * prey stay yellow→blue and predators stay orange→purple (see `holo-palette`).
+ * brushed titanium, nacre and ember. Dominant surfaces are routed through
+ * `typeHue`, so prey stay yellow→blue and predators stay orange→purple (see
+ * `holo-palette`); accents (sparkles, rim glints, eyes) are free.
  *
  * `p` is snapped to the fixed flare grid (the authored sprite look); the body
  * silhouette arrives as `r`/`boundary`, so patterns follow the coarse grid

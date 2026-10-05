@@ -12,12 +12,12 @@ import {
   type GlorpHoloVariant,
 } from '@/render/glorp-holo'
 import { DETAIL_MIN_ZOOM } from '@/render/lod'
-import { MUTATION_LOOKS } from '@/render/mutation-looks'
 import { WORLD_BACKGROUND } from '@/render/palette'
 import { GLORP_RADIUS } from '@/sim/config'
 import { MUTATIONS, MUTATION_KEYS, type MutationKey } from '@/sim/mutations'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
+import { MUTATION_CANDIDATES } from './mutation-candidates'
 import styles from './HoloLab.module.css'
 
 /** Which gallery the world tab is showing. */
@@ -94,8 +94,8 @@ const VARIANT_ROWS: readonly LabRow[] = GLORP_HOLO_VARIANTS.map((body) => ({
 /** Every mutation's candidate looks, grouped in declaration order. */
 const MUTATION_ROWS: readonly LabRow[] = MUTATION_KEYS.flatMap((key) => {
   const samples = samplesFor(key)
-  return MUTATION_LOOKS[key].candidates.map((candidate) => ({
-    label: `${MUTATIONS[key].name} · ${candidate.name}`,
+  return MUTATION_CANDIDATES[key].map((candidate) => ({
+    label: `${MUTATIONS[key].name} · ${GLORP_HOLO_LABELS[candidate.body]}`,
     body: candidate.body,
     aura: candidate.aura ?? null,
     samples,
