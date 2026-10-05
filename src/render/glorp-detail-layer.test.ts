@@ -1,9 +1,9 @@
 import type { ShaderMaterial } from 'three'
 import { describe, expect, it } from 'vitest'
-import { outlineWidth, pixelSize } from '@/render/glorp-detail'
+import { detailSpriteMetrics } from '@/render/glorp-detail'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { glorpHoloIndex } from '@/render/glorp-holo'
-import { DETAIL_MIN_ZOOM } from '@/render/lod'
+import { DETAIL_SPRITE_ZOOM, DETAIL_MIN_ZOOM } from '@/render/lod'
 import { MUTATIONS } from '@/sim/mutations'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
@@ -44,14 +44,18 @@ describe('GlorpDetailLayer', () => {
     layer.dispose()
   })
 
-  it('sizes the outline and pixel grid for the current zoom', () => {
+  it('fixes the sprite grid regardless of camera zoom', () => {
+    const expected = detailSpriteMetrics(12, DETAIL_SPRITE_ZOOM)
     const layer = new GlorpDetailLayer()
-    layer.update(makeWorld(), BOUNDS, 1, 0)
     const material = layer.mesh.material as ShaderMaterial
-    expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(
-      outlineWidth(12, 1),
-    )
-    expect(material.uniforms.uPixel.value).toBeCloseTo(pixelSize(12, 1))
+
+    layer.update(makeWorld(), BOUNDS, DETAIL_MIN_ZOOM, 0)
+    expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(expected.outline)
+    expect(material.uniforms.uPixel.value).toBeCloseTo(expected.pixel)
+
+    const pixelAtThreshold = material.uniforms.uPixel.value
+    layer.update(makeWorld(), BOUNDS, 4, 0)
+    expect(material.uniforms.uPixel.value).toBe(pixelAtThreshold)
     layer.dispose()
   })
 

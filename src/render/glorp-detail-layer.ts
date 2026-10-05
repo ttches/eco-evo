@@ -8,9 +8,7 @@ import {
   GLORP_BLOB_SEGMENTS,
   GLORP_OUTLINE_SHADE,
   GLORP_SILHOUETTE_GLSL,
-  glorpShapeRadius,
-  outlineWidth,
-  pixelSize,
+  detailSpriteMetrics,
 } from '@/render/glorp-detail'
 import { GLORP_HOLO_SPEED, GLORP_HOLO_STRENGTH } from '@/render/glorp-holo'
 import { GLORP_HOLO_GLSL } from '@/render/glorp-holo-shader'
@@ -20,8 +18,11 @@ import { MAX_GLORPS } from '@/sim/config'
 import { GLORP_TYPE } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
-/** Coverage disc sized once from the worst-case snap at the detail threshold. */
-const SHAPE_RADIUS = glorpShapeRadius()
+/**
+ * Sprite metrics, fixed once: the snap grid, outline, and coverage disc all
+ * derive from the sprite zoom, so the glorp keeps one look at every camera zoom.
+ */
+const SPRITE = detailSpriteMetrics()
 
 /** Chooses the sheen branch for the mutated glorp at `index`. */
 export type GlorpHoloPicker = (world: RenderableWorld, index: number) => number
@@ -119,7 +120,10 @@ export class GlorpDetailLayer {
 
   public constructor(pickHolo: GlorpHoloPicker = holoByMutation) {
     this.pickHolo = pickHolo
-    this.geometry = new THREE.CircleGeometry(SHAPE_RADIUS, GLORP_BLOB_SEGMENTS)
+    this.geometry = new THREE.CircleGeometry(
+      SPRITE.shapeRadius,
+      GLORP_BLOB_SEGMENTS,
+    )
 
     this.colorAttr = new THREE.InstancedBufferAttribute(this.colors, 3)
     this.seedAttr = new THREE.InstancedBufferAttribute(this.seeds, 1)
@@ -145,9 +149,9 @@ export class GlorpDetailLayer {
       vertexShader,
       fragmentShader,
       uniforms: {
-        uOutlineWidth: { value: 0 },
+        uOutlineWidth: { value: SPRITE.outline },
         uOutlineShade: { value: GLORP_OUTLINE_SHADE },
-        uPixel: { value: 0 },
+        uPixel: { value: SPRITE.pixel },
         uBlobAmp: { value: GLORP_BLOB_AMPLITUDE },
         uTime: { value: 0 },
         uSpeed: { value: GLORP_HOLO_SPEED },
@@ -180,6 +184,8 @@ export class GlorpDetailLayer {
     zoom: number,
     time: number,
   ): void {
+    // Above the LOD threshold the sprite grid is fixed (see DETAIL_SPRITE_ZOOM),
+    // so only the sheen clock changes per frame.
     if (zoom < DETAIL_MIN_ZOOM) {
       this.mesh.count = 0
       return
@@ -187,16 +193,7 @@ export class GlorpDetailLayer {
 
     const count = Math.min(world.count, MAX_GLORPS)
     const radius = world.radius
-    const pixel = pixelSize(radius, zoom)
-    // No screen size means no pixel grid to snap to; draw the flat layer only.
-    if (pixel <= 0) {
-      this.mesh.count = 0
-      return
-    }
-
     const margin = radius + CAMERA.cullMargin
-    this.material.uniforms.uOutlineWidth.value = outlineWidth(radius, zoom)
-    this.material.uniforms.uPixel.value = pixel
     this.material.uniforms.uTime.value = time
     let visible = 0
 
