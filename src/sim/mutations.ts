@@ -52,10 +52,12 @@ export const MUTATIONS = {
   jumper: {
     bit: 1 << 2,
     name: 'Jumper',
-    description: `Dodges ${JUMPER.dodgeDistancePerAgility} world units further per agility point. Prey only.`,
+    description: `${JUMPER.dodgeChanceMultiplier}x dodge chance (capped at the maximum) and dodges ${JUMPER.dodgeDistancePerAgility} world units further per agility point. Prey only.`,
     exclusive: GLORP_TYPE.prey,
     /** World units added to a dodge per point of `agility`. */
     dodgeDistancePerAgility: JUMPER.dodgeDistancePerAgility,
+    /** Multiplier on dodge chance, before the max clamp. */
+    dodgeChanceMultiplier: JUMPER.dodgeChanceMultiplier,
   },
   camouflage: {
     bit: 1 << 3,
@@ -250,3 +252,9 @@ export const mutationDodgeSpeed = (mask: number, agility: number): number =>
     ? DODGE_SPEED +
       (agility * MUTATIONS.jumper.dodgeDistancePerAgility) / DODGE_DURATION
     : DODGE_SPEED
+
+/** Multiplier a mask applies to dodge chance, before the max clamp. */
+export const mutationDodgeChanceMultiplier = (mask: number): number =>
+  hasMutation(mask, MUTATIONS.jumper.bit)
+    ? MUTATIONS.jumper.dodgeChanceMultiplier
+    : 1

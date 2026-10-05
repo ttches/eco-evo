@@ -184,14 +184,19 @@ export const STOAT = {
 } as const
 
 /**
- * Jumper mutation effect levers. Prey only: each point of `agility` stretches
- * the prey's fixed dodge dart by this many world units, so an agile jumper
- * escapes further over the same `DODGE_DURATION`. Kept here so the headless
- * simulator can sweep it with `--set JUMPER.dodgeDistancePerAgility=...`.
+ * Jumper mutation effect levers. Prey only: multiplies the prey's dodge chance
+ * (clamped to `DODGE_CHANCE_MAX`), and stretches its fixed dodge dart by
+ * `dodgeDistancePerAgility` world units per point of `agility`, so an agile
+ * jumper escapes further over the same `DODGE_DURATION`. Kept here so the
+ * headless simulator can sweep either lever with
+ * `--set JUMPER.dodgeChanceMultiplier=...` or
+ * `--set JUMPER.dodgeDistancePerAgility=...`.
  */
 export const JUMPER = {
   /** World units added to a dodge's distance per point of prey agility. */
   dodgeDistancePerAgility: 4,
+  /** Multiplier on the prey's dodge chance, before the max clamp. */
+  dodgeChanceMultiplier: 2,
 } as const
 
 /**

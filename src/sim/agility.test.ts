@@ -8,6 +8,7 @@ import {
   GESTATION_SECONDS,
   GLORP_RADIUS,
   HUNTER_KILL_FED,
+  JUMPER,
   PREGNANT_SPEED_FACTOR_MIN,
 } from '@/sim/config'
 import { computeSteering } from '@/sim/behavior'
@@ -267,6 +268,26 @@ describe('jumper mutation', () => {
   it('leaves a non-jumper dart at the base distance', () => {
     expect(dartDistance(5, false)).toBeCloseTo(DODGE_DISTANCE, 0)
     expect(dartDistance(7, false)).toBeCloseTo(DODGE_DISTANCE, 0)
+  })
+
+  it('multiplies the dodge chance below the maximum', () => {
+    const world = setupHunt(4, 5)
+    world.mutations[1] = MUTATIONS.jumper.bit
+    expect(dodgeChance(world, 0, 1)).toBeCloseTo(
+      DODGE_CHANCE_PER_LEVEL * JUMPER.dodgeChanceMultiplier,
+    )
+  })
+
+  it('clamps the multiplied dodge chance to the maximum', () => {
+    const world = setupHunt(0, 3)
+    world.mutations[1] = MUTATIONS.jumper.bit
+    expect(dodgeChance(world, 0, 1)).toBeCloseTo(DODGE_CHANCE_MAX)
+  })
+
+  it('cannot dodge without an agility advantage', () => {
+    const world = setupHunt(5, 5)
+    world.mutations[1] = MUTATIONS.jumper.bit
+    expect(dodgeChance(world, 0, 1)).toBe(0)
   })
 })
 

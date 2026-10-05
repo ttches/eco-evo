@@ -5,6 +5,7 @@ import {
   ENDURANCE,
   GESTATION_SECONDS,
   HUNTER_SIGHT,
+  JUMPER,
   MATE_RANGE,
   MAX_MUTATIONS,
   METABOLISM,
@@ -24,6 +25,7 @@ import {
   hasMutation,
   inheritMutations,
   mutationDrainMultiplier,
+  mutationDodgeChanceMultiplier,
   mutationKeys,
   mutationSpeedFactor,
   mutationWalkFactor,
@@ -219,6 +221,13 @@ describe('mutation effects', () => {
     expect(mutationWalkFactor(STOAT)).toBe(2)
     expect(mutationWalkFactor(COLD)).toBe(1)
     expect(mutationWalkFactor(0)).toBe(1)
+  })
+
+  it('multiplies dodge chance only for jumpers', () => {
+    expect(mutationDodgeChanceMultiplier(MUTATIONS.jumper.bit)).toBe(
+      JUMPER.dodgeChanceMultiplier,
+    )
+    expect(mutationDodgeChanceMultiplier(0)).toBe(1)
   })
 })
 

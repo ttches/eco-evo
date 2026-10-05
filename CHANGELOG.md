@@ -16,7 +16,7 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
   dumps the other traits.
 - New heritable `agility` trait. A prey whose agility exceeds its attacker's
   can dodge a catch, with the chance rising 25% per level of advantage (capped
-  at 75%). A dodge jukes the prey perpendicular to its heading and makes it
+  at 90%). A dodge jukes the prey perpendicular to its heading and makes it
   untargetable for a fast 0.3s dart, so the hunter's normal prey search
   reprioritizes to the next victim on its own. Catches and dodges resolve at one
   glorp body diameter. Trait budget rises to 20 points across five traits.
@@ -39,6 +39,9 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
   the old `PREGNANT_SPEED_FACTOR` is renamed to `PREGNANT_SPEED_FACTOR_MIN`.
 - The `stoat` mutation now burns hunger 3x as fast on top of its 2x move speed,
   applied after the endurance modifier, mirroring how cold blooded slows it.
+- The `jumper` mutation now multiplies a prey's dodge chance by
+  `JUMPER.dodgeChanceMultiplier` (2x by default) before the maximum is applied,
+  on top of its existing per-agility dodge-distance bonus.
 
 ## [0.1.0] - 2026-10-01
 

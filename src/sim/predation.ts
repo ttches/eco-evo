@@ -20,7 +20,10 @@ import {
 } from '@/sim/config'
 import { consumeGrass } from '@/sim/grass'
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
-import { mutationDodgeSpeed } from '@/sim/mutations'
+import {
+  mutationDodgeChanceMultiplier,
+  mutationDodgeSpeed,
+} from '@/sim/mutations'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { removeGlorp } from '@/sim/store'
@@ -81,7 +84,8 @@ export const grazePrey = (world: World, dt: number): void => {
 /**
  * Chance the prey dodges a specific attacker: zero unless the prey's agility
  * exceeds the hunter's, then `DODGE_CHANCE_PER_LEVEL` per level of advantage,
- * capped at `DODGE_CHANCE_MAX`.
+ * multiplied by the prey's mutation factor (jumper doubles it), capped at
+ * `DODGE_CHANCE_MAX`.
  */
 export const dodgeChance = (
   world: World,
@@ -90,7 +94,10 @@ export const dodgeChance = (
 ): number => {
   const edge = world.agility[prey] - world.agility[hunter]
   if (edge <= 0) return 0
-  const chance = edge * DODGE_CHANCE_PER_LEVEL
+  const chance =
+    edge *
+    DODGE_CHANCE_PER_LEVEL *
+    mutationDodgeChanceMultiplier(world.mutations[prey])
   return chance < DODGE_CHANCE_MAX ? chance : DODGE_CHANCE_MAX
 }
 
