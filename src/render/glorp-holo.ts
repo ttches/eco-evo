@@ -34,6 +34,10 @@ export const GLORP_HOLO_VARIANTS = [
   'predator-glint',
   'smoke-and-ember',
   'chromatic-veil',
+  'hummingbird-gorget',
+  'ore-vein',
+  'fire-glimmer',
+  'fish-scales',
 ] as const
 
 export type GlorpHoloVariant = (typeof GLORP_HOLO_VARIANTS)[number]
@@ -67,6 +71,10 @@ export const GLORP_HOLO_LABELS: Record<GlorpHoloVariant, string> = {
   'predator-glint': 'Predator Glint',
   'smoke-and-ember': 'Smoke & Ember',
   'chromatic-veil': 'Chromatic Veil',
+  'hummingbird-gorget': "Anna's Hummingbird",
+  'ore-vein': 'Ore Vein',
+  'fire-glimmer': 'Fire Glimmer',
+  'fish-scales': 'Fish Scales',
 }
 
 /** The sheen a mutated glorp of each type wears in the world. */

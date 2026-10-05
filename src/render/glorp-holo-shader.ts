@@ -143,6 +143,76 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
     return mix(vec3(0.02), hot, glow * crack * pulse);
   }
 
+  // Distance-to-edge of a Voronoi cell, for glowing ore veins. Returns a thin
+  // vein mask and a per-vein hash: the sum of the two nearest cell hashes, so
+  // it stays continuous across the seam either hash alone would step at.
+  float oreVeinMask(vec2 p, float seed, out float veinHash) {
+    vec2 cell = floor(p);
+    vec2 f = fract(p);
+    float f1 = 8.0;
+    float f2 = 8.0;
+    float h1 = 0.0;
+    float h2 = 0.0;
+    for (int y = -1; y <= 1; y++) {
+      for (int x = -1; x <= 1; x++) {
+        vec2 g = vec2(float(x), float(y));
+        float h = hash(cell + g + seed);
+        float d = length(g + vec2(h, hash(cell + g + seed + 3.7)) - f);
+        if (d < f1) {
+          f2 = f1;
+          f1 = d;
+          h2 = h1;
+          h1 = h;
+        } else if (d < f2) {
+          f2 = d;
+          h2 = h;
+        }
+      }
+    }
+    veinHash = h1 + h2;
+    return 1.0 - smoothstep(0.0, 0.12, f2 - f1);
+  }
+
+  // Upward-licking flame intensity, brightest low on the body.
+  float flame(vec2 p, float time, float seed) {
+    float col = p.y + 0.35 * sin(p.x * 4.0 + time * 2.0 + seed);
+    float n = 0.5 + 0.5 * sin(col * 6.0 - time * 3.0 + seed);
+    float tongue = smoothstep(0.3, 1.0, n) * smoothstep(-1.0, 0.6, p.y);
+    float flick = 0.6 + 0.4 * sin(time * 19.0 + seed * 50.0) * sin(time * 7.0);
+    return clamp(tongue * flick, 0.0, 1.0);
+  }
+
+  // Wet, offset fish scales with a nacre sheen; reports a per-scale glint.
+  vec3 fishScale(vec2 p, float warm, float time, float seed, out float glint) {
+    vec2 s = p * 4.0;
+    float row = floor(s.y);
+    s.x += mod(row, 2.0) * 0.5;
+    vec2 cell = floor(s);
+    vec2 g = fract(s) - 0.5;
+    float h = hash(cell + seed);
+    float d = abs(g.x) * 1.1 + abs(g.y);
+    float scale = 1.0 - smoothstep(0.35, 0.55, d);
+    glint = (1.0 - smoothstep(0.0, 0.28, length(g + vec2(0.12, 0.18)))) * scale;
+    float phase = 0.5 + 0.5 * sin(time * 2.0 + h * 6.2831853 + p.x * 2.0);
+    vec3 base = hsv2rgb(vec3(typeHue(0.2 + 0.5 * h, warm), 0.35, 0.45 + 0.3 * scale));
+    vec3 pearl = thinFilmTyped(p.x * 0.4 + p.y * 0.2 + time * 0.05 + phase * 0.3, warm);
+    return mix(base, pearl, 0.5 * scale) * (0.7 + 0.3 * phase) + vec3(glint * 0.6);
+  }
+
+  // Anna's hummingbird: dark plumage with a structural gorget patch that flips
+  // from near-black to magenta/green/gold as the glare angle sweeps.
+  vec3 gorget(vec2 p, float warm, float time, float seed) {
+    vec3 plumage = hsv2rgb(vec3(typeHue(0.4 + 0.2 * sin(p.x * 3.0 + seed), warm), 0.45, 0.22));
+    vec2 c = p - vec2(0.0, 0.15);
+    float mask = 1.0 - smoothstep(0.5, 0.95, length(vec2(c.x * 1.5, c.y * 1.05)));
+    float glare = 0.5 + 0.5 * cos(atan(c.y, c.x) * 2.0 + c.x * 8.0 + seed * 6.2831853 + time * 0.6);
+    vec3 hot = mix(vec3(0.95, 0.10, 0.45), vec3(0.15, 0.95, 0.45), 0.5 + 0.5 * cos(glare * 6.2831853));
+    vec3 irid = mix(hot, vec3(0.95, 0.7, 0.2), smoothstep(0.6, 1.0, glare));
+    vec3 gorgetCol = mix(vec3(0.02, 0.02, 0.03), irid, smoothstep(0.15, 0.85, glare));
+    gorgetCol += irid * foilFlakes(p, seed, time, 16.0) * 0.8;
+    return mix(plumage, gorgetCol, mask);
+  }
+
   vec3 glorpHolo(vec3 baseColor, vec2 p, float boundary, float r,
                  float holo, float seed, float time, float strength, float warm) {
     vec3 sheen = baseColor;
@@ -336,6 +406,44 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
       float shimmer = 0.5 + 0.5 * sin(p.x * 6.0 + p.y * 6.0 + time * 1.5 + seed);
       sheen = mix(baseColor, thinFilmTyped(shimmer, warm), 0.35);
       amount = 0.5;
+    } else if (holo < 27.5) {
+      // Anna's Hummingbird — structural gorget flashing on the dark plumage.
+      sheen = gorget(p, warm, time, seed);
+      amount = 0.95;
+    } else if (holo < 28.5) {
+      // Ore Vein — glowing mineral veins through dark rock; icy for prey,
+      // molten for predators, with a slow heat pulse and crystal sparks.
+      float veinHash = 0.0;
+      float vein = oreVeinMask(p * 3.2 + seed, seed, veinHash);
+      float pulse = 0.5 + 0.5 * sin(time * 1.4 + veinHash * 6.2831853);
+      vec3 glow = mix(
+        hsv2rgb(vec3(typeHue(0.5, warm), 0.75, 0.7 + 0.3 * pulse)),
+        mix(vec3(1.0, 0.25, 0.05), vec3(1.0, 0.9, 0.4), pulse),
+        warm
+      );
+      float spark = foilFlakes(p, seed, time, 7.0) * (0.4 + 0.6 * warm);
+      sheen = vec3(0.05, 0.05, 0.06) + glow * vein * (0.7 + 0.5 * pulse)
+        + glow * spark * 0.5;
+      amount = 0.9;
+    } else if (holo < 29.5) {
+      // Fire Glimmer — a flickering flame up the body with drifting sparks.
+      // Golden fire for prey (yellow range), red/orange for predators.
+      float f = flame(p, time, seed);
+      vec3 fire = mix(
+        mix(vec3(0.95, 0.80, 0.10), vec3(0.85, 0.10, 0.02), warm),
+        mix(vec3(1.0, 0.95, 0.55), vec3(1.0, 0.45, 0.05), warm),
+        pow(f, 0.6)
+      );
+      float bloom =
+        smoothstep(0.85, 1.0, f) * (0.5 + 0.5 * sin(time * 23.0 + seed));
+      sheen = vec3(0.05, 0.02, 0.02) + fire * f + vec3(1.0, 0.95, 0.7) * bloom
+        + vec3(1.0, 0.8, 0.4) * foilFlakes(p, seed, time, 9.0) * 0.5;
+      amount = 0.9;
+    } else if (holo < 30.5) {
+      // Fish Scales — wet offset scales with a nacre sheen and per-scale glints.
+      float glint = 0.0;
+      sheen = fishScale(p, warm, time, seed, glint);
+      amount = 0.8 + 0.2 * glint;
     }
 
     return mix(baseColor, sheen, clamp(amount * strength, 0.0, 1.0));
