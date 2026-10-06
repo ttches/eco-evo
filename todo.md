@@ -56,10 +56,12 @@ preds and prey use the jog mechanic when critically hungry if not eating / pursu
 dead unconsumed glorps create a full patch of grass after short # of seconds
 
 introduce corpses
-2 seconds existance - in config
+3 seconds existance - in config
 
 scavenger
-can eat corpse of prey for 10hp
+can eat corpse of prey for 15hp
+prioritizes corpse over grass or prey
+tile beneath eaten corpse becomes full grass.
 
 Mutation changes
 mutations that come from a pregnancy or a clone will have a chance to be enabled: false, like a recessive gene
@@ -69,8 +71,10 @@ all gen 0 glorps start with same stats?
 mutations:
 
 mutation appearances:
-green shimmer beatle
-anna's hummingbird
-teal or moltant ore vein through dark glorp
-fire glimmer
-Fish scales
+Scavenger: Death mask, hyena, racoon mask
+
+change jumper to grasshopper
+
+mutations stack
+uglier sprites for the ones without synergies
+prettier sprites for synnergies
