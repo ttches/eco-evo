@@ -1,11 +1,8 @@
 allow 0 pts into trait
 
-# <<<<<<< HEAD
-
 see if endurance should also affect energy. rename energy everywhere to hunger
 
-> > > > > > > b4dbb78 (added todos)
-> > > > > > > prey should not freeze when it can only run toward other pray. SHould go to least bad option
+<!-- > > > > > > > prey should not freeze when it can only run toward other pray. SHould go to least bad option -->
 
 dhasboard: prey / predators pills in leaderboard replace with glorp svg like the glorpInspector
 glorp svg to right of name in the Fasted / Fertilest styled buttons.
