@@ -101,9 +101,33 @@ describe('scavenge drive', () => {
     )
   })
 
-  it('does not seek a corpse when well fed', () => {
+  it('keeps scavenging while well fed', () => {
     const world = setupScavenger()
     world.fed[0] = HUNGER
+    addCorpse(world, 150, 100)
+    rebuildSpatialGrid(world)
+
+    expect(computeSteering(world, 0, DT).x).toBeGreaterThan(0)
+  })
+
+  it('does not seek a corpse when a hunter is well fed', () => {
+    const world = setupScavenger()
+    world.type[0] = GLORP_TYPE.hunter
+    world.fed[0] = HUNGER
+    addCorpse(world, 150, 100)
+    rebuildSpatialGrid(world)
+
+    const steering = computeSteering(world, 0, DT)
+
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
+      WALK_SPEED * MOVEMENT.walkFactor,
+      5,
+    )
+  })
+
+  it('does not chase a corpse it is too full to eat', () => {
+    const world = setupScavenger()
+    world.fed[0] = FED_MAX
     addCorpse(world, 150, 100)
     rebuildSpatialGrid(world)
 

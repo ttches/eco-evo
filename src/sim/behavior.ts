@@ -1,4 +1,5 @@
 import {
+  FED_MAX,
   HUNGER,
   HUNTER_SIGHT,
   HUNTER_SPRINT_MULTIPLIER,
@@ -205,13 +206,15 @@ const fleeHunters: Drive = (world, index, dt) => {
 }
 
 /**
- * Hungry scavengers jog to the nearest corpse in sight, ranked above their
- * type's normal food (grass for prey, live prey for hunters). Jogging keeps
- * sprint reserved for pursuit and flight while still racing the corpse's short
- * decay.
+ * Scavengers jog to the nearest corpse in sight, ranked above their type's
+ * normal food (grass for prey, live prey for hunters). Prey scavenge at any
+ * hunger; hunters only when hungry, so a well-fed predator keeps hunting.
+ * Jogging keeps sprint reserved for pursuit and flight while still racing the
+ * corpse's short decay.
  */
 const scavenge: Drive = (world, index, dt) => {
-  if (world.fed[index] >= HUNGER) return null
+  if (world.type[index] === GLORP_TYPE.hunter && world.fed[index] >= HUNGER)
+    return null
   if (!isScavenger(world.mutations[index])) return null
   const corpse = nearestCorpse(
     world,

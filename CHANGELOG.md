@@ -42,11 +42,14 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 - The `jumper` mutation now multiplies a prey's dodge chance by
   `JUMPER.dodgeChanceMultiplier` (2x by default) before the maximum is applied,
   on top of its existing per-agility dodge-distance bonus.
-- New `scavenger` mutation, available to both types. A hungry scavenger prefers
-  a corpse over grass or live prey, jogging to the nearest one within
+- New `scavenger` mutation, available to both types. A scavenger prefers a
+  corpse over grass or live prey, jogging to the nearest one within
   `SCAVENGER.sight` (120) and eating it for `SCAVENGER.energy` (15); the tile it
-  eats on becomes full grass. Prey still flee a hunter before scavenging, and a
-  hunter treats a corpse as preferred over a live meal. Eating draws no RNG.
+  eats on becomes full grass. Prey scavenge at any hunger, but a hunter only
+  when hungry, so a well-fed predator keeps hunting. A glorp with no room left
+  (`FED_MAX`) does not chase a corpse it cannot eat. Prey still flee a hunter
+  before scavenging, and a hunter treats a corpse as preferred over a live meal.
+  Eating draws no RNG.
 
 ### Visuals
 
@@ -54,8 +57,13 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
   dimmest hunger shade, then lingers for `CORPSE_SECONDS` (3s) before clearing.
   Corpses now feed scavengers but otherwise change nothing, and appear only in
   the zoomed-in detailed view; eaten glorps are consumed and leave nothing.
-- The `scavenger` mutation wears the Fire Glimmer world sheen, with a raccoon
-  bandit-mask icon in the inspector.
+- The `scavenger` mutation's world sheen is rebuilt around three candidates,
+  wired to the `hyena-pelt` (a mangy halftone-spotted coat over a hunched,
+  dark-saddled back, with a bristling mane and a held-frame cackle; olive-yellow
+  for prey, burnt orange for predators). The alternates — a `raccoon-bandit`
+  with a jagged charcoal mask and ringed tail, and a breathing ivory ribcage
+  (`bone-ribs`, Bayer-dithered bone) — are kept as alternates in the
+  all-variants gallery alongside Fire Glimmer.
 
 ## [0.1.0] - 2026-10-01
 

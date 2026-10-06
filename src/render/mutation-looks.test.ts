@@ -34,10 +34,10 @@ describe('holoForMutations', () => {
       'beetle-shell',
     )
     expect(holoForMutations(MUTATIONS.scavenger.bit, GLORP_TYPE.prey)).toBe(
-      'fire-glimmer',
+      'hyena-pelt',
     )
     expect(holoForMutations(MUTATIONS.scavenger.bit, GLORP_TYPE.hunter)).toBe(
-      'fire-glimmer',
+      'hyena-pelt',
     )
   })
 

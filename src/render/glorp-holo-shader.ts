@@ -12,7 +12,8 @@ import {
  *
  * The material helpers below build the premium vocabulary — foil glitter,
  * chrome, thin-film opal, oil slick, beetle chitin, dragon scales, gold leaf,
- * brushed titanium, nacre and ember. Dominant surfaces are routed through
+ * brushed titanium, nacre, ember, bone ribcage, hyena pelt and raccoon bandit.
+ * Dominant surfaces are routed through
  * `typeHue`, so prey stay yellow→blue and predators stay orange→purple (see
  * `holo-palette`); accents (sparkles, rim glints, eyes) are free.
  *
@@ -28,6 +29,24 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
 
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  // A 2x2 ordered dither threshold, built from arithmetic so it needs no lookup
+  // table.
+  float bayer2(vec2 a) {
+    a = floor(a);
+    return fract(a.x / 2.0 + a.y * a.y * 0.75);
+  }
+  // The 4x4 ordered Bayer threshold in [0,1). Used to dither bone so a gradient
+  // reads as a few authored shades rather than a smooth ramp.
+  float bayer4(vec2 a) {
+    return bayer2(a * 0.5) * 0.25 + bayer2(a);
+  }
+
+  // Held animation clock: quantise time so a look steps in sprite frames
+  // instead of sliding smoothly.
+  float stepTime(float time, float frames) {
+    return floor(time * frames) / frames;
   }
 
   // A 6x6 hashed star field: returns (cell hash, per-cell twinkle phase).
@@ -214,6 +233,122 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
     vec3 gorgetCol = mix(vec3(0.02, 0.02, 0.03), irid, smoothstep(0.15, 0.85, glare));
     gorgetCol += irid * foilFlakes(p, seed, time, 16.0) * 0.8;
     return mix(plumage, gorgetCol, mask);
+  }
+
+  // Bone Ribs — an X-ray ribcage: a charcoal hide stretched over a segmented
+  // ivory spine and three breathing, tapering rib arcs, with an organ pulse.
+  vec3 boneRibs(vec2 p, float r, float boundary, float warm, float time, float seed) {
+    // Breathing lifts and drops the whole ribcage.
+    float breath = 0.02 * sin(time * 1.7 + seed);
+    float ribs = 0.0;
+    for (int i = 0; i < 3; i++) {
+      float y = -0.40 + float(i) * 0.42 + breath;
+      // Ribs bow down at the flanks and stop short of the silhouette edge.
+      float arc = p.y - (y - 0.14 * p.x * p.x);
+      float bar = 1.0 - smoothstep(0.05, 0.15, abs(arc));
+      bar *= 1.0 - smoothstep(0.42, 0.62, abs(p.x));
+      ribs = max(ribs, bar);
+    }
+    // A thin spine broken into vertebrae so it never reads as a solid bar.
+    float spine = 1.0 - smoothstep(0.045, 0.1, abs(p.x));
+    spine *= 1.0 - smoothstep(0.55, 0.8, abs(p.y));
+    spine *= step(0.35, 0.5 + 0.5 * sin(p.y * 16.0 + seed));
+    float bone = clamp(max(ribs, spine), 0.0, 1.0);
+    // Two-tone ivory, Bayer-dithered so it reads as authored bone pixels.
+    float dither = bayer4(p * 10.0 + seed) - 0.5;
+    vec3 ivory = hsv2rgb(vec3(0.12, 0.14, 0.94));
+    vec3 boneCol = mix(hsv2rgb(vec3(0.09, 0.4, 0.34)), ivory,
+                       step(0.5, clamp(bone + dither * 0.16, 0.0, 1.0)));
+    // Dark hide with a faint type rim so the silhouette stays readable.
+    vec3 hide = vec3(0.03) + hsv2rgb(vec3(typeHue(0.15, warm), 0.4, 0.14));
+    float rim = smoothstep(0.72, 0.98, r / boundary);
+    hide = mix(hide, hsv2rgb(vec3(typeHue(0.9, warm), 0.5, 0.4)), rim * 0.5);
+    // A dim organ pulse glows between the ribs.
+    float organ = 1.0 - smoothstep(0.1, 0.55, abs(p.y));
+    organ *= 0.4 + 0.6 * (0.5 + 0.5 * sin(time * 2.2 + seed));
+    hide = mix(hide, hsv2rgb(vec3(typeHue(0.98, warm), 0.8, 0.6)), organ * 0.3);
+    vec2 dust = starField(p, seed + 4.0, time);
+    return mix(hide, boneCol, bone) + ivory * step(0.85, dust.x) * dust.y * 0.5;
+  }
+
+  // Hyena Pelt — a mangy spotted coat over a hunched, dark-saddled back, with a
+  // short bristling mane and a stepped bone-crunching cackle.
+  vec3 hyenaPelt(vec2 p, float warm, float time, float seed) {
+    // Pick a per-type point in the hue window: olive-yellow for prey, burnt
+    // orange for predators (as goldT does), so the pelt reads warm either way.
+    vec3 coat = hsv2rgb(vec3(typeHue(mix(0.12, 0.9, warm), warm), 0.55, 0.52));
+    vec3 shadow = hsv2rgb(vec3(typeHue(mix(0.04, 0.8, warm), warm), 0.55, 0.2));
+    vec3 belly = hsv2rgb(vec3(typeHue(mix(0.3, 0.98, warm), warm), 0.35, 0.7));
+    // Hunched back: dark along the top, pale belly below.
+    coat = mix(coat, shadow, 0.6 * smoothstep(-0.2, 0.85, p.y));
+    coat = mix(coat, belly, 0.4 * (1.0 - smoothstep(-0.7, 0.1, p.y)));
+    // Halftone spots on the flanks, with a held-frame flicker so it teems.
+    vec2 s = p * 3.5 + seed;
+    vec2 cell = floor(s);
+    vec2 g = fract(s) - 0.5;
+    float h = hash(cell + seed);
+    float rad = h * 0.24 + 0.05;
+    float spot = 1.0 - smoothstep(rad, rad + 0.07, length(g));
+    float flick = step(0.5, hash(cell + stepTime(time, 3.0)));
+    float flank = smoothstep(0.1, 0.35, abs(p.x));
+    coat = mix(coat, shadow, spot * step(0.45, h) * flank * (0.55 + 0.45 * flick));
+    // Short bristling mane along the top of the spine only.
+    float mane = (1.0 - smoothstep(0.0, 0.16, abs(p.x)));
+    mane *= smoothstep(0.05, 0.4, p.y);
+    mane *= 0.6 + 0.4 * step(0.45, 0.5 + 0.5 * sin(p.y * 30.0 + seed));
+    coat = mix(coat, vec3(0.05), mane * 0.85);
+    // Cackle: a pale tooth row flashing in held frames at the low edge.
+    float open = step(0.35, fract(stepTime(time, 4.0) * 7.0));
+    float mouth = (1.0 - smoothstep(0.22, 0.36, abs(p.x)));
+    mouth *= 1.0 - smoothstep(0.03, 0.1, abs(p.y + 0.52));
+    float teeth = step(0.5, fract(p.x * 7.0 + 0.5)) * open;
+    coat = mix(coat, vec3(0.02), mouth * open * 0.8);
+    coat = mix(coat, vec3(0.95, 0.93, 0.8), teeth * mouth * open);
+    return coat;
+  }
+
+  // Raccoon Bandit — grey dithered fur under a wide charcoal bandit mask, pale
+  // eyes with a sliding glint, a pale muzzle, and ringed tail bands.
+  vec3 raccoonBandit(vec2 p, float warm, float time, float seed) {
+    vec3 furA = hsv2rgb(vec3(typeHue(0.5, warm), 0.1, 0.32));
+    vec3 furB = hsv2rgb(vec3(typeHue(0.5, warm), 0.1, 0.46));
+    float d = hash(floor(p * 8.0) + seed + stepTime(time, 8.0));
+    vec3 coat = mix(furA, furB, step(0.5, d));
+    // Cheek fur frames the mask above and below.
+    float cheek = smoothstep(0.42, 0.68, abs(p.y - 0.18));
+    coat = mix(coat, vec3(0.58, 0.56, 0.5), cheek * 0.35);
+    // Bandit mask: a wide dark band across the eyes, ragged and tapered.
+    float top = 0.34 + 0.05 * sin(p.x * 12.0 + seed);
+    float bot = 0.02 + 0.05 * sin(p.x * 10.0 - seed);
+    float mask = smoothstep(bot - 0.03, bot + 0.03, p.y) *
+      (1.0 - smoothstep(top - 0.03, top + 0.03, p.y));
+    mask *= 1.0 - smoothstep(0.55, 0.8, abs(p.x));
+    coat = mix(coat, vec3(0.03, 0.03, 0.04), mask);
+    // Pale muzzle pointing down to a dark nose.
+    float muzzle = (1.0 - smoothstep(0.18, 0.32, abs(p.x))) *
+      smoothstep(-0.5, -0.08, p.y) * (1.0 - smoothstep(-0.08, 0.0, p.y));
+    coat = mix(coat, vec3(0.86, 0.84, 0.76), muzzle);
+    coat = mix(coat, vec3(0.02),
+               (1.0 - smoothstep(0.05, 0.12, distance(p, vec2(0.0, -0.48)))) * 0.9);
+    // Ringed tail: alternating bands slowly drifting on the lower flanks.
+    float tail = smoothstep(0.28, 0.5, abs(p.x));
+    tail *= smoothstep(-0.75, -0.25, p.y) * (1.0 - smoothstep(-0.3, -0.05, p.y));
+    float ring = step(0.5, fract((p.y + 0.2) * 7.0 + time * 0.3));
+    coat = mix(coat, vec3(0.05), tail * ring * 0.9);
+    coat = mix(coat, vec3(0.85, 0.83, 0.76), tail * (1.0 - ring));
+    // Eyes: pale discs with dark pupils and a soft blink.
+    vec2 eyeL = vec2(-0.2, 0.18);
+    vec2 eyeR = vec2(0.2, 0.18);
+    float eye = clamp((1.0 - smoothstep(0.07, 0.13, distance(p, eyeL))) +
+      (1.0 - smoothstep(0.07, 0.13, distance(p, eyeR))), 0.0, 1.0);
+    float pupil = clamp((1.0 - smoothstep(0.03, 0.07, distance(p, eyeL))) +
+      (1.0 - smoothstep(0.03, 0.07, distance(p, eyeR))), 0.0, 1.0);
+    float blink = smoothstep(0.15, 0.3, abs(sin(time * 0.8 + seed)));
+    vec3 eyeCol = mix(vec3(0.97, 0.95, 0.85), vec3(0.03), pupil);
+    coat = mix(coat, eyeCol, eye * blink);
+    vec2 glint = vec2(0.2, 0.18) + 0.04 * vec2(cos(time * 1.3), sin(time * 1.3));
+    coat += vec3(1.0) * (1.0 - smoothstep(0.0, 0.035, distance(p, glint))) * blink;
+    return coat;
   }
 
   vec3 glorpHolo(vec3 baseColor, vec2 p, float boundary, float r,
@@ -448,6 +583,18 @@ export const GLORP_HOLO_GLSL = /* glsl */ `
       float glint = 0.0;
       sheen = fishScale(p, warm, time, seed, glint);
       amount = 0.8 + 0.2 * glint;
+    } else if (holo < 31.5) {
+      // Bone Ribs — breathing ivory ribcage over a dark hide, plus bone dust.
+      sheen = boneRibs(p, r, boundary, warm, time, seed);
+      amount = 0.9;
+    } else if (holo < 32.5) {
+      // Hyena Pelt — halftone spots, dorsal mane and a stepped cackle.
+      sheen = hyenaPelt(p, warm, time, seed);
+      amount = 0.9;
+    } else if (holo < 33.5) {
+      // Raccoon Bandit — dithered fur, bandit mask, eyes and a ringed tail.
+      sheen = raccoonBandit(p, warm, time, seed);
+      amount = 0.9;
     }
 
     return mix(baseColor, sheen, clamp(amount * strength, 0.0, 1.0));
