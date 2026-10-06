@@ -164,7 +164,7 @@ export const MUTATIONS_ENABLED = true
  */
 export const COLD_BLOODED = {
   /** Multiplier on hunger drain: 0.5 means it burns half as fast. */
-  hungerDrain: 0.5,
+  hungerDrain: 0.3,
   /** Multiplier on the mechanical value of the `speed` trait. */
   speedEffectiveness: 0.7,
 } as const
