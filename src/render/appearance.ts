@@ -1,6 +1,6 @@
 import { clamp, lerp } from '@/engine/math'
 import { FED_MAX } from '@/sim/config'
-import { GLORP_TYPE, type GlorpType } from '@/sim/types'
+import { GLORP_TYPE, glorpTypeFrom, type GlorpType } from '@/sim/types'
 import type { RenderableWorld } from '@/sim/view'
 
 export type Rgb = readonly [number, number, number]
@@ -22,11 +22,8 @@ const DODGE_FLASH_MIX = 0.65
 type ColorSink = { [index: number]: number }
 
 /** The glorp's type, clamped to the two known kinds. */
-export const glorpTypeAt = (
-  world: RenderableWorld,
-  index: number,
-): GlorpType =>
-  world.type[index] === GLORP_TYPE.hunter ? GLORP_TYPE.hunter : GLORP_TYPE.prey
+export const glorpTypeAt = (world: RenderableWorld, index: number): GlorpType =>
+  glorpTypeFrom(world.type[index])
 
 /** Write a glorp's color into `sink` at `offset`, allocating nothing. */
 const glorpColorInto = (

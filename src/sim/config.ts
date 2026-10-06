@@ -384,3 +384,19 @@ export const DODGE_SPEED = DODGE_DISTANCE / DODGE_DURATION
  * so the hunter's normal prey search simply reprioritizes to the next victim.
  */
 export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS
+
+// ---------------------------------------------------------------------------
+// Death & corpses
+// ---------------------------------------------------------------------------
+
+/**
+ * Seconds a starved glorp's corpse lingers in the world before it is cleared.
+ * Only unconsumed deaths leave a corpse; eaten glorps are gone immediately.
+ */
+export const CORPSE_SECONDS = 3
+
+/**
+ * Most corpses the world tracks at once. Corpses are cosmetic, so when the cap
+ * is hit new ones are simply dropped rather than growing the arrays.
+ */
+export const MAX_CORPSES = 4096

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { viewBounds, type Camera, type Viewport } from '@/engine/camera'
+import { CorpseLayer } from '@/render/corpse-layer'
 import { GlorpAuraLayer } from '@/render/glorp-aura-layer'
 import { GlorpDetailLayer } from '@/render/glorp-detail-layer'
 import { GLORP_HOLO_STILL_TIME } from '@/render/glorp-holo'
@@ -17,6 +18,7 @@ export class Renderer {
   private readonly camera: THREE.OrthographicCamera
   private readonly ground = new GroundPass()
   private readonly grass = new GrassLayer()
+  private readonly corpses = new CorpseLayer()
   private readonly glorps = new GlorpLayer()
   private readonly glorpDetail = new GlorpDetailLayer()
   private readonly glorpAura = new GlorpAuraLayer()
@@ -47,6 +49,7 @@ export class Renderer {
     this.scene.add(
       this.ground.mesh,
       this.grass.mesh,
+      this.corpses.mesh,
       ...this.glorpAura.meshes,
       this.glorps.mesh,
       this.glorpDetail.mesh,
@@ -76,6 +79,7 @@ export class Renderer {
     const time = this.reducedMotion
       ? GLORP_HOLO_STILL_TIME
       : (performance.now() - this.startedAt) / 1000
+    this.corpses.update(world, bounds, camera.zoom)
     this.glorps.update(world, bounds, camera.zoom)
     this.glorpDetail.update(world, bounds, camera.zoom, time)
     this.glorpAura.update(world, bounds, camera.zoom, time)
@@ -88,6 +92,7 @@ export class Renderer {
   public dispose(): void {
     this.ground.dispose()
     this.grass.dispose()
+    this.corpses.dispose()
     this.glorps.dispose()
     this.glorpDetail.dispose()
     this.glorpAura.dispose()

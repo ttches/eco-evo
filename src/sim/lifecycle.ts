@@ -1,4 +1,5 @@
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
+import { spawnCorpse } from '@/sim/corpses'
 import { removeGlorp } from '@/sim/store'
 import { ENDURANCE, METABOLISM } from '@/sim/config'
 import { mutationDrainMultiplier } from '@/sim/mutations'
@@ -29,11 +30,12 @@ export const applyMetabolism = (world: World, dt: number): void => {
   }
 }
 
-/** Remove every glorp that has run out of energy. */
+/** Leave a corpse behind for every glorp that has run out of energy. */
 export const applyDeath = (world: World): void => {
   for (let index = world.count - 1; index >= 0; index -= 1) {
     if (world.fed[index] > 0) continue
     recordDeath(world, index, DEATH_CAUSE.starved)
+    spawnCorpse(world, index)
     removeGlorp(world, index)
   }
 }

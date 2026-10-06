@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { glorpColor, writeGlorpColor } from '@/render/appearance'
 import type { RenderableWorld } from '@/sim/view'
-import { GLORP_TYPE } from '@/sim/types'
+import { GLORP_TYPE, glorpTypeFrom } from '@/sim/types'
+
+describe('glorpTypeFrom', () => {
+  it('keeps known kinds and clamps anything else to prey', () => {
+    expect(glorpTypeFrom(GLORP_TYPE.prey)).toBe(GLORP_TYPE.prey)
+    expect(glorpTypeFrom(GLORP_TYPE.hunter)).toBe(GLORP_TYPE.hunter)
+    expect(glorpTypeFrom(99)).toBe(GLORP_TYPE.prey)
+  })
+})
 
 describe('glorpColor dodge flash', () => {
   it('brightens a dodging prey toward the flash color', () => {
@@ -33,6 +41,7 @@ describe('writeGlorpColor', () => {
       dodgeTimer: Float32Array.of(dodgeTimer),
       mutations: new Uint32Array(1),
       grass: {} as never,
+      corpses: {} as never,
     }) as RenderableWorld
 
   it('reads the live dodge timer from the world', () => {

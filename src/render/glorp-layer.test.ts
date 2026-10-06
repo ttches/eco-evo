@@ -18,6 +18,7 @@ const makeWorld = (): RenderableWorld =>
     dodgeTimer: new Float32Array(1),
     mutations: new Uint32Array(1),
     grass: {} as never,
+    corpses: {} as never,
   }) as RenderableWorld
 
 describe('GlorpLayer', () => {

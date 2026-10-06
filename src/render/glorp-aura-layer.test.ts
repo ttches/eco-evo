@@ -23,6 +23,7 @@ const makeWorld = (type: GlorpType = GLORP_TYPE.prey): RenderableWorld =>
     dodgeTimer: new Float32Array(2),
     mutations: new Uint32Array(2),
     grass: {} as never,
+    corpses: {} as never,
   }) as RenderableWorld
 
 describe('GlorpAuraLayer', () => {

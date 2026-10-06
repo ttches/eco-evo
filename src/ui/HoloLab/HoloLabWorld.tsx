@@ -122,6 +122,7 @@ const makeWorld = (rows: readonly LabRow[]): RenderableWorld => {
     dodgeTimer: new Float32Array(count),
     mutations: new Uint32Array(count),
     grass: {} as never,
+    corpses: {} as never,
   }
   for (let row = 0; row < rows.length; row += 1) {
     for (let column = 0; column < columnCount; column += 1) {

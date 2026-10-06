@@ -43,6 +43,13 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
   `JUMPER.dodgeChanceMultiplier` (2x by default) before the maximum is applied,
   on top of its existing per-agility dodge-distance bonus.
 
+### Visuals
+
+- Starving glorps now leave a corpse: the body deflates and darkens past the
+  dimmest hunger shade, then lingers for `CORPSE_SECONDS` (3s) before clearing.
+  Corpses are purely cosmetic for now, spawn no RNG, and appear only in the
+  zoomed-in detailed view; eaten glorps are consumed and leave nothing.
+
 ## [0.1.0] - 2026-10-01
 
 ### Gameplay

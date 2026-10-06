@@ -102,6 +102,21 @@ describe('applyDeath', () => {
     expect(world.x[0]).toBeCloseTo(lastX)
     expect(world.y[0]).toBeCloseTo(lastY)
   })
+
+  it('leaves a corpse where a starving glorp died', () => {
+    const world = createWorld(3, 5)
+    const id = world.id[0]
+    const x = world.x[0]
+    const y = world.y[0]
+    world.fed[0] = 0
+
+    applyDeath(world)
+
+    expect(world.corpses.count).toBe(1)
+    expect(world.corpses.id[0]).toBe(id)
+    expect(world.corpses.x[0]).toBeCloseTo(x)
+    expect(world.corpses.y[0]).toBeCloseTo(y)
+  })
 })
 
 describe('applyReproduction', () => {

@@ -7,6 +7,7 @@ import {
   START_PREY,
 } from '@/sim/config'
 import { updateBehavior } from '@/sim/behavior'
+import { createCorpses, tickCorpses } from '@/sim/corpses'
 import { createGrass, regrowGrass } from '@/sim/grass'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
@@ -68,6 +69,7 @@ export const createWorld = (
     exhaustionEvents: 0,
     dodges: 0,
     grass: createGrass(effectiveSeed),
+    corpses: createCorpses(),
     radius: GLORP_RADIUS,
   }
 
@@ -79,6 +81,9 @@ export const createWorld = (
 
 /** Advance the whole simulation one fixed step. */
 export const step = (world: World, deltaSeconds: number): void => {
+  // Age corpses before any death this step, so a corpse always lives the full
+  // `CORPSE_SECONDS` from the moment it appears.
+  tickCorpses(world, deltaSeconds)
   tickDodges(world, deltaSeconds)
   updateBehavior(world, deltaSeconds)
   integrateMotion(world, deltaSeconds)

@@ -1,3 +1,4 @@
+import type { CorpseField } from '@/sim/corpses'
 import type { GrassField } from '@/sim/grass'
 
 /**
@@ -20,4 +21,6 @@ export type RenderableWorld = {
   /** Bitmask of rogue-like mutations held; 0 when none. */
   readonly mutations: Uint32Array
   readonly grass: GrassField
+  /** Dead glorps still lingering; drawn only in the detailed view. */
+  readonly corpses: CorpseField
 }

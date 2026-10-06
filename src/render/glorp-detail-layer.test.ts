@@ -27,6 +27,7 @@ const makeWorld = (
     dodgeTimer: new Float32Array(2),
     mutations: Uint32Array.of(mutations, mutations),
     grass: {} as never,
+    corpses: {} as never,
   }) as RenderableWorld
 
 describe('GlorpDetailLayer', () => {
@@ -51,7 +52,9 @@ describe('GlorpDetailLayer', () => {
 
     layer.update(makeWorld(), BOUNDS, DETAIL_MIN_ZOOM, 0)
     const bodyAtThreshold = detailBodyMetrics(12, DETAIL_MIN_ZOOM)
-    expect(material.uniforms.uBodyPixel.value).toBeCloseTo(bodyAtThreshold.pixel)
+    expect(material.uniforms.uBodyPixel.value).toBeCloseTo(
+      bodyAtThreshold.pixel,
+    )
     expect(material.uniforms.uOutlineWidth.value).toBeCloseTo(
       bodyAtThreshold.outline,
     )
