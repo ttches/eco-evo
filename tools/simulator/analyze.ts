@@ -105,6 +105,9 @@ export type RunAnalysis = IndividualAnalysis & {
     /** Successful prey dodges over the whole run. */
     dodges: number
     dodgesPerGlorpSecond: number
+    /** Corpses eaten by scavengers over the whole run. */
+    scavenges: number
+    scavengesPerGlorpSecond: number
   }
   /** Flat numeric metrics, for aggregation across seeds and baseline diffs. */
   headline: Headline
@@ -167,6 +170,9 @@ const combatStats = (
   return {
     dodges: world.dodges,
     dodgesPerGlorpSecond: glorpSeconds === 0 ? 0 : world.dodges / glorpSeconds,
+    scavenges: world.scavenges,
+    scavengesPerGlorpSecond:
+      glorpSeconds === 0 ? 0 : world.scavenges / glorpSeconds,
   }
 }
 

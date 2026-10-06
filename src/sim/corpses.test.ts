@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { CORPSE_SECONDS, MAX_CORPSES } from '@/sim/config'
-import { spawnCorpse, tickCorpses } from '@/sim/corpses'
+import {
+  nearestCorpse,
+  removeCorpse,
+  spawnCorpse,
+  tickCorpses,
+} from '@/sim/corpses'
 import { createWorld } from '@/sim/world'
 
 describe('spawnCorpse', () => {
@@ -37,6 +42,40 @@ describe('spawnCorpse', () => {
     spawnCorpse(world, 0)
 
     expect(world.corpses.count).toBe(MAX_CORPSES)
+  })
+})
+
+describe('removeCorpse', () => {
+  it('swap-removes a corpse and keeps the rest dense', () => {
+    const world = createWorld(3, 5)
+    spawnCorpse(world, 0)
+    spawnCorpse(world, 1)
+    spawnCorpse(world, 2)
+    const survivorX = world.corpses.x[2]
+
+    removeCorpse(world, 0)
+
+    expect(world.corpses.count).toBe(2)
+    expect(world.corpses.x[0]).toBeCloseTo(survivorX)
+  })
+})
+
+describe('nearestCorpse', () => {
+  it('finds the closest corpse within range, or -1 when none is near', () => {
+    const world = createWorld(3, 5)
+    world.x[0] = 10
+    world.y[0] = 10
+    world.x[1] = 50
+    world.y[1] = 10
+    world.x[2] = 200
+    world.y[2] = 10
+    spawnCorpse(world, 0)
+    spawnCorpse(world, 1)
+    spawnCorpse(world, 2)
+
+    expect(nearestCorpse(world, 0, 0, 100)).toBe(0)
+    expect(nearestCorpse(world, 45, 10, 20)).toBe(1)
+    expect(nearestCorpse(world, 300, 300, 20)).toBe(-1)
   })
 })
 

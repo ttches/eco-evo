@@ -17,10 +17,13 @@ import {
   MAX_GLORPS,
   PREY_CONSUME_PER_SECOND,
   PREY_ENERGY_PER_SECOND,
+  SCAVENGER,
 } from '@/sim/config'
-import { consumeGrass } from '@/sim/grass'
+import { nearestCorpse, removeCorpse } from '@/sim/corpses'
+import { consumeGrass, fillGrass } from '@/sim/grass'
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import {
+  isScavenger,
   mutationDodgeChanceMultiplier,
   mutationDodgeSpeed,
 } from '@/sim/mutations'
@@ -242,11 +245,39 @@ export const cannibalize = (
     removeGlorp(world, victims[kill])
 }
 
-/** Prey graze, hunters hunt, and starving hunters may cannibalize. */
+/**
+ * Scavengers eat any corpse they have reached, gaining `SCAVENGER.energy` and
+ * turning the tile beneath it into full grass. Contact eating is additive, so a
+ * glorp that also caught live prey this step still gets its corpse; running last
+ * leaves the catch/cannibal removal bookkeeping untouched. Draws no randomness,
+ * so the simulation stream (and determinism) is untouched.
+ */
+export const scavengeCorpses = (world: World): void => {
+  if (world.corpses.count === 0) return
+  for (let index = 0; index < world.count; index += 1) {
+    if (!isScavenger(world.mutations[index])) continue
+    if (world.fed[index] >= FED_MAX) continue
+    const corpse = nearestCorpse(
+      world,
+      world.x[index],
+      world.y[index],
+      CATCH_PREY_RANGE,
+    )
+    if (corpse < 0) continue
+    const next = world.fed[index] + SCAVENGER.energy
+    world.fed[index] = next < FED_MAX ? next : FED_MAX
+    fillGrass(world.grass, world.corpses.x[corpse], world.corpses.y[corpse])
+    removeCorpse(world, corpse)
+    world.scavenges += 1
+  }
+}
+
+/** Prey graze, hunters hunt, starving hunters may cannibalize, scavengers eat. */
 export const applyEating = (world: World, dt: number): void => {
   grazePrey(world, dt)
   // Catches and dodges both resolve at one body diameter, so a dodge only fires
   // when the hunter is right on top of the prey.
   const preyKills = huntPrey(world, CATCH_PREY_RANGE)
   if (CANNIBALISM) cannibalize(world, 2 * world.radius, preyKills > 0)
+  scavengeCorpses(world)
 }

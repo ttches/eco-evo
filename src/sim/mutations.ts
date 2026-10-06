@@ -9,6 +9,7 @@ import {
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
   MUTATIONS_ENABLED,
+  SCAVENGER,
   STEALTH,
   STOAT,
 } from '@/sim/config'
@@ -79,6 +80,12 @@ export const MUTATIONS = {
     canSprint: STEALTH.canSprint,
     /** Whether prey flee from it despite its stealth. */
     preyFlee: STEALTH.preyFlee,
+  },
+  scavenger: {
+    bit: 1 << 5,
+    name: 'Scavenger',
+    description: `Prefers a corpse over grass or prey, jogging to one in sight and eating it for ${SCAVENGER.energy} energy. The tile it eats on becomes full grass.`,
+    exclusive: null,
   },
 } as const
 
@@ -221,6 +228,10 @@ export const mutationWalkFactor = (mask: number): number =>
 /** True when the glorp's mask carries the stealthy mutation. */
 export const isStealth = (mask: number): boolean =>
   hasMutation(mask, MUTATIONS.stealth.bit)
+
+/** True when the glorp's mask carries the scavenger mutation. */
+export const isScavenger = (mask: number): boolean =>
+  hasMutation(mask, MUTATIONS.scavenger.bit)
 
 /**
  * Whether a mask permits sprinting. Stealth normally forbids it; the registry

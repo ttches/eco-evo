@@ -1,4 +1,5 @@
 import {
+  FED_MAX,
   HUNGER,
   HUNTER_SIGHT,
   HUNTER_SPRINT_MULTIPLIER,
@@ -8,13 +9,16 @@ import {
   PREGNANT_SPEED_FACTOR_MAX,
   PREGNANT_SPEED_FACTOR_MIN,
   PREY_FLEE,
+  SCAVENGER,
   STEER_RATE,
   WALK_SPEED,
 } from '@/sim/config'
+import { nearestCorpse } from '@/sim/corpses'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
 import {
   camouflageSightFactor,
+  isScavenger,
   mutationCanSprint,
   mutationDodgeSpeed,
   mutationScaresPrey,
@@ -201,6 +205,35 @@ const fleeHunters: Drive = (world, index, dt) => {
   )
 }
 
+/**
+ * Scavengers jog to the nearest corpse in sight, ranked above their type's
+ * normal food (grass for prey, live prey for hunters). Prey scavenge at any
+ * hunger; hunters only when hungry, so a well-fed predator keeps hunting.
+ * Jogging keeps sprint reserved for pursuit and flight while still racing the
+ * corpse's short decay.
+ */
+const scavenge: Drive = (world, index, dt) => {
+  if (world.type[index] === GLORP_TYPE.hunter && world.fed[index] >= HUNGER)
+    return null
+  if (!isScavenger(world.mutations[index])) return null
+  const corpse = nearestCorpse(
+    world,
+    world.x[index],
+    world.y[index],
+    SCAVENGER.sight,
+  )
+  if (corpse < 0) return null
+  return steerToward(
+    world,
+    index,
+    world.corpses.x[corpse],
+    world.corpses.y[corpse],
+    jogSpeed(world, index),
+    false,
+    dt,
+  )
+}
+
 /** Hungry prey walk to the nearest tile with grass. */
 const seekGrass: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
@@ -243,8 +276,10 @@ const seekMate: Drive = (world, index, dt) => {
 
 /** Drives per glorp type, highest priority first. Wandering is the fallback. */
 const DRIVES: Readonly<Record<GlorpType, readonly Drive[]>> = {
-  [GLORP_TYPE.prey]: [dodge, fleeHunters, seekGrass],
-  [GLORP_TYPE.hunter]: [chasePrey, seekMate],
+  // Survival first: dodge and flee outrank food. Scavenging then outranks the
+  // normal meal, and a hunter treats a corpse as preferred over live prey.
+  [GLORP_TYPE.prey]: [dodge, fleeHunters, scavenge, seekGrass],
+  [GLORP_TYPE.hunter]: [scavenge, chasePrey, seekMate],
 }
 
 /** Pick the steering one glorp would take with no pregnancy modifier. */

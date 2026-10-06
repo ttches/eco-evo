@@ -5,6 +5,7 @@ import { GRASS_MIN_VALUE, GRASS_REGROW } from '@/sim/config'
 import {
   consumeGrass,
   createGrass,
+  fillGrass,
   grassAt,
   nearestGrassTile,
   regrowGrass,
@@ -44,6 +45,23 @@ describe('consumeGrass', () => {
     expect(consumed).toBeCloseTo(0.1)
     expect(grassAt(grass, 5, 5)).toBe(0)
     expect(consumeGrass(grass, 5, 5, 1)).toBe(0)
+  })
+})
+
+describe('fillGrass', () => {
+  it('sets the containing tile to full and ignores points outside', () => {
+    const grass = createGrass(1)
+    grass.values.fill(0)
+
+    fillGrass(grass, 5, 5)
+
+    expect(grassAt(grass, 5, 5)).toBe(1)
+
+    fillGrass(grass, -1, 5)
+    // A full tile past the right edge, independent of how WORLD.width divides.
+    fillGrass(grass, WORLD.width + grass.tileSize, 5)
+    // Only the in-bounds call touched a tile.
+    expect(grass.values.filter((value) => value === 1)).toHaveLength(1)
   })
 })
 

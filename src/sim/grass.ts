@@ -71,6 +71,12 @@ export const consumeGrass = (
   return consumed
 }
 
+/** Set the grass tile at a point to full density; no-op outside the field. */
+export const fillGrass = (grass: GrassField, x: number, y: number): void => {
+  const index = tileIndex(grass, x, y)
+  if (index >= 0) grass.values[index] = 1
+}
+
 /**
  * Center of the closest tile holding meaningful grass, or null if none.
  * Searches outward in square rings of tiles around the point and stops once

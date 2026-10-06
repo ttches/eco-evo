@@ -45,4 +45,9 @@ export const MUTATION_CANDIDATES: Record<
     { body: 'smoke-and-ember', aura: 'ember' },
     { body: 'chromatic-veil', aura: 'chromatic' },
   ],
+  scavenger: [
+    { body: 'hyena-pelt' },
+    { body: 'raccoon-bandit' },
+    { body: 'bone-ribs' },
+  ],
 }

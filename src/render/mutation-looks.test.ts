@@ -33,6 +33,12 @@ describe('holoForMutations', () => {
     expect(holoForMutations(MUTATIONS.jumper.bit, GLORP_TYPE.prey)).toBe(
       'beetle-shell',
     )
+    expect(holoForMutations(MUTATIONS.scavenger.bit, GLORP_TYPE.prey)).toBe(
+      'hyena-pelt',
+    )
+    expect(holoForMutations(MUTATIONS.scavenger.bit, GLORP_TYPE.hunter)).toBe(
+      'hyena-pelt',
+    )
   })
 
   it('falls back to the type shimmer without a mutation', () => {
