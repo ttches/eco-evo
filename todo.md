@@ -1,6 +1,11 @@
 allow 0 pts into trait
 
-prey should not freeze when it can only run toward other pray. SHould go to least bad option
+# <<<<<<< HEAD
+
+see if endurance should also affect energy. rename energy everywhere to hunger
+
+> > > > > > > b4dbb78 (added todos)
+> > > > > > > prey should not freeze when it can only run toward other pray. SHould go to least bad option
 
 dhasboard: prey / predators pills in leaderboard replace with glorp svg like the glorpInspector
 glorp svg to right of name in the Fasted / Fertilest styled buttons.
@@ -51,6 +56,11 @@ make click ui look less like ai and match sprite theme
 Leap for predators based on strength + agility
 try to compete with speed + endurance
 
+implement corpses
+glorp deflates and turns darker than max hunger
+corpse exists for 3 seconds (in config)
+corpses only show in world detailed view (not when zoomed out)
+
 balance levers:
 preds and prey use the jog mechanic when critically hungry if not eating / pursuing food
 dead unconsumed glorps create a full patch of grass after short # of seconds
@@ -78,3 +88,116 @@ change jumper to grasshopper
 mutations stack
 uglier sprites for the ones without synergies
 prettier sprites for synnergies
+
+mutations:
+scavenger
+can eat dead glorps for 10 health
+scavenged corpse creates full grass patch
+
+Cannibal
+can eat your own kind when starving
+dodge still works normally even if prey vs prey
+hunted creates run away exactly as prey runs away today when hunted
+
+Pack Leader
+creates offspring with Pack Animal mutation
+No cloning no mating with pack animals. Always becomes pregnant when mating
+
+Pack Animal
+All animals in pack share 20% of each meal
+Pack animals like to be in proximity to eachother
+Maybe a grid so they don't clump up where each glorp can only move within iit's grid?
+No cloning No mating
+
+See if you know of or can find a fun effcient suggestion to keep animals "together" without them blobbing up or feeling too grid like.
+
+And here's what we could use if we don't have a better idea or finding
+Grid idea for pack animals - I know it's a shader but describes the similar behavior. We would very likely not implement as a shader.
+// Author: @patriciogv - 2015
+// Title: Tissue
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+// Created by inigo quilez - iq/2013
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+// http://www.iquilezles.org/www/articles/voronoilines/voronoilines.htm
+
+vec2 random2( vec2 p ) {
+return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))\*43758.5453);
+}
+
+#define ANIMATE
+vec3 voronoi( in vec2 x, float rnd ) {
+vec2 n = floor(x);
+vec2 f = fract(x);
+
+    // first pass: regular voronoi
+    vec2 mg, mr;
+    float md = 8.0;
+    for (int j=-1; j<=1; j++ ) {
+        for (int i=-1; i<=1; i++ ) {
+            vec2 g = vec2(float(i),float(j));
+            vec2 o = random2( n + g )*rnd;
+            #ifdef ANIMATE
+            o = 0.5 + 0.5*sin( u_time + 6.2831*o );
+            #endif
+            vec2 r = g + o - f;
+            float d = dot(r,r);
+
+            if( d<md ) {
+                md = d;
+                mr = r;
+                mg = g;
+            }
+        }
+    }
+
+    // second pass: distance to borders
+    md = 8.0;
+    for (int j=-2; j<=2; j++ ) {
+        for (int i=-2; i<=2; i++ ) {
+            vec2 g = mg + vec2(float(i),float(j));
+            vec2 o = random2(n + g)*rnd;
+            #ifdef ANIMATE
+            o = 0.5 + 0.5*sin( u_time + 6.2831*o );
+            #endif
+            vec2 r = g + o - f;
+
+            if( dot(mr-r,mr-r)>0.00001 )
+            md = min( md, dot( 0.5*(mr+r), normalize(r-mr) ) );
+        }
+    }
+    return vec3( md, mr );
+
+}
+
+void main() {
+vec2 st = gl*FragCoord.xy/u_resolution.xy;
+st = (st-.5)*.75+.5;
+if (u*resolution.y > u_resolution.x ) {
+st.y *= u*resolution.y/u_resolution.x;
+st.y -= (u_resolution.y*.5-u_resolution.x*.5)/u_resolution.x;
+} else {
+st.x *= u*resolution.x/u_resolution.y;
+st.x -= (u_resolution.x*.5-u_resolution.y\*.5)/u_resolution.y;
+}
+vec3 color = vec3(0.0);
+
+    float d = dot(st-.5,st-.5);
+    vec3 c = voronoi( 20.*st, pow(d,.4) );
+
+    // borders
+    color = mix( vec3(1.0), color, smoothstep( 0.01, 0.02, c.x ) );
+    // feature points
+    float dd = length( c.yz );
+    color += vec3(1.)*(1.0-smoothstep( 0.0, 0.1, dd));
+
+    gl_FragColor = vec4(color,1.0);
+
+}
