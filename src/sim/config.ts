@@ -375,13 +375,13 @@ export const DODGE_ENABLED = true
  * whether or not it outscores the hunter. Every agility point is worth
  * something even against a more agile predator.
  */
-export const DODGE_CHANCE_PER_AGILITY_POINT = 0.05
+export const DODGE_CHANCE_PER_AGILITY_POINT = 0.03
 
 /**
  * Extra dodge chance per agility point the prey has over its hunter, added on
  * top of the baseline: the reward for winning the agility contest.
  */
-export const DODGE_CHANCE_PER_ADVANTAGE_POINT = 0.17
+export const DODGE_CHANCE_PER_ADVANTAGE_POINT = 0.25
 
 /** Ceiling on dodge chance, however high the prey's agility. */
 export const DODGE_CHANCE_MAX = 0.9
