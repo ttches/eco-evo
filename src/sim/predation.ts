@@ -71,6 +71,9 @@ export const grazePrey = (world: World, dt: number): void => {
   const desired = PREY_CONSUME_PER_SECOND * dt
   for (let index = 0; index < world.count; index += 1) {
     if (world.type[index] !== GLORP_TYPE.prey) continue
+    // A scavenger that just ate a corpse must not immediately graze the grass
+    // it created, so the patch survives.
+    if (world.grazeCooldown[index] > 0) continue
     if (world.fed[index] >= FED_MAX) continue
     const consumed = consumeGrass(
       world.grass,
@@ -173,6 +176,15 @@ export const tickDodges = (world: World, dt: number): void => {
   }
 }
 
+/** Count down the post-scavenge graze cooldown on every glorp. */
+export const tickGrazeCooldowns = (world: World, dt: number): void => {
+  for (let index = 0; index < world.count; index += 1) {
+    if (world.grazeCooldown[index] <= 0) continue
+    const next = world.grazeCooldown[index] - dt
+    world.grazeCooldown[index] = next > 0 ? next : 0
+  }
+}
+
 /**
  * Hunters remove and gain energy from nearby prey. A prey agile enough to beat
  * the hunter's agility may dodge instead, escaping the catch; while its dart
@@ -247,10 +259,12 @@ export const cannibalize = (
 
 /**
  * Scavengers eat any corpse they have reached, gaining `SCAVENGER.energy` and
- * turning the tile beneath it into full grass. Contact eating is additive, so a
- * glorp that also caught live prey this step still gets its corpse; running last
- * leaves the catch/cannibal removal bookkeeping untouched. Draws no randomness,
- * so the simulation stream (and determinism) is untouched.
+ * turning the tile beneath it into full grass. The eater is put on a
+ * `SCAVENGER.grazeCooldown` so it does not immediately graze that grass.
+ * Contact eating is additive, so a glorp that also caught live prey this step
+ * still gets its corpse; running last leaves the catch/cannibal removal
+ * bookkeeping untouched. Draws no randomness, so the simulation stream (and
+ * determinism) is untouched.
  */
 export const scavengeCorpses = (world: World): void => {
   if (world.corpses.count === 0) return
@@ -266,6 +280,7 @@ export const scavengeCorpses = (world: World): void => {
     if (corpse < 0) continue
     const next = world.fed[index] + SCAVENGER.energy
     world.fed[index] = next < FED_MAX ? next : FED_MAX
+    world.grazeCooldown[index] = SCAVENGER.grazeCooldown
     fillGrass(world.grass, world.corpses.x[corpse], world.corpses.y[corpse])
     removeCorpse(world, corpse)
     world.scavenges += 1

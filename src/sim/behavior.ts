@@ -205,11 +205,11 @@ const fleeHunters: Drive = (world, index, dt) => {
 }
 
 /**
- * Scavengers jog to the nearest corpse in sight, ranked above their type's
+ * Scavengers sprint to the nearest corpse in sight, ranked above their type's
  * normal food (grass for prey, live prey for hunters). Prey scavenge at any
  * hunger; hunters only when hungry, so a well-fed predator keeps hunting.
- * Jogging keeps sprint reserved for pursuit and flight while still racing the
- * corpse's short decay.
+ * Sprinting drains stamina exactly as pursuit and flight do, and a stealth
+ * scavenger is capped at its jog.
  */
 const scavenge: Drive = (world, index, dt) => {
   if (world.type[index] === GLORP_TYPE.hunter && world.fed[index] >= HUNGER)
@@ -222,13 +222,14 @@ const scavenge: Drive = (world, index, dt) => {
     SCAVENGER.sight,
   )
   if (corpse < 0) return null
+  const sprint = canSprint(world, index)
   return steerToward(
     world,
     index,
     world.corpses.x[corpse],
     world.corpses.y[corpse],
-    jogSpeed(world, index),
-    false,
+    pursuitSpeed(world, index, sprint),
+    sprint,
     dt,
   )
 }
@@ -236,6 +237,9 @@ const scavenge: Drive = (world, index, dt) => {
 /** Hungry prey walk to the nearest tile with grass. */
 const seekGrass: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
+  // A scavenger waits out its graze cooldown so it leaves the fresh corpse
+  // grass behind instead of camping the tile until it can eat it.
+  if (world.grazeCooldown[index] > 0) return null
   const tile = nearestGrassTile(world.grass, world.x[index], world.y[index])
   if (!tile) return null
   return steerToward(

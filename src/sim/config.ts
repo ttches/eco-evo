@@ -224,15 +224,19 @@ export const STEALTH = {
 
 /**
  * Scavenger mutation effect levers. Available to both types: a scavenger
- * prefers a corpse over grass or prey, jogs to the nearest one within `sight`,
- * and eats it for `energy`. Kept here so the headless simulator can sweep
- * either lever with `--set SCAVENGER.energy=...` or `--set SCAVENGER.sight=...`.
+ * prefers a corpse over grass or prey, sprints to the nearest one within
+ * `sight`, and eats it for `energy`, leaving the tile as full grass. The eater
+ * cannot graze for `grazeCooldown` seconds afterwards, so the grass it just
+ * created survives. Kept here so the headless simulator can sweep any lever,
+ * e.g. `--set SCAVENGER.energy=...` or `--set SCAVENGER.grazeCooldown=...`.
  */
 export const SCAVENGER = {
   /** Energy gained from eating one corpse. */
   energy: 15,
   /** How far, in world units, a scavenger spots a corpse to steer toward. */
   sight: 120,
+  /** Seconds after eating a corpse during which the scavenger cannot graze. */
+  grazeCooldown: 3,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -406,7 +410,7 @@ export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS
  * Seconds a starved glorp's corpse lingers in the world before it is cleared.
  * Only unconsumed deaths leave a corpse; eaten glorps are gone immediately.
  */
-export const CORPSE_SECONDS = 3
+export const CORPSE_SECONDS = 8
 
 /**
  * Most corpses the world tracks at once. When the cap is hit new ones are

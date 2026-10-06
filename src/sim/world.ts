@@ -12,7 +12,7 @@ import { createGrass, regrowGrass } from '@/sim/grass'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
 import { integrateMotion, updateStamina } from '@/sim/motion'
-import { applyEating, tickDodges } from '@/sim/predation'
+import { applyEating, tickDodges, tickGrazeCooldowns } from '@/sim/predation'
 import {
   applyGestation,
   applyPairReproduction,
@@ -88,6 +88,7 @@ export const step = (world: World, deltaSeconds: number): void => {
   // `CORPSE_SECONDS` from the moment it appears.
   tickCorpses(world, deltaSeconds)
   tickDodges(world, deltaSeconds)
+  tickGrazeCooldowns(world, deltaSeconds)
   updateBehavior(world, deltaSeconds)
   integrateMotion(world, deltaSeconds)
   applyEating(world, deltaSeconds)

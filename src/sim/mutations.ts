@@ -84,7 +84,7 @@ export const MUTATIONS = {
   scavenger: {
     bit: 1 << 5,
     name: 'Scavenger',
-    description: `Prefers a corpse over grass or prey, jogging to one in sight and eating it for ${SCAVENGER.energy} energy. The tile it eats on becomes full grass.`,
+    description: `Prefers a corpse over grass or prey, sprinting to one in sight and eating it for ${SCAVENGER.energy} energy. The tile it eats on becomes full grass, which it cannot graze for ${SCAVENGER.grazeCooldown}s.`,
     exclusive: null,
   },
 } as const

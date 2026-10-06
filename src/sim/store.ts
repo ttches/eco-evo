@@ -26,6 +26,8 @@ const STATE_COLUMNS = {
   gestationSeed: Uint32Array,
   /** Seconds spent beside an eligible mate, for courtship dwell. */
   mateContact: Float32Array,
+  /** Seconds after eating a corpse during which the glorp cannot graze. */
+  grazeCooldown: Float32Array,
   /** Seconds remaining of an active dodge dart; 0 when not dodging. */
   dodgeTimer: Float32Array,
   /** Committed escape direction during a dodge dart. */

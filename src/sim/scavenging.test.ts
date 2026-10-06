@@ -10,8 +10,8 @@ import {
   WALK_SPEED,
 } from '@/sim/config'
 import { grassAt } from '@/sim/grass'
-import { MUTATIONS } from '@/sim/mutations'
-import { scavengeCorpses } from '@/sim/predation'
+import { MUTATIONS, mutationSpeedFactor } from '@/sim/mutations'
+import { grazePrey, scavengeCorpses, tickGrazeCooldowns } from '@/sim/predation'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { scaleTrait, traitValue } from '@/sim/traits'
 import { GLORP_TYPE, type GlorpType } from '@/sim/types'
@@ -49,6 +49,13 @@ const jogSpeed = (
     MOVEMENT.jogFactorMax,
   )
 
+const sprintSpeed = (
+  world: ReturnType<typeof createWorld>,
+  index: number,
+): number =>
+  traitValue('speed', world.speed[index]) *
+  mutationSpeedFactor(world.mutations[index])
+
 describe('scavenge drive', () => {
   /** A hungry scavenger at (100,100) with all grass stripped so only corpses steer it. */
   const setupScavenger = () => {
@@ -63,7 +70,7 @@ describe('scavenge drive', () => {
     return world
   }
 
-  it('jogs toward a corpse in sight', () => {
+  it('sprints toward a corpse in sight', () => {
     const world = setupScavenger()
     addCorpse(world, 150, 100)
     rebuildSpatialGrid(world)
@@ -72,11 +79,45 @@ describe('scavenge drive', () => {
 
     expect(steering.x).toBeGreaterThan(0)
     expect(Math.abs(steering.y)).toBeLessThan(1e-6)
+    expect(steering.sprint).toBe(true)
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
+      sprintSpeed(world, 0),
+      5,
+    )
+  })
+
+  it('jogs to a corpse when exhausted', () => {
+    const world = setupScavenger()
+    world.exhausted[0] = 1
+    addCorpse(world, 150, 100)
+    rebuildSpatialGrid(world)
+
+    const steering = computeSteering(world, 0, DT)
+
+    expect(steering.x).toBeGreaterThan(0)
     expect(steering.sprint).toBe(false)
     expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
       jogSpeed(world, 0),
       5,
     )
+  })
+
+  it('jogs to a corpse with no stamina left', () => {
+    const world = setupScavenger()
+    world.stamina[0] = 0
+    addCorpse(world, 150, 100)
+    rebuildSpatialGrid(world)
+
+    expect(computeSteering(world, 0, DT).sprint).toBe(false)
+  })
+
+  it('does not sprint to a corpse when stealthy', () => {
+    const world = setupScavenger()
+    world.mutations[0] = SCAVENGER_BIT | MUTATIONS.stealth.bit
+    addCorpse(world, 150, 100)
+    rebuildSpatialGrid(world)
+
+    expect(computeSteering(world, 0, DT).sprint).toBe(false)
   })
 
   it('picks the nearest corpse when several are in sight', () => {
@@ -114,20 +155,6 @@ describe('scavenge drive', () => {
     const world = setupScavenger()
     world.type[0] = GLORP_TYPE.hunter
     world.fed[0] = HUNGER
-    addCorpse(world, 150, 100)
-    rebuildSpatialGrid(world)
-
-    const steering = computeSteering(world, 0, DT)
-
-    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
-      WALK_SPEED * MOVEMENT.walkFactor,
-      5,
-    )
-  })
-
-  it('does not chase a corpse it is too full to eat', () => {
-    const world = setupScavenger()
-    world.fed[0] = FED_MAX
     addCorpse(world, 150, 100)
     rebuildSpatialGrid(world)
 
@@ -193,7 +220,7 @@ describe('scavenge drive', () => {
     const steering = computeSteering(world, 0, DT)
 
     expect(steering.x).toBeLessThan(0)
-    expect(steering.sprint).toBe(false)
+    expect(steering.sprint).toBe(true)
   })
 })
 
@@ -269,6 +296,59 @@ describe('scavengeCorpses', () => {
     scavengeCorpses(eating)
 
     expect(eating.random.unit()).toBe(control.random.unit())
+  })
+})
+
+describe('post-scavenge graze cooldown', () => {
+  const setupEater = (): ReturnType<typeof createWorld> => {
+    const world = createWorld(1, 30)
+    world.mutations.fill(0)
+    world.grass.values.fill(0)
+    world.type[0] = GLORP_TYPE.prey
+    world.x[0] = 100
+    world.y[0] = 100
+    world.fed[0] = 50
+    world.mutations[0] = SCAVENGER_BIT
+    return world
+  }
+
+  it('does not graze the grass it just created', () => {
+    const world = setupEater()
+    addCorpse(world, 100, 100)
+    scavengeCorpses(world)
+
+    expect(world.grazeCooldown[0]).toBe(SCAVENGER.grazeCooldown)
+    grazePrey(world, DT)
+
+    expect(grassAt(world.grass, 100, 100)).toBe(1)
+    expect(world.fed[0]).toBe(50 + SCAVENGER.energy)
+  })
+
+  it('resumes grazing once the cooldown expires', () => {
+    const world = setupEater()
+    addCorpse(world, 100, 100)
+    scavengeCorpses(world)
+
+    tickGrazeCooldowns(world, SCAVENGER.grazeCooldown)
+    expect(world.grazeCooldown[0]).toBe(0)
+
+    grazePrey(world, DT)
+
+    expect(grassAt(world.grass, 100, 100)).toBeLessThan(1)
+  })
+
+  it('leaves the fresh tile behind instead of camping on it', () => {
+    const world = setupEater()
+    addCorpse(world, 100, 100)
+    scavengeCorpses(world)
+    rebuildSpatialGrid(world)
+
+    const steering = computeSteering(world, 0, DT)
+
+    expect(Math.hypot(steering.x, steering.y)).toBeCloseTo(
+      WALK_SPEED * MOVEMENT.walkFactor,
+      5,
+    )
   })
 })
 

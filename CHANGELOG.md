@@ -43,9 +43,11 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
   `JUMPER.dodgeChanceMultiplier` (2x by default) before the maximum is applied,
   on top of its existing per-agility dodge-distance bonus.
 - New `scavenger` mutation, available to both types. A scavenger prefers a
-  corpse over grass or live prey, jogging to the nearest one within
+  corpse over grass or live prey, sprinting to the nearest one within
   `SCAVENGER.sight` (120) and eating it for `SCAVENGER.energy` (15); the tile it
-  eats on becomes full grass. Prey scavenge at any hunger, but a hunter only
+  eats on becomes full grass, which the eater cannot graze for
+  `SCAVENGER.grazeCooldown` (3s) so the patch survives. Scavenging sprints spend
+  stamina like any other sprint. Prey scavenge at any hunger, but a hunter only
   when hungry, so a well-fed predator keeps hunting. A glorp with no room left
   (`FED_MAX`) does not chase a corpse it cannot eat. Prey still flee a hunter
   before scavenging, and a hunter treats a corpse as preferred over a live meal.
