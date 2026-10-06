@@ -93,14 +93,10 @@ uglier sprites for the ones without synergies
 prettier sprites for synnergies
 
 mutations:
-scavenger
-can eat dead glorps for 10 health
-scavenged corpse creates full grass patch
 
 Cannibal
-can eat your own kind when starving
+can hunt eat your own kind when starving
 dodge still works normally even if prey vs prey
-hunted creates run away exactly as prey runs away today when hunted
 
 Pack Leader
 creates offspring with Pack Animal mutation
@@ -204,3 +200,5 @@ vec3 color = vec3(0.0);
     gl_FragColor = vec4(color,1.0);
 
 }
+
+I think I want to see world glorps looking like thtey did in 6890aeb5d833f0abbad63dfdb4732df5451fa7ee, before they were changed in 85811e681f449468fa6f0dbaa5af70125707b59e but I want them to seem at double pixel density. I think you said they were about 8px wide, so we'd do 16

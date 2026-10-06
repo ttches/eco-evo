@@ -365,15 +365,25 @@ export const CANNIBAL_HUNGER = 20
 export const CANNIBAL_KILL_FED = 15
 
 /**
- * When true, a prey whose `agility` exceeds its attacker's can dodge the catch.
- * Off makes agility inert, which the headless simulator uses as an A/B control.
+ * When true, a prey can dodge a catch using its `agility`. Off makes agility
+ * inert, which the headless simulator uses as an A/B control.
  */
 export const DODGE_ENABLED = true
 
-/** Dodge chance added per agility level the prey has over the hunter. */
-export const DODGE_CHANCE_PER_LEVEL = 0.25
+/**
+ * Baseline dodge chance the prey gains per point of its own `agility`, applied
+ * whether or not it outscores the hunter. Every agility point is worth
+ * something even against a more agile predator.
+ */
+export const DODGE_CHANCE_PER_AGILITY_POINT = 0.05
 
-/** Ceiling on dodge chance, however large the agility gap. */
+/**
+ * Extra dodge chance per agility point the prey has over its hunter, added on
+ * top of the baseline: the reward for winning the agility contest.
+ */
+export const DODGE_CHANCE_PER_ADVANTAGE_POINT = 0.17
+
+/** Ceiling on dodge chance, however high the prey's agility. */
 export const DODGE_CHANCE_MAX = 0.9
 
 /**

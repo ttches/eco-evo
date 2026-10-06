@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   DODGE_CHANCE_MAX,
-  DODGE_CHANCE_PER_LEVEL,
+  DODGE_CHANCE_PER_ADVANTAGE_POINT,
+  DODGE_CHANCE_PER_AGILITY_POINT,
   DODGE_DISTANCE,
   DODGE_DURATION,
   DODGE_SPEED,
@@ -48,44 +49,69 @@ describe('agility trait', () => {
 })
 
 describe('dodgeChance', () => {
-  it('is zero when the hunter is at least as agile', () => {
-    expect(dodgeChance(setupHunt(5, 5), 0, 1)).toBe(0)
-    expect(dodgeChance(setupHunt(6, 5), 0, 1)).toBe(0)
-    expect(dodgeChance(setupHunt(7, 1), 0, 1)).toBe(0)
+  it('gives a baseline chance even when the hunter is at least as agile', () => {
+    expect(dodgeChance(setupHunt(5, 5), 0, 1)).toBeCloseTo(
+      5 * DODGE_CHANCE_PER_AGILITY_POINT,
+    )
+    expect(dodgeChance(setupHunt(6, 5), 0, 1)).toBeCloseTo(
+      5 * DODGE_CHANCE_PER_AGILITY_POINT,
+    )
+    expect(dodgeChance(setupHunt(7, 1), 0, 1)).toBeCloseTo(
+      DODGE_CHANCE_PER_AGILITY_POINT,
+    )
   })
 
-  it('scales with each level of agility advantage', () => {
+  it('adds a bonus for each level of agility advantage', () => {
     expect(dodgeChance(setupHunt(4, 5), 0, 1)).toBeCloseTo(
-      DODGE_CHANCE_PER_LEVEL,
+      5 * DODGE_CHANCE_PER_AGILITY_POINT + 1 * DODGE_CHANCE_PER_ADVANTAGE_POINT,
     )
     expect(dodgeChance(setupHunt(4, 6), 0, 1)).toBeCloseTo(
-      DODGE_CHANCE_PER_LEVEL * 2,
+      6 * DODGE_CHANCE_PER_AGILITY_POINT + 2 * DODGE_CHANCE_PER_ADVANTAGE_POINT,
     )
-    expect(dodgeChance(setupHunt(4, 7), 0, 1)).toBeCloseTo(
-      DODGE_CHANCE_PER_LEVEL * 3,
+    expect(dodgeChance(setupHunt(1, 4), 0, 1)).toBeCloseTo(
+      4 * DODGE_CHANCE_PER_AGILITY_POINT + 3 * DODGE_CHANCE_PER_ADVANTAGE_POINT,
     )
   })
 
-  it('never exceeds the configured maximum', () => {
-    const expected = Math.min(7 * DODGE_CHANCE_PER_LEVEL, DODGE_CHANCE_MAX)
-    expect(dodgeChance(setupHunt(0, 7), 0, 1)).toBeCloseTo(expected)
+  it('never falls when the prey gains an agility edge', () => {
+    for (let hunter = 0; hunter < 7; hunter += 1) {
+      const behind = dodgeChance(setupHunt(hunter, hunter), 0, 1)
+      const ahead = dodgeChance(setupHunt(hunter, hunter + 1), 0, 1)
+      expect(ahead).toBeGreaterThanOrEqual(behind)
+    }
+  })
+
+  it('clamps an otherwise-overflowing chance to the maximum', () => {
+    const uncapped =
+      7 * DODGE_CHANCE_PER_AGILITY_POINT + 7 * DODGE_CHANCE_PER_ADVANTAGE_POINT
+    expect(uncapped).toBeGreaterThan(DODGE_CHANCE_MAX)
+    expect(dodgeChance(setupHunt(0, 7), 0, 1)).toBeCloseTo(DODGE_CHANCE_MAX)
   })
 })
 
 describe('dodge resolution', () => {
-  it('eats a prey of equal agility even when the roll would dodge', () => {
+  it('lets an equal-agility prey dodge on a successful roll', () => {
     const world = setupHunt(5, 5)
     rollUnit(world, 0)
+    applyEating(world, 0.1)
+    expect(world.count).toBe(2)
+    expect(world.dodges).toBe(1)
+  })
+
+  it('eats an equal-agility prey when the roll fails', () => {
+    const world = setupHunt(5, 5)
+    rollUnit(world, 0.99)
     applyEating(world, 0.1)
     expect(world.count).toBe(1)
     expect(world.dodges).toBe(0)
   })
 
-  it('eats a prey less agile than the hunter', () => {
+  it('lets a less agile prey dodge a poor hunter on a successful roll', () => {
     const world = setupHunt(6, 4)
     rollUnit(world, 0)
     applyEating(world, 0.1)
-    expect(world.count).toBe(1)
+    expect(world.count).toBe(2)
+    expect(world.dodges).toBe(1)
   })
 
   it('lets a more agile prey escape on a successful roll', () => {
@@ -271,23 +297,32 @@ describe('jumper mutation', () => {
   })
 
   it('multiplies the dodge chance below the maximum', () => {
-    const world = setupHunt(4, 5)
+    const world = setupHunt(3, 4)
     world.mutations[1] = MUTATIONS.jumper.bit
     expect(dodgeChance(world, 0, 1)).toBeCloseTo(
-      DODGE_CHANCE_PER_LEVEL * JUMPER.dodgeChanceMultiplier,
+      (4 * DODGE_CHANCE_PER_AGILITY_POINT +
+        1 * DODGE_CHANCE_PER_ADVANTAGE_POINT) *
+        JUMPER.dodgeChanceMultiplier,
     )
   })
 
   it('clamps the multiplied dodge chance to the maximum', () => {
     const world = setupHunt(0, 3)
     world.mutations[1] = MUTATIONS.jumper.bit
+    const uncapped =
+      (3 * DODGE_CHANCE_PER_AGILITY_POINT +
+        3 * DODGE_CHANCE_PER_ADVANTAGE_POINT) *
+      JUMPER.dodgeChanceMultiplier
+    expect(uncapped).toBeGreaterThan(DODGE_CHANCE_MAX)
     expect(dodgeChance(world, 0, 1)).toBeCloseTo(DODGE_CHANCE_MAX)
   })
 
-  it('cannot dodge without an agility advantage', () => {
+  it('doubles the baseline even without an agility advantage', () => {
     const world = setupHunt(5, 5)
     world.mutations[1] = MUTATIONS.jumper.bit
-    expect(dodgeChance(world, 0, 1)).toBe(0)
+    expect(dodgeChance(world, 0, 1)).toBeCloseTo(
+      5 * DODGE_CHANCE_PER_AGILITY_POINT * JUMPER.dodgeChanceMultiplier,
+    )
   })
 })
 

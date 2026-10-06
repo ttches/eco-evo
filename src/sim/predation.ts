@@ -9,7 +9,8 @@ import {
   CANNIBAL_KILL_FED,
   CATCH_PREY_RANGE,
   DODGE_CHANCE_MAX,
-  DODGE_CHANCE_PER_LEVEL,
+  DODGE_CHANCE_PER_ADVANTAGE_POINT,
+  DODGE_CHANCE_PER_AGILITY_POINT,
   DODGE_DURATION,
   DODGE_ENABLED,
   FED_MAX,
@@ -88,9 +89,11 @@ export const grazePrey = (world: World, dt: number): void => {
 }
 
 /**
- * Chance the prey dodges a specific attacker: zero unless the prey's agility
- * exceeds the hunter's, then `DODGE_CHANCE_PER_LEVEL` per level of advantage,
- * multiplied by the prey's mutation factor (jumper doubles it), capped at
+ * Chance the prey dodges a specific attacker. Every point of the prey's own
+ * agility adds `DODGE_CHANCE_PER_AGILITY_POINT`, so agility pays off even
+ * without an edge; each point it outscores the hunter by adds
+ * `DODGE_CHANCE_PER_ADVANTAGE_POINT` on top, so winning the contest pays more.
+ * Multiplied by the prey's mutation factor (jumper doubles it), capped at
  * `DODGE_CHANCE_MAX`.
  */
 export const dodgeChance = (
@@ -98,11 +101,12 @@ export const dodgeChance = (
   hunter: number,
   prey: number,
 ): number => {
-  const edge = world.agility[prey] - world.agility[hunter]
-  if (edge <= 0) return 0
+  const agility = world.agility[prey]
+  const edge = agility - world.agility[hunter]
+  const advantage = edge > 0 ? edge : 0
   const chance =
-    edge *
-    DODGE_CHANCE_PER_LEVEL *
+    (agility * DODGE_CHANCE_PER_AGILITY_POINT +
+      advantage * DODGE_CHANCE_PER_ADVANTAGE_POINT) *
     mutationDodgeChanceMultiplier(world.mutations[prey])
   return chance < DODGE_CHANCE_MAX ? chance : DODGE_CHANCE_MAX
 }
@@ -186,12 +190,12 @@ export const tickGrazeCooldowns = (world: World, dt: number): void => {
 }
 
 /**
- * Hunters remove and gain energy from nearby prey. A prey agile enough to beat
- * the hunter's agility may dodge instead, escaping the catch; while its dart
- * lasts it is untargetable and cannot be eaten. Kills are collected and removed
- * afterwards so indices stored in the grid stay valid for the whole hunt;
- * descending order keeps swap-remove safe. Returns the number of kills so
- * callers know whether the grid went stale.
+ * Hunters remove and gain energy from nearby prey. A prey may dodge instead
+ * (see `dodgeChance`), escaping the catch; while its dart lasts it is
+ * untargetable and cannot be eaten. Kills are collected and removed afterwards
+ * so indices stored in the grid stay valid for the whole hunt; descending order
+ * keeps swap-remove safe. Returns the number of kills so callers know whether
+ * the grid went stale.
  */
 export const huntPrey = (world: World, reach: number): number => {
   rebuildSpatialGrid(world)
