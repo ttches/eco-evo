@@ -34,6 +34,11 @@ const predationMetrics = (analysis: RunAnalysis): Headline => {
     'pred.timeToFirstKill': round(analysis.lineage.timeToFirstKill.mean, 2),
     'pred.dodges': analysis.combat.dodges,
     'pred.dodgesPerGlorpSecond': round(analysis.combat.dodgesPerGlorpSecond, 5),
+    'pred.scavenges': analysis.combat.scavenges,
+    'pred.scavengesPerGlorpSecond': round(
+      analysis.combat.scavengesPerGlorpSecond,
+      5,
+    ),
   }
 }
 

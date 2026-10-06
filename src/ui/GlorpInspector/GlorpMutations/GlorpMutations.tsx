@@ -107,6 +107,23 @@ const StealthIcon = () => (
   </svg>
 )
 
+/** Bandit mask with eye patches and a snout, reading as a raccoon scavenger. */
+const ScavengerIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2.5 11c2.2-2.6 5.2-3.6 8.2-2.6l1.3.5 1.3-.5c3-1 6 0 8.2 2.6-1.4 2.6-4.4 4.2-9.5 4.2S3.9 13.6 2.5 11Z" />
+    <circle cx="8.2" cy="11.5" r="1.1" />
+    <circle cx="15.8" cy="11.5" r="1.1" />
+    <path d="M12 15.2v2.3" />
+  </svg>
+)
+
 /** Icon for each mutation, in registry order. Every mutation must have an entry. */
 const MUTATION_ICONS = {
   coldBlooded: <ColdBloodedIcon />,
@@ -114,6 +131,7 @@ const MUTATION_ICONS = {
   jumper: <JumperIcon />,
   camouflage: <CamouflageIcon />,
   stealth: <StealthIcon />,
+  scavenger: <ScavengerIcon />,
 } satisfies Record<MutationKey, ReactNode>
 
 /** The mutations a glorp holds, as a row of icons with hover descriptions. */

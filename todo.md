@@ -77,8 +77,14 @@ all gen 0 glorps start with same stats?
 
 mutations:
 
+We want to make a detailed world glorp for the scavenger mutation. Read about the scavenger and our glorp art direction and look at the hololab world shader all variants to get an idea of some of the interesting ways we've done art effects in the past. The effects typically have a blocky resolution but they're still dynamic and interesting, often with unique animations. Also research sprite art, pixel art, shaders for interesting effects we might want to incorporate
+
+Without copying any of the others too closely, I want you to create designs based on this:
+
+Scavenger: Bone Ribs, hyena, racoon mask
+
 mutation appearances:
-Scavenger: Death mask, hyena, racoon mask
+Scavenger: Bone Ribs, hyena, racoon mask
 
 change jumper to grasshopper
 

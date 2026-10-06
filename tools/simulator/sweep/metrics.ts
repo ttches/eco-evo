@@ -123,6 +123,13 @@ export const METRICS: MetricDef[] = [
     key: 'pred.dodgesPerGlorpSecond',
     digits: 5,
   },
+  { group: 'Predation', label: 'scavenges', key: 'pred.scavenges', digits: 0 },
+  {
+    group: 'Predation',
+    label: 'scavenges per glorp-second',
+    key: 'pred.scavengesPerGlorpSecond',
+    digits: 5,
+  },
   {
     group: 'Lineage',
     label: 'max generation',

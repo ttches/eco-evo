@@ -45,6 +45,8 @@ export type World = RenderableWorld &
     exhaustionEvents: number
     /** Cumulative successful prey dodges. */
     dodges: number
+    /** Cumulative corpses eaten by scavengers. */
+    scavenges: number
   }
 
 const DEFAULT_COUNT = START_PREY + START_HUNTERS
@@ -68,6 +70,7 @@ export const createWorld = (
     sprintStarts: 0,
     exhaustionEvents: 0,
     dodges: 0,
+    scavenges: 0,
     grass: createGrass(effectiveSeed),
     corpses: createCorpses(),
     radius: GLORP_RADIUS,

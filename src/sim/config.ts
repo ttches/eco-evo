@@ -222,6 +222,19 @@ export const STEALTH = {
   preyFlee: false,
 } as const
 
+/**
+ * Scavenger mutation effect levers. Available to both types: a scavenger
+ * prefers a corpse over grass or prey, jogs to the nearest one within `sight`,
+ * and eats it for `energy`. Kept here so the headless simulator can sweep
+ * either lever with `--set SCAVENGER.energy=...` or `--set SCAVENGER.sight=...`.
+ */
+export const SCAVENGER = {
+  /** Energy gained from eating one corpse. */
+  energy: 15,
+  /** How far, in world units, a scavenger spots a corpse to steer toward. */
+  sight: 120,
+} as const
+
 // ---------------------------------------------------------------------------
 // Movement & stamina
 // ---------------------------------------------------------------------------
@@ -396,7 +409,8 @@ export const CATCH_PREY_RANGE = 2 * GLORP_RADIUS
 export const CORPSE_SECONDS = 3
 
 /**
- * Most corpses the world tracks at once. Corpses are cosmetic, so when the cap
- * is hit new ones are simply dropped rather than growing the arrays.
+ * Most corpses the world tracks at once. When the cap is hit new ones are
+ * simply dropped rather than growing the arrays; corpses expire quickly, so the
+ * cap is a deliberate bound, not a target.
  */
 export const MAX_CORPSES = 4096
