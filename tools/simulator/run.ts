@@ -17,7 +17,10 @@ import {
   parseArgs,
   resolveSeeds,
   timestamp,
+  validateOverrideKeys,
 } from './cli/args.ts'
+import * as gameConfig from '@/sim/config'
+import { TRAITS } from '@/sim/traits'
 import { aggregateHeadlines, buildSweepFile } from './sweep/aggregate.ts'
 import { formatComparison, readBaseline } from './sweep/compare.ts'
 import { formatCompactHeader, formatCompactRow } from './sweep/progress.ts'
@@ -29,10 +32,16 @@ const loaderPath = pathToFileURL(
   path.join(import.meta.dirname, 'loader.mjs'),
 ).href
 const workerPath = path.join(import.meta.dirname, 'worker.ts')
+const chasePath = path.join(import.meta.dirname, 'chase.ts')
 
 const children = new Set<ChildProcess>()
 
-const runJob = (job: Job, env: NodeJS.ProcessEnv): Promise<number> =>
+/** Run a script in a child process that loads the game through loader.mjs. */
+const runChild = (
+  script: string,
+  payload: unknown,
+  env: NodeJS.ProcessEnv,
+): Promise<number> =>
   new Promise((resolve) => {
     const child = spawn(
       process.execPath,
@@ -40,8 +49,8 @@ const runJob = (job: Job, env: NodeJS.ProcessEnv): Promise<number> =>
         '--disable-warning=ExperimentalWarning',
         '--import',
         loaderPath,
-        workerPath,
-        JSON.stringify(job),
+        script,
+        JSON.stringify(payload),
       ],
       { cwd: root, env, stdio: 'inherit' },
     )
@@ -56,6 +65,9 @@ const runJob = (job: Job, env: NodeJS.ProcessEnv): Promise<number> =>
       finish(1)
     })
   })
+
+const runJob = (job: Job, env: NodeJS.ProcessEnv): Promise<number> =>
+  runChild(workerPath, job, env)
 
 type PoolResult = { summaries: RunSummary[]; failures: number[] }
 
@@ -157,6 +169,23 @@ const compareToBaseline = (
   }
 }
 
+/**
+ * Validate `--set` keys against the real config plus every overlay's exports,
+ * so an overlay can introduce a constant that `--set` then tunes.
+ */
+const checkOverrideKeys = async (
+  overrides: Record<string, unknown>,
+  layers: string[],
+): Promise<void> => {
+  if (Object.keys(overrides).length === 0) return
+  const config: Record<string, unknown> = { ...gameConfig }
+  for (const layer of layers) {
+    const file = path.isAbsolute(layer) ? layer : path.resolve(root, layer)
+    Object.assign(config, await import(pathToFileURL(file).href))
+  }
+  validateOverrideKeys(overrides, { config, traits: TRAITS })
+}
+
 const main = async (): Promise<void> => {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
@@ -166,17 +195,33 @@ const main = async (): Promise<void> => {
 
   const seeds = resolveSeeds(args)
   const overrides = buildOverrides(args.set)
+  await checkOverrideKeys(overrides, args.config)
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    SIM_CONFIG_LAYERS: JSON.stringify(args.config),
+    SIM_CONFIG_OVERRIDES: JSON.stringify(overrides),
+  }
+  if (args.bench === 'chase') {
+    const code = await runChild(
+      chasePath,
+      {
+        prey: args.preyBuild,
+        hunter: args.hunterBuild,
+        trials: args.trials,
+        seconds: args.benchSeconds,
+        distance: args.benchDistance,
+      },
+      env,
+    )
+    if (code !== 0) process.exitCode = code
+    return
+  }
   const baseOut = path.resolve(
     root,
     args.out ??
       path.join('runs', `${timestamp()}${args.label ? `-${args.label}` : ''}`),
   )
   const single = seeds.length === 1
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    SIM_CONFIG_LAYERS: JSON.stringify(args.config),
-    SIM_CONFIG_OVERRIDES: JSON.stringify(overrides),
-  }
 
   const jobs = buildJobs(args, seeds, baseOut)
   if (!args.quiet) {

@@ -13,6 +13,9 @@ import {
   DODGE_CHANCE_PER_AGILITY_POINT,
   DODGE_DURATION,
   DODGE_ENABLED,
+  DODGE_EXHAUSTS_HUNTER,
+  DODGE_LOSES_TRACK_SECONDS,
+  DODGE_LUNGE,
   FED_MAX,
   HUNTER_KILL_FED,
   MAX_GLORPS,
@@ -21,6 +24,7 @@ import {
   SCAVENGER,
 } from '@/sim/config'
 import { nearestCorpse, removeCorpse } from '@/sim/corpses'
+import { noteDodge } from '@/sim/encounters'
 import { consumeGrass, fillGrass } from '@/sim/grass'
 import { DEATH_CAUSE, recordDeath } from '@/sim/lineage'
 import {
@@ -89,10 +93,23 @@ export const grazePrey = (world: World, dt: number): void => {
 }
 
 /**
+ * How dodgeable a hunter's lunge is under `DODGE_LUNGE`: its speed at contact
+ * relative to the reference, clamped. Always 1 when lunge dodging is off.
+ */
+const lungeFactor = (world: World, hunter: number): number => {
+  if (!DODGE_LUNGE.enabled) return 1
+  const speed = Math.hypot(world.vx[hunter], world.vy[hunter])
+  const factor = speed / DODGE_LUNGE.referenceSpeed
+  if (factor < DODGE_LUNGE.minFactor) return DODGE_LUNGE.minFactor
+  return factor > DODGE_LUNGE.maxFactor ? DODGE_LUNGE.maxFactor : factor
+}
+
+/**
  * Chance the prey dodges a specific attacker. Every point of the prey's own
  * agility adds `DODGE_CHANCE_PER_AGILITY_POINT`, so agility pays off even
  * without an edge; each point it outscores the hunter by adds
  * `DODGE_CHANCE_PER_ADVANTAGE_POINT` on top, so winning the contest pays more.
+ * Under `DODGE_LUNGE` the sum scales with how fast the hunter is lunging.
  * Multiplied by the prey's mutation factor (jumper doubles it), capped at
  * `DODGE_CHANCE_MAX`.
  */
@@ -107,6 +124,7 @@ export const dodgeChance = (
   const chance =
     (agility * DODGE_CHANCE_PER_AGILITY_POINT +
       advantage * DODGE_CHANCE_PER_ADVANTAGE_POINT) *
+    lungeFactor(world, hunter) *
     mutationDodgeChanceMultiplier(world.mutations[prey])
   return chance < DODGE_CHANCE_MAX ? chance : DODGE_CHANCE_MAX
 }
@@ -168,12 +186,26 @@ const triggerDodge = (world: World, hunter: number, prey: number): void => {
   world.vx[prey] = directionX * dodgeSpeed
   world.vy[prey] = directionY * dodgeSpeed
 
+  if (DODGE_LOSES_TRACK_SECONDS > 0) {
+    world.lostId[hunter] = world.id[prey]
+    world.lostTimer[hunter] = DODGE_LOSES_TRACK_SECONDS
+  }
+  if (DODGE_EXHAUSTS_HUNTER) {
+    world.stamina[hunter] = 0
+    world.exhausted[hunter] = 1
+  }
+
+  noteDodge(world, hunter, prey)
   world.dodges += 1
 }
 
-/** Count down active dodge darts. */
+/** Count down active dodge darts and hunters' lost-track timers. */
 export const tickDodges = (world: World, dt: number): void => {
   for (let index = 0; index < world.count; index += 1) {
+    if (world.lostTimer[index] > 0) {
+      const lost = world.lostTimer[index] - dt
+      world.lostTimer[index] = lost > 0 ? lost : 0
+    }
     if (world.dodgeTimer[index] <= 0) continue
     const next = world.dodgeTimer[index] - dt
     world.dodgeTimer[index] = next > 0 ? next : 0
@@ -204,7 +236,16 @@ export const huntPrey = (world: World, reach: number): number => {
     if (world.type[index] !== GLORP_TYPE.prey) continue
     // A dodging prey is untargetable for the whole dart.
     if (world.dodgeTimer[index] > 0) continue
-    const hunter = nearestOfType(world, index, GLORP_TYPE.hunter, reach)
+    const preyId = world.id[index]
+    // A hunter that lost track of this prey cannot catch it by bumping into it.
+    const hunter = nearestOfType(
+      world,
+      index,
+      GLORP_TYPE.hunter,
+      reach,
+      (candidate) =>
+        world.lostTimer[candidate] <= 0 || world.lostId[candidate] !== preyId,
+    )
     if (hunter < 0) continue
     if (tryDodge(world, hunter, index)) {
       triggerDodge(world, hunter, index)

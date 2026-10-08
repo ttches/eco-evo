@@ -1,6 +1,7 @@
 import { WORLD } from '@/engine/config'
 import { TAU, XorShift32, clamp, hashUnit } from '@/engine/math'
 import {
+  CLONE_COST,
   CLONE_OFFSPRING_FED_MAX,
   FED_MAX,
   GESTATION_SECONDS,
@@ -97,15 +98,12 @@ export const applyReproduction = (world: World): void => {
       [world.mutations[index]],
       world.type[index] as GlorpType,
     )
-    initOffspring(
-      world,
-      child,
-      offspringFed(world, index, CLONE_OFFSPRING_FED_MAX),
-    )
+    const childFed = offspringFed(world, index, CLONE_OFFSPRING_FED_MAX)
+    initOffspring(world, child, childFed)
     placeOffspring(world, index, child)
     recordBirth(world, child, index)
 
-    world.fed[index] = FED_MAX
+    world.fed[index] = FED_MAX - CLONE_COST * childFed
     world.cooldown[index] = traitValue('fertility', world.fertility[index])
   }
 }

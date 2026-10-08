@@ -8,6 +8,7 @@ import type { DiversityReport } from './diversity.ts'
 import type { PopulationDynamics, TypeDynamics } from './dynamics.ts'
 import type { IntegrityReport } from './integrity.ts'
 import type { Overview } from './overview.ts'
+import type { MatchedReport } from './matched.ts'
 import { LOW_N, type SelectionReport } from './selection.ts'
 import { TYPE_NAMES, type TypeName } from './types.ts'
 
@@ -20,8 +21,11 @@ export const THRESHOLDS = {
   convergedMean: 1.5,
   /** Share of the final cohort at one extreme level that marks fixation. */
   fixationShare: 0.5,
-  /** Standardized selection effect below this (all outcomes) is "no signal". */
-  neutralEffect: 0.1,
+  /**
+   * A trait whose point costs more than this share of offspring, against the
+   * matched reference trait, is "outclassed" (see `matched.ts`).
+   */
+  outclassedShare: 0.03,
   /** Share of hunters that never made a kill. */
   zeroKillWarn: 0.35,
   /** Top-decile hunters taking more than this share of kills is an elite-killer game. */
@@ -55,6 +59,7 @@ export type HealthInput = {
   dynamics: PopulationDynamics
   overview: Overview
   selection: Record<TypeName, SelectionReport>
+  matched: Record<TypeName, MatchedReport>
   diversity: Record<TypeName, DiversityReport>
   integrity: IntegrityReport
   maxGlorps: number
@@ -200,27 +205,46 @@ const predationFlags = ({ overview }: HealthInput): Flag[] => {
   return flags
 }
 
-const neutralTraitFlags = (
-  type: TypeName,
-  selection: SelectionReport,
-): Flag[] =>
-  selection.traits
-    .filter((trait) => trait.verdict === 'neutral')
-    .map((trait) => {
-      const strongest = Math.max(
-        ...Object.values(trait.effect).map((value) => Math.abs(value ?? 0)),
-      )
-      return flag(
+/**
+ * Judged against same-birth-window peers: a trait that clearly loses to the
+ * reference is outclassed, and the reference beating every trait dominates.
+ */
+const matchedTraitFlags = (type: TypeName, matched: MatchedReport): Flag[] => {
+  const flags: Flag[] = []
+  const losing = matched.traits.filter(
+    (trait) =>
+      trait.verdict === 'loses to' &&
+      (trait.offspringShare ?? 0) <= -THRESHOLDS.outclassedShare,
+  )
+  for (const trait of losing) {
+    flags.push(
+      flag(
         'info',
-        `${type}-${trait.trait}-neutral`,
-        `${type} ${trait.trait} shows no selection signal (max |effect| ${strongest.toFixed(2)} < ${THRESHOLDS.neutralEffect}): possibly a dead stat`,
-      )
-    })
+        `${type}-${trait.trait}-outclassed`,
+        `${type} ${trait.trait} loses to ${matched.reference}: moving a point from ${matched.reference} into ${trait.trait} costs ${pct(-(trait.offspringShare ?? 0))} offspring`,
+      ),
+    )
+  }
+  if (
+    matched.traits.length > 0 &&
+    matched.traits.every((trait) => trait.verdict === 'loses to')
+  ) {
+    flags.push(
+      flag(
+        'warn',
+        `${type}-${matched.reference}-dominant`,
+        `${type} ${matched.reference} beats every other trait: no other point is worth having`,
+      ),
+    )
+  }
+  return flags
+}
 
 /** Traits that pinned to an extreme, or that the population stopped caring about. */
 const traitFlags = (type: TypeName, input: HealthInput): Flag[] => {
   const diversity = input.diversity[type]
   const selection = input.selection[type]
+  const matched = input.matched[type]
   const last = [...diversity.rows].reverse().find((row) => row.epoch >= 0)
   if (!last || last.n < THRESHOLDS.minCohortForTraits) return []
 
@@ -251,7 +275,7 @@ const traitFlags = (type: TypeName, input: HealthInput): Flag[] => {
     }
   }
   if (selection.n >= LOW_N) {
-    flags.push(...neutralTraitFlags(type, selection))
+    flags.push(...matchedTraitFlags(type, matched))
   } else {
     flags.push(
       flag(

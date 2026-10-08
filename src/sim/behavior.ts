@@ -1,5 +1,6 @@
 import {
   HUNGER,
+  HUNTER_REST_WHEN_EXHAUSTED,
   HUNTER_SIGHT,
   HUNTER_SPRINT_MULTIPLIER,
   MATE_SEEKING,
@@ -10,9 +11,11 @@ import {
   PREY_FLEE,
   SCAVENGER,
   STEER_RATE,
+  TRACTION,
   WALK_SPEED,
 } from '@/sim/config'
 import { nearestCorpse } from '@/sim/corpses'
+import { noteFlight } from '@/sim/encounters'
 import { nearestGrassTile } from '@/sim/grass'
 import { isEligibleMate } from '@/sim/mate'
 import {
@@ -140,6 +143,7 @@ const withinSight = (
  */
 const chasePrey: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
+  if (HUNTER_REST_WHEN_EXHAUSTED && world.exhausted[index] === 1) return null
   const prey = nearestOfType(
     world,
     index,
@@ -148,6 +152,12 @@ const chasePrey: Drive = (world, index, dt) => {
     (candidate) => {
       // A dodging prey is untargetable, so the search skips it entirely.
       if (world.dodgeTimer[candidate] > 0) return false
+      // Neither is one that just juked this hunter, while it has lost track.
+      if (
+        world.lostTimer[index] > 0 &&
+        world.lostId[index] === world.id[candidate]
+      )
+        return false
       // Camouflaged prey are only spotted within a fraction of that range.
       const sight = camouflageSightFactor(world.mutations[candidate])
       if (sight === 1) return true
@@ -192,6 +202,7 @@ const fleeHunters: Drive = (world, index, dt) => {
     (candidate) => mutationScaresPrey(world.mutations[candidate]),
   )
   if (hunter < 0) return null
+  noteFlight(world, index)
   const sprint = canSprint(world, index)
   return steerFlee(
     world,
@@ -321,16 +332,44 @@ export const computeSteering = (
   return applyPregnancy(world, index, steering)
 }
 
+/** Slip per unit of excess speed at each `agility` level; see `TRACTION`. */
+const SLIP_BY_LEVEL = (() => {
+  const table = new Float64Array(TRAIT_MAX + 1)
+  for (let level = TRAIT_MIN; level <= TRAIT_MAX; level += 1) {
+    table[level] = scaleTrait(
+      'agility',
+      level,
+      TRACTION.slipAtMinAgility,
+      TRACTION.slipAtMaxAgility,
+    )
+  }
+  return table
+})()
+
+/**
+ * This step's steering blend for one glorp. Without traction everyone turns at
+ * `STEER_RATE`; with it, speed above `TRACTION.referenceSpeed` loosens the grip
+ * unless agility holds it.
+ */
+const steerBlend = (world: World, index: number, dt: number): number => {
+  const speed = Math.hypot(world.vx[index], world.vy[index])
+  if (speed <= TRACTION.referenceSpeed) return 1 - Math.exp(-STEER_RATE * dt)
+  const excess = (speed - TRACTION.referenceSpeed) / TRACTION.referenceSpeed
+  const rate = STEER_RATE / (1 + excess * SLIP_BY_LEVEL[world.agility[index]])
+  return 1 - Math.exp(-rate * dt)
+}
+
 /** Steer every glorp's velocity toward its desired velocity. */
 export const updateBehavior = (world: World, dt: number): void => {
   rebuildSpatialGrid(world)
-  const blend = 1 - Math.exp(-STEER_RATE * dt)
+  const fixedBlend = 1 - Math.exp(-STEER_RATE * dt)
   for (let index = 0; index < world.count; index += 1) {
     const steering = computeSteering(world, index, dt)
     if (world.sprinting[index] === 0 && steering.sprint) {
       world.sprintStarts += 1
     }
     world.sprinting[index] = steering.sprint ? 1 : 0
+    const blend = TRACTION.enabled ? steerBlend(world, index, dt) : fixedBlend
     world.vx[index] += (steering.x - world.vx[index]) * blend
     world.vy[index] += (steering.y - world.vy[index]) * blend
   }

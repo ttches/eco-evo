@@ -185,6 +185,10 @@ const person = (over: Partial<Individual>): Individual => ({
   epoch: 0,
   traits: [4, 4, 4, 4],
   mutations: 0,
+  flights: 0,
+  escapes: 0,
+  dodges: 0,
+  whiffs: 0,
   ...over,
 })
 

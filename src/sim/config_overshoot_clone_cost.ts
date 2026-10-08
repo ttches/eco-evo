@@ -1,5 +1,5 @@
-// VARIANT: traction (fast glorps turn wide) + dodge chance scales with the hunter's lunge speed + a juked hunter loses track for 2s (recommended)
-// Changed from config.ts: TRACTION.enabled, DODGE_LUNGE.enabled, DODGE_LOSES_TRACK_SECONDS. Rename to config.ts to play it.
+// VARIANT: overshoot + cloning costs half the baby's energy + endurance saves more hunger (endurance clearly wins scarcity, but slower pace)
+// Changed from config.ts: TRACTION.enabled, DODGE_LUNGE.enabled, DODGE_LOSES_TRACK_SECONDS, CLONE_COST, ENDURANCE.drainFactorAtMax. Rename to config.ts to play it.
 
 import { TRAIT_BASE, TRAIT_KEYS, traitValue } from '@/sim/traits'
 
@@ -60,7 +60,7 @@ export const ENDURANCE = {
    * glorp at `TRAIT_MAX` burns hunger 20% slower than at level 0. Interpolated
    * linearly across levels, so each point trims drain a little.
    */
-  drainFactorAtMax: 0.85,
+  drainFactorAtMax: 0.8,
 } as const
 
 /** Below this fed value a glorp becomes hungry and starts seeking food. */
@@ -90,7 +90,7 @@ export const HUNTER_ASEXUAL = true
  * cloning free: the parent stays full and the child's energy comes from
  * nowhere, so reproduction is limited by cooldown alone.
  */
-export const CLONE_COST = 0
+export const CLONE_COST = 0.5
 
 /** Energy each parent spends at conception. */
 export const MATE_ENERGY_COST = 0
@@ -190,7 +190,7 @@ export const STOAT = {
    * Multiplier on hunger drain: 3 means it burns three times as fast. Applied
    * after the `endurance` modifier, mirroring how cold blooded cuts the drain.
    */
-  hungerDrain: 2,
+  hungerDrain: 3,
 } as const
 
 /**

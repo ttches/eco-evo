@@ -102,6 +102,21 @@ const selectionMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
   return h
 }
 
+/** Matched trait value: offspring share and eaten/escape change per point. */
+const matchedMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
+  const h: Headline = {}
+  for (const trait of analysis.matched[type].traits) {
+    const prefix = `${type}.vs.${trait.trait}`
+    h[`${prefix}.offspring`] = round(trait.offspringShare, 4)
+    h[`${prefix}.eaten`] = round(trait.estimates.eaten?.perPoint ?? null, 4)
+    if (trait.estimates.escape)
+      h[`${prefix}.escape`] = round(trait.estimates.escape.perPoint, 4)
+    if (trait.estimates.kills)
+      h[`${prefix}.kills`] = round(trait.estimates.kills.perPoint, 3)
+  }
+  return h
+}
+
 const mutationMetrics = (analysis: RunAnalysis, type: TypeName): Headline => {
   const report = analysis.mutations[type]
   const h: Headline = {
@@ -134,6 +149,7 @@ export const buildHeadline = (
       ...mortalityMetrics(analysis, type),
       ...buildMetrics(analysis, type),
       ...selectionMetrics(analysis, type),
+      ...matchedMetrics(analysis, type),
       ...mutationMetrics(analysis, type),
     })),
   ),

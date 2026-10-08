@@ -5,7 +5,9 @@ import {
   buildOverrides,
   parseArgs,
   resolveSeeds,
+  parseBuild,
   timestamp,
+  validateOverrideKeys,
 } from './args.ts'
 
 describe('parseArgs', () => {
@@ -92,5 +94,66 @@ describe('buildOverrides', () => {
 describe('timestamp', () => {
   it('is a sortable local date-time', () => {
     expect(timestamp(new Date(2026, 8, 30, 4, 5, 6))).toBe('20260930-040506')
+  })
+})
+
+describe('validateOverrideKeys', () => {
+  const surface = {
+    config: { HUNGER: 70, MOVEMENT: { walkFactor: 0.45 } },
+    traits: { speed: {} },
+  }
+
+  it('accepts real top-level, nested and trait keys', () => {
+    expect(() =>
+      validateOverrideKeys(
+        { HUNGER: 80, 'MOVEMENT.walkFactor': 0.5, 'TRAITS.speed': {} },
+        surface,
+      ),
+    ).not.toThrow()
+  })
+
+  it('names every misspelled key instead of running the default config', () => {
+    expect(() =>
+      validateOverrideKeys(
+        {
+          HUNGRY: 80,
+          'MOVEMENT.walkFactorr': 2,
+          'HUNGER.x': 1,
+          'TRAITS.sped': {},
+        },
+        surface,
+      ),
+    ).toThrow(/HUNGRY, MOVEMENT.walkFactorr, HUNGER.x, TRAITS.sped/)
+  })
+})
+
+describe('benchmark and lab-control flags', () => {
+  it('parses a chase benchmark with builds', () => {
+    const args = parseArgs([
+      '--bench',
+      'chase',
+      '--prey-build',
+      '7-3-0-2',
+      '--hunter-build',
+      '5-3-1-3',
+      '--trials',
+      '50',
+      '--hold-hunters',
+      '20',
+    ])
+    expect(args).toMatchObject({
+      bench: 'chase',
+      preyBuild: [7, 3, 0, 2],
+      hunterBuild: [5, 3, 1, 3],
+      trials: 50,
+      holdHunters: 20,
+    })
+    expect(() => parseArgs(['--bench', 'race'])).toThrow(/Invalid --bench/)
+  })
+
+  it('rejects builds with the wrong length or out-of-range levels', () => {
+    expect(parseBuild('--prey-build', '1-2-3-4')).toEqual([1, 2, 3, 4])
+    expect(() => parseBuild('--prey-build', '1-2-3')).toThrow(/expected 4/)
+    expect(() => parseBuild('--prey-build', '9-2-3-4')).toThrow(/Invalid/)
   })
 })

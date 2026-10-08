@@ -46,6 +46,12 @@ export type Individual = {
   traits: number[]
   /** Mutation bitmask as rolled or inherited at birth (see `@/sim/mutations`). */
   mutations: number
+  /** Prey: hunters fled from, and flights that ended alive (`@/sim/encounters`). */
+  flights: number
+  escapes: number
+  /** Prey: catches dodged. Hunters: catches a prey dodged. */
+  dodges: number
+  whiffs: number
 }
 
 export type IndividualTable = {
@@ -129,6 +135,10 @@ export const buildTable = (
       epoch: founder ? -1 : epochOf(log.bornAt[id], endedAt, epochs),
       traits: TRAIT_KEYS.map((key) => log.traits[key][id]),
       mutations: log.mutations[id],
+      flights: log.flights[id],
+      escapes: log.escapes[id],
+      dodges: log.dodges[id],
+      whiffs: log.whiffs[id],
     })
   }
   return { traitKeys: TRAIT_KEYS, epochs, runs: [{ seed, endedAt }], rows }
@@ -168,11 +178,19 @@ const COLUMNS = [
   'eligible',
   'epoch',
   'mutations',
+  'flights',
+  'escapes',
+  'dodges',
+  'whiffs',
 ] as const
 
 /** Values for columns absent from older `individuals.json` files. */
 const COLUMN_DEFAULTS: Partial<Record<(typeof COLUMNS)[number], number>> = {
   mutations: 0,
+  flights: 0,
+  escapes: 0,
+  dodges: 0,
+  whiffs: 0,
 }
 
 /** Compact columnar-ish JSON: a header plus one array per row. */

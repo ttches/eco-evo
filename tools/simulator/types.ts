@@ -20,6 +20,8 @@ export type RunSettings = {
   /** Near-crash floors; null derives them from the starting population. */
   floorPrey: number | null
   floorHunter: number | null
+  /** Lab control: respawn founder hunters to keep at least this many; 0 is off. */
+  holdHunters: number
 }
 
 /** One simulation run requested by the CLI. */

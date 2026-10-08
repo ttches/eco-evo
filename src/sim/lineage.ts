@@ -41,6 +41,12 @@ export type LineageLog = {
   traits: Record<TraitKey, Float32Array>
   /** Mutation bitmask as rolled or inherited at birth; never changes afterward. */
   mutations: Uint32Array
+  /** Prey: hunters fled from, and how many of those flights ended alive. */
+  flights: Uint32Array
+  escapes: Uint32Array
+  /** Prey: catches dodged. Hunters: catches a prey dodged. */
+  dodges: Uint32Array
+  whiffs: Uint32Array
   /** User-given names, sparse because most glorps are never named. */
   readonly names: Map<number, string>
 }
@@ -81,6 +87,10 @@ export const createLineage = (capacity = INITIAL_CAPACITY): LineageLog => ({
   killer: new Int32Array(capacity),
   traits: createTraitColumns(capacity),
   mutations: new Uint32Array(capacity),
+  flights: new Uint32Array(capacity),
+  escapes: new Uint32Array(capacity),
+  dodges: new Uint32Array(capacity),
+  whiffs: new Uint32Array(capacity),
   names: new Map(),
 })
 
@@ -106,6 +116,10 @@ const grow = (log: LineageLog): void => {
   log.deathCause = grown(log.deathCause, capacity)
   log.killer = grown(log.killer, capacity)
   log.mutations = grown(log.mutations, capacity)
+  log.flights = grown(log.flights, capacity)
+  log.escapes = grown(log.escapes, capacity)
+  log.dodges = grown(log.dodges, capacity)
+  log.whiffs = grown(log.whiffs, capacity)
   for (const key of TRAIT_KEYS)
     log.traits[key] = grown(log.traits[key], capacity)
   log.capacity = capacity

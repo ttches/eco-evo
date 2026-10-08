@@ -190,7 +190,7 @@ export const STOAT = {
    * Multiplier on hunger drain: 3 means it burns three times as fast. Applied
    * after the `endurance` modifier, mirroring how cold blooded cuts the drain.
    */
-  hungerDrain: 2,
+  hungerDrain: 3,
 } as const
 
 /**

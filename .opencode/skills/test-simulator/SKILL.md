@@ -47,6 +47,8 @@ npm run test:simulator -- --seeds 1,2,3,4 --seconds 600 --jobs 4 --out runs/swee
 | `--out <dir>` / `--label <name>`          | output directory / suffix for the default one                                        | `runs/<timestamp>` |
 | `--config <file>` / `--set KEY=VALUE`     | config overlays / overrides (repeatable)                                             | game config        |
 | `--baseline <path>`                       | run or sweep directory (or `sweep.json`) to compare against                          | –                  |
+| `--hold-hunters <n>`                      | lab control: respawn founder hunters to keep at least n alive (steady pressure)      | `0` (off)          |
+| `--bench chase`                           | one-prey-vs-one-hunter benchmark instead of ecosystem runs (see below)               | –                  |
 | `--no-csv`                                | skip `lineage.csv` / `timeseries.csv`                                                | –                  |
 | `--quiet`                                 | suppress the printed report                                                          | –                  |
 
@@ -74,7 +76,23 @@ export const HUNTER_SIGHT = 150
 npm run test:simulator -- --set HUNGER=85 --set MOVEMENT.walkFactor=0.6
 ```
 
-With no `--config`/`--set`, the real game config is used directly.
+With no `--config`/`--set`, the real game config is used directly. A `--set` key
+that names no config export (or no property of a config object, or no trait) is
+an error, so a typo can never silently run the defaults.
+
+## Chase benchmark
+
+```bash
+npm run test:simulator -- --bench chase --hunter-build 6-3-1-2 --set TRACTION.enabled=true
+```
+
+One prey vs one hunter, no grass, food pinned. For each prey trait it sweeps
+level 0..7 (other prey traits at `--prey-build`, default all 3) and reports
+% caught and mean seconds to catch over `--trials` encounters (default 200,
+`--bench-seconds` 30, `--bench-distance` 200). Levels are set directly, so the
+trait budget does not apply. Use it to see what a point buys in one chase
+before running sweeps; "time to catch" matters even at 100% caught, because in
+a herd a longer chase lets the hunter switch to someone else.
 
 `--set` keys may be a top-level name or one dotted level (`MOVEMENT.walkFactor`);
 deeper keys are rejected rather than silently mangled. Constants defined in terms
@@ -118,13 +136,23 @@ and LLMs. Sections, and the design question each answers:
   kills per hunter-minute, how concentrated kills are (top-10% share, gini),
   hunters that never killed, and the top killers with their builds. Hunters eaten
   at birth by a starving parent are counted separately.
+- **Matched selection** (per type, read this first): what one point is worth when
+  moved out of `fertility` (the intended stat sink) into each other trait, judged
+  only against glorps born in the same run within the same 30s window. This
+  removes the biggest confounds of pooled numbers (late births face more
+  hunters; hunter-extinct seeds sit beside healthy ones). Reports offspring/pt
+  (± se), lifespan, eaten and escape (prey) or kills (hunters), with a verdict
+  beats / on par / loses to. Headline keys `prey.vs.speed.offspring` etc.
+  Flags: `<type>-<trait>-outclassed` (costs >3% offspring) and
+  `<type>-fertility-dominant` (fertility beats every trait).
 - **Selection** (per type): for each trait the drift from founders to the final
   cohort, the share pinned at level 1 / 7, and a budget-aware selection gradient
   (`effect`) against lifespan, offspring and (hunters) kills. Traits share a point
   budget, so naive correlations mislead; `effect` measures moving one point into
   the trait from the average of the others, in outcome-sd per trait-sd. Also an
-  outcome-by-level table. Verdicts: strong advantage / advantage / neutral
-  ("possibly a dead stat") / disadvantage / trade-off.
+  outcome-by-level table. Verdicts: strong advantage / advantage / neutral /
+  disadvantage / trade-off. Pooled over time and seeds, so prefer matched
+  selection for "is this trait worth a point".
 - **Performer cohorts**: top-decile by offspring, by lifespan, by kills, and the
   shortest-lived decile, each with trait mean and gap to the population in sd.
   Big gap = that trait separates winners.

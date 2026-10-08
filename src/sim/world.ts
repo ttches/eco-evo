@@ -8,6 +8,7 @@ import {
 } from '@/sim/config'
 import { updateBehavior } from '@/sim/behavior'
 import { createCorpses, tickCorpses } from '@/sim/corpses'
+import { tickFlights } from '@/sim/encounters'
 import { createGrass, regrowGrass } from '@/sim/grass'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
@@ -92,6 +93,8 @@ export const step = (world: World, deltaSeconds: number): void => {
   updateBehavior(world, deltaSeconds)
   integrateMotion(world, deltaSeconds)
   applyEating(world, deltaSeconds)
+  // After eating, so a prey caught mid-flight never counts as escaped.
+  tickFlights(world, deltaSeconds)
   // Cooldowns tick once per step, then both reproduction paths read them.
   tickCooldowns(world, deltaSeconds)
   // Reproduction must run before metabolism: eating tops `fed` up to exactly

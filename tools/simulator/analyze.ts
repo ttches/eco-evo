@@ -16,6 +16,7 @@ import {
   type PopulationDynamics,
 } from './analysis/dynamics.ts'
 import { assessHealth, type Health } from './analysis/health.ts'
+import { analyzeMatched, type MatchedReport } from './analysis/matched.ts'
 import { buildHeadline, type Headline } from './analysis/headline.ts'
 import { buildTable, type IndividualTable } from './analysis/individuals.ts'
 import { checkIntegrity, type IntegrityReport } from './analysis/integrity.ts'
@@ -83,6 +84,8 @@ export type BuildTables = { frequent: BuildRow[]; best: BuildRow[] }
 export type IndividualAnalysis = {
   overview: Overview
   selection: Record<TypeName, SelectionReport>
+  /** Trait value against same-run, same-birth-window peers; see `matched`. */
+  matched: Record<TypeName, MatchedReport>
   performers: Record<TypeName, PerformerReport>
   diversity: Record<TypeName, DiversityReport>
   builds: Record<TypeName, BuildTables>
@@ -127,6 +130,7 @@ export const analyzeIndividuals = (
 ): IndividualAnalysis => ({
   overview: analyzeOverview(table),
   selection: perType((type) => analyzeSelection(table, type)),
+  matched: perType((type) => analyzeMatched(table, type)),
   performers: perType((type) => analyzePerformers(table, type)),
   diversity: perType((type) => analyzeDiversity(table, type, bounds)),
   builds: perType((type) => ({

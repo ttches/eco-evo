@@ -4,6 +4,7 @@
  */
 import { MUTATIONS, MUTATION_KEYS } from '@/sim/mutations'
 import { TRAIT_KEYS } from '@/sim/traits'
+import { MATCHED_REFERENCE } from '../analysis/matched.ts'
 import { TYPE_NAMES } from '../analysis/types.ts'
 
 export type MetricDef = {
@@ -166,6 +167,36 @@ export const METRICS: MetricDef[] = [
         key: `traitSd.${key}`,
       })),
     ],
+  ),
+  ...TYPE_NAMES.flatMap((type) =>
+    TRAIT_KEYS.filter((key) => key !== MATCHED_REFERENCE).flatMap((key) => {
+      const group = `Matched value vs ${MATCHED_REFERENCE}: ${type}`
+      const extra =
+        type === 'hunter'
+          ? [{ label: `${key} -> kills / pt`, key: `${type}.vs.${key}.kills` }]
+          : [
+              {
+                label: `${key} -> escape / pt`,
+                key: `${type}.vs.${key}.escape`,
+                digits: 3,
+              },
+            ]
+      return [
+        {
+          group,
+          label: `${key} -> offspring / pt`,
+          key: `${type}.vs.${key}.offspring`,
+          digits: 3,
+        },
+        {
+          group,
+          label: `${key} -> eaten / pt`,
+          key: `${type}.vs.${key}.eaten`,
+          digits: 3,
+        },
+        ...extra.map((entry) => ({ group, ...entry })),
+      ]
+    }),
   ),
   ...TYPE_NAMES.flatMap((type) =>
     TRAIT_KEYS.flatMap((key) =>

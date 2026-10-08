@@ -6,7 +6,10 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { FIXED_STEP } from '@/engine/config'
-import { seedPopulation } from '@/sim/spawn'
+import { seedPopulation, spawnRandom } from '@/sim/spawn'
+import { FED_MAX } from '@/sim/config'
+import { traitValue } from '@/sim/traits'
+import { GLORP_TYPE } from '@/sim/types'
 import { createWorld, step } from '@/sim/world'
 import { countAlive, sampleWorld, type SampleRow } from './analysis/sampling.ts'
 import { analyzeWorld, defaultFloors } from './analyze.ts'
@@ -57,6 +60,21 @@ const seedWorld = (settings: RunSettings) => {
   return world
 }
 
+/**
+ * Lab control for `--hold-hunters`: top hunters back up to the floor with fresh
+ * founders, fed and on cooldown like the starting ones, so selection can be
+ * measured under steady predator pressure. Not a game mechanic.
+ */
+const holdHunters = (world: ReturnType<typeof createWorld>, floor: number) => {
+  let missing = floor - countAlive(world).hunter
+  while (missing > 0) {
+    const hunter = spawnRandom(world, GLORP_TYPE.hunter, FED_MAX)
+    if (hunter < 0) return
+    world.cooldown[hunter] = traitValue('fertility', world.fertility[hunter])
+    missing -= 1
+  }
+}
+
 const advance = (
   world: ReturnType<typeof createWorld>,
   settings: RunSettings,
@@ -71,6 +89,7 @@ const advance = (
 
   for (let index = 0; index < totalSteps; index += 1) {
     step(world, dt)
+    if (settings.holdHunters > 0) holdHunters(world, settings.holdHunters)
     steps += 1
     if (steps % sampleEvery === 0) timeseries.push(sampleWorld(world))
     if (steps % checkEvery === 0) {

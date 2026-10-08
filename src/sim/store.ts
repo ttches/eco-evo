@@ -33,6 +33,11 @@ const STATE_COLUMNS = {
   /** Committed escape direction during a dodge dart. */
   dodgeDirX: Float32Array,
   dodgeDirY: Float32Array,
+  /** Hunters: stable id of a prey that juked them, ignored while `lostTimer` runs. */
+  lostId: Uint32Array,
+  lostTimer: Float32Array,
+  /** Seconds until an ongoing flight counts as an escape; see `encounters`. */
+  flightCalm: Float32Array,
   /** Bitmask of rogue-like mutations held; see `mutations`. */
   mutations: Uint32Array,
 } as const

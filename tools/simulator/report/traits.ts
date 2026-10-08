@@ -5,6 +5,7 @@
  */
 import { TRAIT_MAX, TRAIT_MIN } from '@/sim/traits'
 import type { DiversityReport } from '../analysis/diversity.ts'
+import type { MatchedOutcome, MatchedReport } from '../analysis/matched.ts'
 import type { Cohort, PerformerReport } from '../analysis/performers.ts'
 import {
   LOW_N,
@@ -23,6 +24,61 @@ const OUTCOME_HEADER: Record<Outcome, string> = {
   lifespan: 'life',
   offspring: 'offsp',
   kills: 'kills',
+}
+
+// ------------------------------------------------------------------ matched
+
+const MATCHED_HEADER: Record<MatchedOutcome, string> = {
+  offspring: 'offspring / pt',
+  lifespan: 'life / pt',
+  eaten: 'eaten / pt',
+  escape: 'escape / pt',
+  kills: 'kills / pt',
+}
+
+const matchedCell = (
+  report: MatchedReport,
+  outcome: MatchedOutcome,
+  trait: MatchedReport['traits'][number],
+): string => {
+  const estimate = trait.estimates[outcome]
+  if (!estimate) return 'n/a'
+  if (outcome === 'offspring')
+    return `${signedPct(trait.offspringShare, 1)} ±${pct(
+      report.meanOffspring > 0 ? estimate.se / report.meanOffspring : null,
+      1,
+    )}`
+  if (outcome === 'eaten' || outcome === 'escape')
+    return `${signed(estimate.perPoint * 100, 1)}pp`
+  if (outcome === 'lifespan') return `${signed(estimate.perPoint, 1)}s`
+  return signed(estimate.perPoint, 2)
+}
+
+/** Value of each trait point vs the reference, among same-window peers. */
+export const matchedSection = (report: MatchedReport): string => {
+  if (report.traits.every((trait) => Object.keys(trait.estimates).length === 0))
+    return `Matched selection: not enough ${report.type} to compare.`
+  return [
+    `Matched selection: moving one point from **${report.reference}** into each trait, judged only against`,
+    `glorps born in the same run within the same ${report.windowSeconds}s window (so a late, hunter-heavy birth is`,
+    `never compared with an early, safe one). offspring ± is one standard error; "beats" / "loses to" need`,
+    `>= 2 se and >= 2% of mean offspring. eaten = chance of dying to a hunter; escape = share of flights survived.`,
+    '',
+    table(
+      [
+        'trait',
+        ...report.outcomes.map((outcome) => MATCHED_HEADER[outcome]),
+        'verdict',
+      ],
+      report.traits.map((trait) => [
+        trait.trait,
+        ...report.outcomes.map((outcome) =>
+          matchedCell(report, outcome, trait),
+        ),
+        `${trait.verdict} ${report.reference}`,
+      ]),
+    ),
+  ].join('\n')
 }
 
 // ------------------------------------------------------------------ selection
@@ -288,6 +344,8 @@ export const individualSections = (analysis: IndividualAnalysis): string =>
   TYPE_NAMES.map((type) =>
     [
       `### ${type === 'prey' ? 'Prey' : capitalize(`${type}s`)}`,
+      '',
+      matchedSection(analysis.matched[type]),
       '',
       selectionSection(analysis.selection[type], analysis.diversity[type]),
       '',
