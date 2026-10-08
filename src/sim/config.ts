@@ -413,7 +413,7 @@ export const DODGE_CHANCE_PER_AGILITY_POINT = 0.03
  * Extra dodge chance per agility point the prey has over its hunter, added on
  * top of the baseline: the reward for winning the agility contest.
  */
-export const DODGE_CHANCE_PER_ADVANTAGE_POINT = 0.25
+export const DODGE_CHANCE_PER_ADVANTAGE_POINT = 0.2
 
 /**
  * When true, a dodged hunter whiffs its lunge: its stamina empties and it is
