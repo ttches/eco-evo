@@ -50,4 +50,15 @@ export const MUTATION_CANDIDATES: Record<
     { body: 'raccoon-bandit' },
     { body: 'bone-ribs' },
   ],
+  // Placeholders reusing existing sheens until the pack art pass.
+  packLeader: [
+    { body: 'gold' },
+    { body: 'fire-glimmer' },
+    { body: 'sahara-gold' },
+  ],
+  packAnimal: [
+    { body: 'ore-vein' },
+    { body: 'fish-scales' },
+    { body: 'lichen-patina' },
+  ],
 }

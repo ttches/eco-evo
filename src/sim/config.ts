@@ -249,6 +249,33 @@ export const SCAVENGER = {
   grazeCooldown: 3,
 } as const
 
+/**
+ * Pack Leader / Pack Animal levers. Hunters only. A leader never clones and is
+ * always the mother when it mates; every child it bears is a sterile pack
+ * animal that follows it. Members hold sunflower-spiral slots around the
+ * leader, starting behind it, so the pack spreads out evenly instead of
+ * stacking. Sweep with e.g.
+ * `--set PACK.shareEnergy=...` or `--set PACK.leash=...`.
+ */
+export const PACK = {
+  /** Bonus energy every other pack member gains when one member eats. */
+  shareEnergy: 10,
+  /**
+   * Sunflower radius scale, in world units: slot k sits at
+   * `spacing * sqrt(k + 1)` from the leader. 26 keeps the nearest slot clear
+   * of the leader's body (two radii is 24).
+   */
+  spacing: 26,
+  /** Beyond this distance from its leader a member stops hunting to regroup. */
+  leash: 180,
+  /** How far, in world units, a slot drifts inside its own cell. */
+  wobble: 8,
+  /** Radians per second of the slot drift. */
+  wobbleRate: 0.6,
+  /** How hard a member is pulled toward its slot, per second. */
+  stiffness: 2.5,
+} as const
+
 // ---------------------------------------------------------------------------
 // Movement & stamina
 // ---------------------------------------------------------------------------
@@ -381,14 +408,14 @@ export const PREY_CONSUME_PER_SECOND = 0.5
 export const PREY_ENERGY_PER_SECOND = 18
 
 /** Energy gained from a successful hunt. */
-export const HUNTER_KILL_FED = 30
+export const HUNTER_KILL_FED = 35
 
 // ---------------------------------------------------------------------------
 // Predation & combat
 // ---------------------------------------------------------------------------
 
 /** Starving hunters may prey on other hunters when this is true. */
-export const CANNIBALISM = true
+export const CANNIBALISM = false
 
 /** Below this fed a hunter will prey on other hunters. */
 export const CANNIBAL_HUNGER = 20

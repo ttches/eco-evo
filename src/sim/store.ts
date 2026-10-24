@@ -40,6 +40,16 @@ const STATE_COLUMNS = {
   flightCalm: Float32Array,
   /** Bitmask of rogue-like mutations held; see `mutations`. */
   mutations: Uint32Array,
+  /**
+   * Pack animals: their leader's id + 1, so the zeroed default means "no
+   * pack". Leaders leave it 0; their own pack key is `id + 1` (see `packKey`).
+   */
+  pack: Uint32Array,
+  /**
+   * Pack animals: their slot in the leader's sunflower formation. Leaders: the
+   * next slot to hand out to a newborn pup.
+   */
+  packSlot: Uint32Array,
 } as const
 
 type StateColumns = {

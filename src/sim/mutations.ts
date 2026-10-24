@@ -9,6 +9,7 @@ import {
   MUTATION_BIRTH_CHANCE,
   MUTATION_INHERIT_CHANCE,
   MUTATIONS_ENABLED,
+  PACK,
   SCAVENGER,
   STEALTH,
   STOAT,
@@ -87,6 +88,21 @@ export const MUTATIONS = {
     description: `Prefers a corpse over grass or prey, sprinting to one in sight and eating it for ${SCAVENGER.energy} energy. The tile it eats on becomes full grass, which it cannot graze for ${SCAVENGER.grazeCooldown}s.`,
     exclusive: null,
   },
+  packLeader: {
+    bit: 1 << 6,
+    name: 'Pack Leader',
+    description:
+      'Never clones and is always the mother when it mates. Every pup it bears joins its pack as a Pack Animal. When it dies, its oldest packmate takes over. Predators only.',
+    exclusive: GLORP_TYPE.hunter,
+  },
+  packAnimal: {
+    bit: 1 << 7,
+    name: 'Pack Animal',
+    description: `Born into a leader's pack. Cannot clone or mate. Follows its leader, and gains ${PACK.shareEnergy} energy whenever a packmate eats. Predators only.`,
+    exclusive: GLORP_TYPE.hunter,
+    /** Only a pack leader's births grant it; never rolled or inherited. */
+    rollable: false,
+  },
 } as const
 
 export type MutationKey = keyof typeof MUTATIONS
@@ -126,6 +142,13 @@ export const mutationAllowedForType = (
 ): boolean =>
   MUTATIONS[key].exclusive === null || MUTATIONS[key].exclusive === type
 
+/**
+ * Whether a mutation can be rolled at birth or inherited from a parent. Pack
+ * Animal is the exception: only a pack leader's births grant it.
+ */
+export const mutationRollable = (key: MutationKey): boolean =>
+  (MUTATIONS[key] as { readonly rollable?: boolean }).rollable !== false
+
 /** Add a random not-yet-held mutation of an allowed type, if any remain. */
 const addRandomMutation = (
   random: XorShift32,
@@ -135,7 +158,9 @@ const addRandomMutation = (
   if (countMutations(mask) >= MAX_MUTATIONS) return mask
   const missing = MUTATION_BITS.filter(
     (bit, index) =>
-      (mask & bit) === 0 && mutationAllowedForType(MUTATION_KEYS[index], type),
+      (mask & bit) === 0 &&
+      mutationRollable(MUTATION_KEYS[index]) &&
+      mutationAllowedForType(MUTATION_KEYS[index], type),
   )
   if (missing.length === 0) return mask
   return mask | missing[Math.floor(random.unit() * missing.length)]
@@ -157,6 +182,7 @@ export const inheritMutations = (
   for (const parent of parentMasks) {
     for (const key of MUTATION_KEYS) {
       if ((parent & MUTATIONS[key].bit) === 0) continue
+      if (!mutationRollable(key)) continue
       if (!mutationAllowedForType(key, type)) continue
       if (random.unit() < MUTATION_INHERIT_CHANCE) {
         mask |= MUTATIONS[key].bit
@@ -232,6 +258,14 @@ export const isStealth = (mask: number): boolean =>
 /** True when the glorp's mask carries the scavenger mutation. */
 export const isScavenger = (mask: number): boolean =>
   hasMutation(mask, MUTATIONS.scavenger.bit)
+
+/** True when the glorp's mask carries the pack leader mutation. */
+export const isPackLeader = (mask: number): boolean =>
+  hasMutation(mask, MUTATIONS.packLeader.bit)
+
+/** True when the glorp's mask carries the pack animal mutation. */
+export const isPackAnimal = (mask: number): boolean =>
+  hasMutation(mask, MUTATIONS.packAnimal.bit)
 
 /**
  * Whether a mask permits sprinting. Stealth normally forbids it; the registry

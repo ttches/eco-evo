@@ -13,6 +13,7 @@ import { createGrass, regrowGrass } from '@/sim/grass'
 import { applyDeath, applyMetabolism } from '@/sim/lifecycle'
 import { createLineage, type LineageLog } from '@/sim/lineage'
 import { integrateMotion, updateStamina } from '@/sim/motion'
+import { updatePacks } from '@/sim/pack'
 import { applyEating, tickDodges, tickGrazeCooldowns } from '@/sim/predation'
 import {
   applyGestation,
@@ -48,6 +49,11 @@ export type World = RenderableWorld &
     dodges: number
     /** Cumulative corpses eaten by scavengers. */
     scavenges: number
+    /**
+     * Pack key -> live index of that pack's leader, rebuilt by `updatePacks`
+     * each step. Valid until the step's first removal.
+     */
+    readonly packLeaders: Map<number, number>
   }
 
 const DEFAULT_COUNT = START_PREY + START_HUNTERS
@@ -72,6 +78,7 @@ export const createWorld = (
     exhaustionEvents: 0,
     dodges: 0,
     scavenges: 0,
+    packLeaders: new Map(),
     grass: createGrass(effectiveSeed),
     corpses: createCorpses(),
     radius: GLORP_RADIUS,
@@ -90,6 +97,9 @@ export const step = (world: World, deltaSeconds: number): void => {
   tickCorpses(world, deltaSeconds)
   tickDodges(world, deltaSeconds)
   tickGrazeCooldowns(world, deltaSeconds)
+  // Before behavior, so members steer by a fresh leader lookup and a pack
+  // whose leader died last step has already promoted its heir.
+  updatePacks(world)
   updateBehavior(world, deltaSeconds)
   integrateMotion(world, deltaSeconds)
   applyEating(world, deltaSeconds)

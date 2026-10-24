@@ -124,6 +124,40 @@ const ScavengerIcon = () => (
   </svg>
 )
 
+/** Wolf head with pointed ears and a small crown notch, for the pack leader. */
+const PackLeaderIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M5 3l3.5 5h7L19 3l1 9-3.5 5.5L12 21l-4.5-3.5L4 12l1-9Z" />
+    <path d="M9.5 12.5h.01M14.5 12.5h.01" />
+    <path d="M10.5 16.5 12 17.5l1.5-1" />
+  </svg>
+)
+
+/** A paw print: one pad and four toes, for a pack animal. */
+const PackAnimalIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 12.5c-2.8 0-5 3-5 5.2 0 1.6 1.4 2.3 2.7 2.3.9 0 1.5-.4 2.3-.4s1.4.4 2.3.4c1.3 0 2.7-.7 2.7-2.3 0-2.2-2.2-5.2-5-5.2Z" />
+    <circle cx="5" cy="10" r="1.6" />
+    <circle cx="9" cy="5.5" r="1.6" />
+    <circle cx="15" cy="5.5" r="1.6" />
+    <circle cx="19" cy="10" r="1.6" />
+  </svg>
+)
+
 /** Icon for each mutation, in registry order. Every mutation must have an entry. */
 const MUTATION_ICONS = {
   coldBlooded: <ColdBloodedIcon />,
@@ -132,6 +166,8 @@ const MUTATION_ICONS = {
   camouflage: <CamouflageIcon />,
   stealth: <StealthIcon />,
   scavenger: <ScavengerIcon />,
+  packLeader: <PackLeaderIcon />,
+  packAnimal: <PackAnimalIcon />,
 } satisfies Record<MutationKey, ReactNode>
 
 /** The mutations a glorp holds, as a row of icons with hover descriptions. */

@@ -5,6 +5,7 @@ import {
   HUNTER_SPRINT_MULTIPLIER,
   MATE_SEEKING,
   MOVEMENT,
+  PACK,
   PREGNANT_CAN_SPRINT,
   PREGNANT_SPEED_FACTOR_MAX,
   PREGNANT_SPEED_FACTOR_MIN,
@@ -27,6 +28,7 @@ import {
   mutationSpeedFactor,
   mutationWalkFactor,
 } from '@/sim/mutations'
+import { packLeaderOf, steerToSlot } from '@/sim/pack'
 import { TRAIT_MAX, TRAIT_MIN, scaleTrait, traitValue } from '@/sim/traits'
 
 import { nearestOfType } from '@/sim/query'
@@ -245,6 +247,18 @@ const scavenge: Drive = (world, index, dt) => {
   )
 }
 
+/**
+ * A pack animal that strays past `PACK.leash` from its leader drops everything
+ * else and jogs back to its slot. Inside the leash it hunts as normal, so a
+ * pack converges on prey together.
+ */
+const regroup: Drive = (world, index) => {
+  const leader = packLeaderOf(world, index)
+  if (leader < 0) return null
+  if (withinSight(world, index, leader, PACK.leash)) return null
+  return steerToSlot(world, index, leader, jogSpeed(world, index))
+}
+
 /** Hungry prey walk to the nearest tile with grass. */
 const seekGrass: Drive = (world, index, dt) => {
   if (world.fed[index] >= HUNGER) return null
@@ -293,7 +307,8 @@ const DRIVES: Readonly<Record<GlorpType, readonly Drive[]>> = {
   // Survival first: dodge and flee outrank food. Scavenging then outranks the
   // normal meal, and a hunter treats a corpse as preferred over live prey.
   [GLORP_TYPE.prey]: [dodge, fleeHunters, scavenge, seekGrass],
-  [GLORP_TYPE.hunter]: [scavenge, chasePrey, seekMate],
+  // A straying pack animal regroups before anything else.
+  [GLORP_TYPE.hunter]: [regroup, scavenge, chasePrey, seekMate],
 }
 
 /** Pick the steering one glorp would take with no pregnancy modifier. */
@@ -302,6 +317,10 @@ const decideSteering = (world: World, index: number, dt: number): Steering => {
     const steering = drive(world, index, dt)
     if (steering) return steering
   }
+  // An idle pack animal holds its formation slot instead of wandering.
+  const leader = packLeaderOf(world, index)
+  if (leader >= 0)
+    return steerToSlot(world, index, leader, jogSpeed(world, index))
   return steerWander(world, index, walkSpeed(world, index), dt)
 }
 

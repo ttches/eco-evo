@@ -32,6 +32,7 @@ import {
   mutationDodgeChanceMultiplier,
   mutationDodgeSpeed,
 } from '@/sim/mutations'
+import { packKey, sharePackMeal } from '@/sim/pack'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { removeGlorp } from '@/sim/store'
@@ -253,6 +254,7 @@ export const huntPrey = (world: World, reach: number): number => {
     }
     const next = world.fed[hunter] + HUNTER_KILL_FED
     world.fed[hunter] = next < FED_MAX ? next : FED_MAX
+    sharePackMeal(world, hunter)
     recordDeath(world, index, DEATH_CAUSE.eaten, hunter)
     eaten[kills] = index
     kills += 1
@@ -263,7 +265,8 @@ export const huntPrey = (world: World, reach: number): number => {
 
 /**
  * Starving hunters may turn on each other, resolved by the agility contest.
- * Only rebuilds the grid when a previous pass removed glorps.
+ * Packmates are never victims of one another. Only rebuilds the grid when a
+ * previous pass removed glorps.
  */
 export const cannibalize = (
   world: World,
@@ -277,17 +280,22 @@ export const cannibalize = (
     if (world.type[index] !== GLORP_TYPE.hunter) continue
     if (cannibalEaten[index] === 1) continue
     if (world.fed[index] >= CANNIBAL_HUNGER) continue
+    // Packmates never eat each other.
+    const pack = packKey(world, index)
     const victim = nearestOfType(
       world,
       index,
       GLORP_TYPE.hunter,
       reach,
       (candidate) =>
-        cannibalEaten[candidate] === 0 && cannibalWins(world, index, candidate),
+        cannibalEaten[candidate] === 0 &&
+        (pack === 0 || packKey(world, candidate) !== pack) &&
+        cannibalWins(world, index, candidate),
     )
     if (victim < 0) continue
     const next = world.fed[index] + CANNIBAL_KILL_FED
     world.fed[index] = next < FED_MAX ? next : FED_MAX
+    sharePackMeal(world, index)
     recordDeath(world, victim, DEATH_CAUSE.eaten, index)
     cannibalEaten[victim] = 1
     eaten[kills] = victim
@@ -326,6 +334,7 @@ export const scavengeCorpses = (world: World): void => {
     const next = world.fed[index] + SCAVENGER.energy
     world.fed[index] = next < FED_MAX ? next : FED_MAX
     world.grazeCooldown[index] = SCAVENGER.grazeCooldown
+    sharePackMeal(world, index)
     fillGrass(world.grass, world.corpses.x[corpse], world.corpses.y[corpse])
     removeCorpse(world, corpse)
     world.scavenges += 1

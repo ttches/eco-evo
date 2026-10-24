@@ -202,3 +202,22 @@ vec3 color = vec3(0.0);
 }
 
 I think I want to see world glorps looking like thtey did in 6890aeb5d833f0abbad63dfdb4732df5451fa7ee, before they were changed in 85811e681f449468fa6f0dbaa5af70125707b59e but I want them to seem at double pixel density. I think you said they were about 8px wide, so we'd do 16
+
+== turn into clicker idle game == crazy idea
+the game currently is the end state of a clicker game
+start clicking to add dirt, add grass, add prey (can do once if die force prestige)
+prey slow first
+unlock traits
+unlock predators (collapse == force prestige)
+prestige preserves dirt // grass // prey // hunters?
+currencies
+grass harvested. first done by clicks, then by prey
+meat harvested.
+traits harvested? mutations?
+// gameplay
+starts as one tile
+grass grows slowly
+click to harvest, click plot button to exchange grass for plot
+add more powerful sunlight in tiers (faster grass)
+ulock cloning unlock mating
+//unlock humans -> eventually evolve into majesty 2??

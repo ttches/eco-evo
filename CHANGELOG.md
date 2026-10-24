@@ -8,6 +8,19 @@ See [`benchmarks/`](benchmarks/) for how benchmarks are captured and compared.
 
 ### Gameplay
 
+- A hunter's kill is worth 35 energy instead of 30 (`HUNTER_KILL_FED`).
+- Cannibalism is off (`CANNIBALISM = false`): starving hunters no longer eat
+  each other.
+- New hunter-only **Pack Leader** and **Pack Animal** mutations. A Pack Leader
+  never clones and is always the mother when it mates, and every pup it bears is
+  a sterile Pack Animal in its pack. Pack animals can't clone or mate. They hold
+  slots on a sunflower spiral around the leader that starts behind it and
+  drifts slowly, so the pack spreads out evenly instead of stacking. Inside
+  `PACK.leash` they hunt as normal; a member that strays past it regroups first.
+  When any member eats, every other member also gains `PACK.shareEnergy` (10).
+  Packmates never cannibalize each other. When a leader dies, its oldest member
+  becomes the new leader and can mate, so the lineage carries on. Pack Animal is
+  only granted by a leader's births; it is never rolled or inherited.
 - Fertility's cooldown curve is flattened: level 0 now reproduces every 20s
   instead of 40s (level 7 is still 8s). The old curve made a fertility point
   worth 4.6s of cooldown, so populations fixated on it and dumped speed,

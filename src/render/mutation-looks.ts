@@ -29,6 +29,9 @@ export const MUTATION_LOOKS: Record<MutationKey, MutationLook> = {
   camouflage: { body: 'cuttlefish-hologram' },
   stealth: { body: 'predator-glint', aura: 'smoke' },
   scavenger: { body: 'hyena-pelt' },
+  // Placeholders until the pack art pass.
+  packLeader: { body: 'gold' },
+  packAnimal: { body: 'ore-vein' },
 }
 
 /** The first mutation a glorp holds, respecting its type's exclusivity. */

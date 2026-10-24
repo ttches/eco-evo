@@ -39,7 +39,7 @@ export type LineageLog = {
   killer: Int32Array
   /** Trait levels as rolled or inherited at birth. */
   traits: Record<TraitKey, Float32Array>
-  /** Mutation bitmask as rolled or inherited at birth; never changes afterward. */
+  /** Mutation bitmask as rolled or inherited at birth; only pack succession (a pack animal promoted to leader) changes it afterward. */
   mutations: Uint32Array
   /** Prey: hunters fled from, and how many of those flights ended alive. */
   flights: Uint32Array
@@ -63,7 +63,7 @@ export type LineageRecord = {
   readonly deathCause: DeathCause
   readonly killer: number
   readonly traits: Readonly<TraitLevels>
-  /** Mutation bitmask as rolled or inherited at birth; never changes afterward. */
+  /** Mutation bitmask as rolled or inherited at birth; only pack succession (a pack animal promoted to leader) changes it afterward. */
   readonly mutations: number
   /** User-given name, or null if never named. */
   readonly name: string | null

@@ -17,7 +17,8 @@ import {
 import { cloneTraits, crossTraitsFrom, readLevels } from '@/sim/genetics'
 import { NO_GLORP, recordBirth, recordBirthFromIds } from '@/sim/lineage'
 import { isEligibleMate } from '@/sim/mate'
-import { rollBirthMutations } from '@/sim/mutations'
+import { isPackAnimal, isPackLeader, rollBirthMutations } from '@/sim/mutations'
+import { joinPack } from '@/sim/pack'
 import { nearestOfType } from '@/sim/query'
 import { rebuildSpatialGrid } from '@/sim/spatial'
 import { allocGlorp } from '@/sim/store'
@@ -78,12 +79,15 @@ export const tickCooldowns = (world: World, dt: number): void => {
 
 /**
  * Well-fed, off-cooldown glorps spawn an offspring at their position. Hunters
- * are skipped when `HUNTER_ASEXUAL` is off, forcing them to mate instead.
+ * are skipped when `HUNTER_ASEXUAL` is off, forcing them to mate instead. Pack
+ * leaders and pack animals never clone.
  */
 export const applyReproduction = (world: World): void => {
   const population = world.count
   for (let index = 0; index < population; index += 1) {
     if (!HUNTER_ASEXUAL && world.type[index] === GLORP_TYPE.hunter) continue
+    const mask = world.mutations[index]
+    if (isPackLeader(mask) || isPackAnimal(mask)) continue
     if (world.pregnant[index] > 0) continue
     if (world.cooldown[index] > 0) continue
     if (world.fed[index] < FED_MAX) continue
@@ -141,12 +145,17 @@ const birthMatedChild = (
 
   world.type[child] = GLORP_TYPE.hunter
   crossTraitsFrom(world, child, motherTraits, fatherTraits, random)
-  world.mutations[child] = rollBirthMutations(
-    random,
-    [world.mutations[motherIndex], fatherMutations],
-    GLORP_TYPE.hunter,
-    MUTATION_PREGNANCY_BIRTH_CHANCE,
-  )
+  // A pack leader's every pup joins its pack in place of any rolled mutation.
+  if (isPackLeader(world.mutations[motherIndex])) {
+    joinPack(world, child, motherIndex)
+  } else {
+    world.mutations[child] = rollBirthMutations(
+      random,
+      [world.mutations[motherIndex], fatherMutations],
+      GLORP_TYPE.hunter,
+      MUTATION_PREGNANCY_BIRTH_CHANCE,
+    )
+  }
   initOffspring(
     world,
     child,
@@ -157,11 +166,25 @@ const birthMatedChild = (
 }
 
 /**
+ * Which partner carries the child. A pack leader always does; otherwise (or
+ * when both lead) a coin flip decides. The coin is always drawn so the RNG
+ * stream does not depend on whether a leader is involved.
+ */
+const pickMother = (world: World, a: number, b: number): number => {
+  const coin = world.random.unit() < 0.5 ? a : b
+  const leaderA = isPackLeader(world.mutations[a])
+  const leaderB = isPackLeader(world.mutations[b])
+  if (leaderA === leaderB) return coin
+  return leaderA ? a : b
+}
+
+/**
  * One mating: spend energy, then either start a pregnancy or (when gestation is
- * zero) birth the child immediately. A random parent carries the offspring.
+ * zero) birth the child immediately. A random parent carries the offspring,
+ * unless one is a pack leader (see `pickMother`).
  */
 const conceive = (world: World, a: number, b: number): void => {
-  const mother = world.random.unit() < 0.5 ? a : b
+  const mother = pickMother(world, a, b)
   const father = mother === a ? b : a
   const fatherId = world.id[father]
 
